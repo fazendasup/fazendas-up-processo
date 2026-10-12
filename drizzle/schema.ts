@@ -1399,8 +1399,9 @@ export const terceirosRegistros = mysqlTable(
     /** HH:mm */
     horaSaida: varchar("horaSaida", { length: 5 }).notNull(),
     /**
-     * Override admin do almoço na empresa (só os R$ 25).
-     * null = automático (11h–13h); true = sem R$ 25; false = mantém os R$ 25.
+     * Override do almoço na empresa (só os R$ 25).
+     * null = automático (11h–13h); true = sem R$ 25; false = não almoçou (mantém os R$ 25).
+     * O prestador só pode gravar false, e apenas quando o horário cai na regra.
      */
     almocouNaEmpresaOverride: boolean("almocouNaEmpresaOverride"),
     /**

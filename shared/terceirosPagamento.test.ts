@@ -3,6 +3,7 @@ import {
   calcularPagamentoDiaTerceiro,
   dataSaidaServico,
   formatarCpf,
+  horarioNaRegraAlmocoEmpresa,
   mascaraHoraDigitada,
   normalizarCpf,
   normalizarHora24h,
@@ -145,6 +146,16 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.horasPresente).toBe(5);
     expect(r!.horasTrabalhadas).toBe(4);
     expect(r!.valorAlimentacao).toBe(0);
+  });
+
+  it("a opção de refeição fora só cabe no horário das 11h às 13h", () => {
+    expect(horarioNaRegraAlmocoEmpresa("07:00", "16:00")).toBe(true);
+    expect(horarioNaRegraAlmocoEmpresa("10:59", "13:01")).toBe(true);
+    expect(horarioNaRegraAlmocoEmpresa("11:00", "17:00")).toBe(false);
+    expect(horarioNaRegraAlmocoEmpresa("07:00", "13:00")).toBe(false);
+    expect(horarioNaRegraAlmocoEmpresa("13:00", "21:00")).toBe(false);
+    expect(horarioNaRegraAlmocoEmpresa("18:00", "08:00")).toBe(false);
+    expect(horarioNaRegraAlmocoEmpresa("06:00", "05:00")).toBe(true);
   });
 
   it("entrou antes das 11h e saiu depois das 13h: desconta almoço", () => {

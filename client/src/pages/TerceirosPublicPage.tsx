@@ -7,7 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InputHora24h } from "@/components/InputHora24h";
 import { Label } from "@/components/ui/label";
-import { formatarCpf, normalizarCpf, dataSaidaServico, normalizarHora24h } from "@shared/terceirosPagamento";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  dataSaidaServico,
+  formatarCpf,
+  horarioNaRegraAlmocoEmpresa,
+  normalizarCpf,
+  normalizarHora24h,
+} from "@shared/terceirosPagamento";
 
 const STORAGE_KEY = "terceiros.acessoToken";
 
@@ -92,6 +99,7 @@ export default function TerceirosPublicPage() {
   const [dataServico, setDataServico] = useState(hojeIsoSp);
   const [horaEntrada, setHoraEntrada] = useState("07:00");
   const [horaSaida, setHoraSaida] = useState("16:00");
+  const [refeicaoFora, setRefeicaoFora] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -136,6 +144,13 @@ export default function TerceirosPublicPage() {
     onError: err => toast.error(err.message),
   });
 
+  const declararRefeicao = trpc.terceiros.declararRefeicaoFora.useMutation({
+    onSuccess: async () => {
+      await utils.terceiros.meuHistorico.invalidate();
+    },
+    onError: err => toast.error(err.message),
+  });
+
   const excluir = trpc.terceiros.excluirMeuRegistro.useMutation({
     onSuccess: async () => {
       toast.success("Registro removido");
@@ -145,6 +160,24 @@ export default function TerceirosPublicPage() {
   });
 
   const cpfFmt = useMemo(() => formatarCpf(cpf), [cpf]);
+  const entradaNorm = normalizarHora24h(horaEntrada);
+  const saidaNorm = normalizarHora24h(horaSaida);
+  const naRegraAlmoco =
+    entradaNorm != null &&
+    saidaNorm != null &&
+    horarioNaRegraAlmocoEmpresa(entradaNorm, saidaNorm);
+  const registroDoDia = hist.data?.registros.find(
+    r => r.dataServico === dataServico,
+  );
+  const podeMarcarRefeicao = naRegraAlmoco && !registroDoDia?.pago;
+
+  useEffect(() => {
+    setRefeicaoFora(registroDoDia?.almocouNaEmpresaOverride === false);
+  }, [
+    dataServico,
+    registroDoDia?.id,
+    registroDoDia?.almocouNaEmpresaOverride,
+  ]);
 
   function sair() {
     try {
@@ -285,6 +318,25 @@ export default function TerceirosPublicPage() {
               )}
             </p>
           </div>
+          {podeMarcarRefeicao ? (
+            <div className="sm:col-span-3">
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox
+                  checked={refeicaoFora}
+                  onCheckedChange={v => setRefeicaoFora(v === true)}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">Refeição fora da empresa</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    Neste horário o valor da refeição é descontado
+                    automaticamente. Marque se a refeição foi realizada fora
+                    da empresa.
+                  </span>
+                </span>
+              </label>
+            </div>
+          ) : null}
           <div className="sm:col-span-3">
             <Button
               className="w-full sm:w-auto"
@@ -304,6 +356,10 @@ export default function TerceirosPublicPage() {
                   dataServico,
                   horaEntrada: entrada,
                   horaSaida: saida,
+                  ...(horarioNaRegraAlmocoEmpresa(entrada, saida) &&
+                  !registroDoDia?.pago
+                    ? { refeicaoForaDaEmpresa: refeicaoFora }
+                    : {}),
                 });
               }}
             >
@@ -328,10 +384,13 @@ export default function TerceirosPublicPage() {
             <ul className="divide-y rounded-lg border">
               {registros.map(r => {
                 const ultimo = ultimoAjusteDoDia(r.ajustes);
+                const podeMarcarDia =
+                  !r.pago &&
+                  horarioNaRegraAlmocoEmpresa(r.horaEntrada, r.horaSaida);
                 return (
                 <li
                   key={r.id}
-                  className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm"
+                  className="flex items-start justify-between gap-2 px-3 py-2.5 text-sm"
                 >
                   <div className="min-w-0">
                     <p className="font-medium tabular-nums">
@@ -350,9 +409,11 @@ export default function TerceirosPublicPage() {
                       {r.pagamento
                         ? `${r.pagamento.horasTrabalhadas}h`
                         : ""}
-                      {r.pagamento?.almocouNaEmpresa
+                      {r.pagamento?.almocouNaEmpresa && !podeMarcarDia
                         ? " · almoço na empresa"
-                        : ""}
+                        : !podeMarcarDia && r.almocouNaEmpresaOverride === false
+                          ? " · refeição fora da empresa"
+                          : ""}
                       {r.pagamento?.descontaDescanso
                         ? " · descanso 1h"
                         : ""}
@@ -387,6 +448,32 @@ export default function TerceirosPublicPage() {
                           ({fmtQuando(ultimo.quando)})
                         </span>
                       </p>
+                    ) : null}
+                    {podeMarcarDia ? (
+                      <label className="mt-2 flex items-start gap-2 text-xs">
+                        <Checkbox
+                          checked={r.almocouNaEmpresaOverride === false}
+                          disabled={declararRefeicao.isPending}
+                          onCheckedChange={v => {
+                            if (!token) return;
+                            declararRefeicao.mutate({
+                              acessoToken: token,
+                              registroId: r.id,
+                              refeicaoForaDaEmpresa: v === true,
+                            });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>
+                          <span className="font-medium text-foreground">
+                            Refeição fora da empresa
+                          </span>
+                          <span className="block text-muted-foreground">
+                            Marque se a refeição foi realizada fora da empresa.
+                            Sem a marcação, o valor é descontado.
+                          </span>
+                        </span>
+                      </label>
                     ) : null}
                   </div>
                   {!r.pago ? (

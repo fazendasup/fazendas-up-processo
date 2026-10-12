@@ -5,10 +5,12 @@ import {
   calcularPagamentoDiaTerceiro,
   formatarCpf,
   horaParaMinutos,
+  horarioNaRegraAlmocoEmpresa,
   validarCpf,
 } from "@shared/terceirosPagamento";
 import {
   ajustarRegistroAdmin,
+  declararRefeicaoForaPrestador,
   deleteRegistroAdmin,
   deleteRegistroPrestador,
   getPrestadorById,
@@ -227,22 +229,40 @@ export const terceirosRouter = router({
         dataServico: dataIso,
         horaEntrada: horaHm,
         horaSaida: horaHm,
+        /** Só é aplicado se o horário cair na regra de almoço e o dia estiver em aberto. */
+        refeicaoForaDaEmpresa: z.boolean().optional(),
       }),
     )
     .mutation(async ({ input }) => {
       const p = await assertToken(input.acessoToken);
       assertHorarios(input.horaEntrada, input.horaSaida);
-      const row = await upsertRegistroPrestador({
+      let row = await upsertRegistroPrestador({
         prestadorId: p.id,
         dataServico: input.dataServico,
         horaEntrada: input.horaEntrada,
         horaSaida: input.horaSaida,
       });
+      let refeicaoFora = false;
+      if (
+        input.refeicaoForaDaEmpresa != null &&
+        row.pagoAt == null &&
+        horarioNaRegraAlmocoEmpresa(row.horaEntrada, row.horaSaida)
+      ) {
+        const declarado = await declararRefeicaoForaPrestador({
+          prestadorId: p.id,
+          registroId: row.id,
+          refeicaoForaDaEmpresa: input.refeicaoForaDaEmpresa,
+        });
+        row = declarado.registro;
+        refeicaoFora = input.refeicaoForaDaEmpresa && declarado.mudou;
+      }
       const { dispararPushNotificacao } = await import("../pushService");
       dispararPushNotificacao({
         categoria: "terceiros",
         titulo: "Registro de terceiro",
-        corpo: `${p.nomeCompleto} registrou ${input.horaEntrada}–${input.horaSaida} em ${input.dataServico}.`,
+        corpo: refeicaoFora
+          ? `${p.nomeCompleto} registrou ${input.horaEntrada}–${input.horaSaida} em ${input.dataServico}, com refeição fora da empresa.`
+          : `${p.nomeCompleto} registrou ${input.horaEntrada}–${input.horaSaida} em ${input.dataServico}.`,
         url: "/terceiros-admin",
         tag: `terceiro-${row.id}`,
       });
@@ -252,6 +272,49 @@ export const terceirosRouter = router({
         parseDiariaBase(p.diariaBase),
         ajustes,
       );
+    }),
+
+  /** Prestador marca refeição fora da empresa num dia já registrado. */
+  declararRefeicaoFora: publicProcedure
+    .input(
+      z.object({
+        acessoToken: z.string().min(16),
+        registroId: z.number().int().positive(),
+        refeicaoForaDaEmpresa: z.boolean(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const p = await assertToken(input.acessoToken);
+      try {
+        const { registro, mudou } = await declararRefeicaoForaPrestador({
+          prestadorId: p.id,
+          registroId: input.registroId,
+          refeicaoForaDaEmpresa: input.refeicaoForaDaEmpresa,
+        });
+        if (mudou) {
+          const { dispararPushNotificacao } = await import("../pushService");
+          dispararPushNotificacao({
+            categoria: "terceiros",
+            titulo: "Refeição de terceiro",
+            corpo: input.refeicaoForaDaEmpresa
+              ? `${p.nomeCompleto} registrou refeição fora da empresa em ${registro.dataServico}.`
+              : `${p.nomeCompleto} voltou o desconto da refeição ao horário em ${registro.dataServico}.`,
+            url: "/terceiros-admin",
+            tag: `terceiro-refeicao-${registro.id}`,
+          });
+        }
+        const ajustes = await listAjustesPorRegistroIds([registro.id]);
+        return registroComPagamento(
+          registro,
+          parseDiariaBase(p.diariaBase),
+          ajustes,
+        );
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Falha ao registrar a refeição.",
+        });
+      }
     }),
 
   excluirMeuRegistro: publicProcedure

@@ -116,6 +116,25 @@ export function jornadaCruzaMeiaNoite(
 }
 
 /**
+ * A pessoa estava na empresa no intervalo do almoço:
+ * entrou antes das 11h e saiu depois das 13h (ou a jornada cruza a meia-noite).
+ * Nesse caso o almoço na empresa é descontado, salvo marcação em contrário.
+ */
+export function horarioNaRegraAlmocoEmpresa(
+  horaEntrada: string,
+  horaSaida: string,
+): boolean {
+  const ent = horaParaMinutos(horaEntrada);
+  const sai = horaParaMinutos(horaSaida);
+  if (ent == null || sai == null || sai === ent) return false;
+  const cruzaMeiaNoite = sai < ent;
+  return (
+    ent < TERCEIROS_ALMOCO_ENTRADA_ANTES_MIN &&
+    (cruzaMeiaNoite || sai > TERCEIROS_ALMOCO_SAIDA_DEPOIS_MIN)
+  );
+}
+
+/**
  * Data civil da saída (AAAA-MM-DD), a partir da data do serviço (entrada).
  * Se a jornada cruza meia-noite, retorna o dia seguinte.
  */
@@ -201,10 +220,10 @@ export function calcularPagamentoDiaTerceiro(input: {
     ? 24 * 60 - ent + sai
     : sai - ent;
   const horasPresente = round2(minutosPresente / 60);
-  // Almoço na empresa só se a pessoa estava lá das 11h às 13h.
-  const almocouAuto =
-    ent < TERCEIROS_ALMOCO_ENTRADA_ANTES_MIN &&
-    (cruzaMeiaNoite || sai > TERCEIROS_ALMOCO_SAIDA_DEPOIS_MIN);
+  const almocouAuto = horarioNaRegraAlmocoEmpresa(
+    input.horaEntrada,
+    input.horaSaida,
+  );
   const almocouNaEmpresaManual =
     input.almocouNaEmpresaOverride === true ||
     input.almocouNaEmpresaOverride === false;

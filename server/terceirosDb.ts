@@ -12,7 +12,10 @@ import {
   type TerceiroRegistroRow,
 } from "../drizzle/schema";
 import { getDb } from "./db";
-import { normalizarCpf } from "@shared/terceirosPagamento";
+import {
+  horarioNaRegraAlmocoEmpresa,
+  normalizarCpf,
+} from "@shared/terceirosPagamento";
 
 export async function ensureTerceirosTables(): Promise<void> {
   const db = await getDb();
@@ -306,6 +309,79 @@ export async function upsertRegistroPrestador(input: {
     )
     .limit(1);
   return row[0]!;
+}
+
+function overrideAlmocoAtual(
+  raw: boolean | number | null | undefined,
+): boolean | null {
+  if (raw === true || raw === 1) return true;
+  if (raw === false || raw === 0) return false;
+  return null;
+}
+
+/**
+ * O prestador informa refeição fora da empresa.
+ * Só vale quando o horário cai na regra das 11h–13h e o dia ainda está em aberto.
+ * true grava override false (mantém os R$ 25). false volta ao automático,
+ * sem apagar um “almoçou na empresa” definido pela administração.
+ */
+export async function declararRefeicaoForaPrestador(input: {
+  prestadorId: number;
+  registroId: number;
+  refeicaoForaDaEmpresa: boolean;
+}): Promise<{ registro: TerceiroRegistroRow; mudou: boolean }> {
+  await ensureTerceirosTables();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const cur = await db
+    .select()
+    .from(terceirosRegistros)
+    .where(
+      and(
+        eq(terceirosRegistros.id, input.registroId),
+        eq(terceirosRegistros.prestadorId, input.prestadorId),
+      ),
+    )
+    .limit(1);
+  const before = cur[0];
+  if (!before) throw new Error("Registro não encontrado.");
+  if (before.pagoAt != null) {
+    throw new Error("Dia já pago não pode ser alterado. Contate a administração.");
+  }
+  if (!horarioNaRegraAlmocoEmpresa(before.horaEntrada, before.horaSaida)) {
+    throw new Error("Este horário não entra na regra de almoço.");
+  }
+
+  const prev = overrideAlmocoAtual(before.almocouNaEmpresaOverride);
+  if (!input.refeicaoForaDaEmpresa && prev === true) {
+    return { registro: before, mudou: false };
+  }
+  const next = input.refeicaoForaDaEmpresa ? false : null;
+  if (next === prev) return { registro: before, mudou: false };
+
+  await db
+    .update(terceirosRegistros)
+    .set({ almocouNaEmpresaOverride: next })
+    .where(eq(terceirosRegistros.id, before.id));
+  await db.insert(terceirosAjustes).values({
+    registroId: before.id,
+    prestadorId: before.prestadorId,
+    tipo: "alimentacao",
+    descricao: input.refeicaoForaDaEmpresa
+      ? "Registrou refeição fora da empresa."
+      : "Removeu o registro de refeição fora da empresa. O desconto volta a seguir o horário.",
+    detalheJson: JSON.stringify({ antes: prev, depois: next }),
+    adminUserId: null,
+  });
+
+  const row = await db
+    .select()
+    .from(terceirosRegistros)
+    .where(eq(terceirosRegistros.id, before.id))
+    .limit(1);
+  if (!row[0]) throw new Error("Registro não encontrado.");
+  return { registro: row[0], mudou: true };
 }
 
 export async function deleteRegistroPrestador(
