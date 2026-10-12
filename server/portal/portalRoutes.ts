@@ -13,7 +13,9 @@ import {
   todayYmd,
   upcomingDeliveryDates,
 } from "./portalCalendario";
+import { clienteAceitouRecorrencia } from "./contratoRecorrencia";
 import { aceitarContrato, lerConta, minimoDaConta, salvarConta } from "./portalConta";
+import { lerProgramacao, salvarProgramacao } from "./portalProgramacao";
 import { fichaDoProduto } from "./vitrineCopy";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
@@ -171,15 +173,16 @@ async function equipeDaSessao(req: Request) {
   return user;
 }
 
-function dadosCliente(acesso: {
+async function dadosCliente(acesso: {
   email: string;
-  cliente: { nome: string; cnpjCpf: string | null; externalId: string | null };
+  cliente: { id: string; nome: string; cnpjCpf: string | null; externalId: string | null };
 }) {
   return {
     nome: acesso.cliente.nome,
     email: acesso.email,
     cnpj: acesso.cliente.cnpjCpf,
     vinculado: Boolean(acesso.cliente.externalId),
+    recorrente: await clienteAceitouRecorrencia(getComercialPrisma(), acesso.cliente.id),
   };
 }
 
@@ -376,7 +379,7 @@ export function registerPortalRoutes(app: Express): void {
       const acesso = await clienteDaSessao(req);
       const equipe = await equipeDaSessao(req);
       res.json({
-        cliente: acesso ? dadosCliente(acesso) : null,
+        cliente: acesso ? await dadosCliente(acesso) : null,
         equipe: equipe
           ? { nome: equipe.name?.trim() || equipe.email || "Equipe", email: equipe.email }
           : null,
@@ -417,7 +420,7 @@ export function registerPortalRoutes(app: Express): void {
         data: { senhaHash, conviteHash: null, conviteExpiraEm: null },
       });
       await emitirSessaoCliente(req, res, acesso.id, acesso.clienteId);
-      res.json({ cliente: dadosCliente(acesso) });
+      res.json({ cliente: await dadosCliente(acesso) });
     } catch (error) {
       console.error("[portal] ativar", error);
       falha(res, 503, "Não foi possível criar a senha agora.");
@@ -467,7 +470,7 @@ export function registerPortalRoutes(app: Express): void {
         return;
       }
       await emitirSessaoCliente(req, res, completo.id, completo.clienteId);
-      res.json({ cliente: dadosCliente(completo), senhaInicial: !completo.senhaHash });
+      res.json({ cliente: await dadosCliente(completo), senhaInicial: !completo.senhaHash });
     } catch (error) {
       console.error("[portal] entrar", error);
       falha(res, 503, "Não foi possível entrar agora.");
@@ -856,6 +859,80 @@ export function registerPortalRoutes(app: Express): void {
       }
       console.error("[portal] criar pedido", error);
       falha(res, 503, "Não foi possível enviar o pedido agora.");
+    }
+  });
+
+  app.get("/api/portal/programacao", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para ver a programação.");
+      return;
+    }
+    const prisma = getComercialPrisma();
+    if (!(await clienteAceitouRecorrencia(prisma, acesso.clienteId))) {
+      falha(res, 403, "A programação abre depois do aceite do contrato.");
+      return;
+    }
+    try {
+      res.json(await lerProgramacao(prisma, acesso.clienteId, acesso.cliente.externalId?.trim() || null));
+    } catch (error) {
+      console.error("[portal] programacao", error);
+      falha(res, 503, "Não foi possível carregar a programação.");
+    }
+  });
+
+  app.post("/api/portal/programacao", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para programar as entregas.");
+      return;
+    }
+    const prisma = getComercialPrisma();
+    if (!(await clienteAceitouRecorrencia(prisma, acesso.clienteId))) {
+      falha(res, 403, "A programação abre depois do aceite do contrato.");
+      return;
+    }
+    const contaAzulId = acesso.cliente.externalId?.trim();
+    if (!contaAzulId) {
+      falha(res, 400, "Esta conta ainda não pode receber pedidos. Fale com a fazenda.");
+      return;
+    }
+    const parsed = z
+      .object({
+        dias: z
+          .array(
+            z.object({
+              diaSemana: z.number().int(),
+              itens: z.array(
+                z.object({
+                  produtoId: z.string().min(1).max(64),
+                  quantidade: z.number().positive().max(9999),
+                }),
+              ),
+            }),
+          )
+          .max(5),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Confira os dias, os produtos e as quantidades.");
+      return;
+    }
+    try {
+      const atraso = await detalheInadimplenciaCliente(contaAzulId);
+      if (atraso.inadimplente) {
+        falha(res, 409, "Há um pagamento em atraso nesta conta. Regularize para programar as entregas.");
+        return;
+      }
+      const salva = await salvarProgramacao(prisma, acesso.clienteId, contaAzulId, parsed.data.dias);
+      res.json(salva);
+    } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] salvar programacao", error);
+      falha(res, 503, "Não foi possível salvar a programação agora.");
     }
   });
 

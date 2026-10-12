@@ -254,6 +254,7 @@ model Cliente {
   portalAcesso PortalAcesso?
   portalConta PortalConta?
   portalContrato PortalContrato?
+  portalProgramacao PortalProgramacao?
 
   @@index([tipo, statusRelacionamento])
   @@index([nome])
@@ -335,6 +336,7 @@ model ProdutoComercial {
   atualizadoEm             DateTime           @updatedAt @map("atualizado_em")
 
   portalFoto      PortalFoto?
+  programacaoItens PortalProgramacaoItem[]
   precosEspeciais PrecoEspecialCliente[]
   itensPedido     PedidoOperacionalItem[]
   avariasPedido   PedidoOperacionalAvaria[]
@@ -428,6 +430,61 @@ model PortalContratoAceite {
   @@index([clienteId])
   @@index([contratoId])
   @@map("portal_contrato_aceites")
+}
+
+/// Cardápio semanal do cliente recorrente. Cada dia pode ter produtos diferentes e a semana se repete.
+model PortalProgramacao {
+  id           String   @id @default(cuid())
+  clienteId    String   @unique @map("cliente_id")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  cliente  Cliente                    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  dias     PortalProgramacaoDia[]
+  entregas PortalProgramacaoEntrega[]
+
+  @@map("portal_programacoes")
+}
+
+model PortalProgramacaoDia {
+  id            String @id @default(cuid())
+  programacaoId String @map("programacao_id")
+  /// 1 segunda … 5 sexta, no calendário de Manaus.
+  diaSemana     Int    @map("dia_semana")
+
+  programacao PortalProgramacao       @relation(fields: [programacaoId], references: [id], onDelete: Cascade)
+  itens       PortalProgramacaoItem[]
+
+  @@unique([programacaoId, diaSemana])
+  @@map("portal_programacao_dias")
+}
+
+model PortalProgramacaoItem {
+  id         String  @id @default(cuid())
+  diaId      String  @map("dia_id")
+  produtoId  String  @map("produto_id")
+  quantidade Decimal @db.Decimal(14, 3)
+
+  dia     PortalProgramacaoDia @relation(fields: [diaId], references: [id], onDelete: Cascade)
+  produto ProdutoComercial     @relation(fields: [produtoId], references: [id])
+
+  @@unique([diaId, produtoId])
+  @@index([produtoId])
+  @@map("portal_programacao_itens")
+}
+
+/// Entrega já gerada a partir da programação. Pedido firme não é reescrito.
+model PortalProgramacaoEntrega {
+  id            String   @id @default(cuid())
+  programacaoId String   @map("programacao_id")
+  dataEntrega   DateTime @map("data_entrega")
+  pedidoId      String   @unique @map("pedido_id")
+
+  programacao PortalProgramacao @relation(fields: [programacaoId], references: [id], onDelete: Cascade)
+  pedido      PedidoOperacional @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  @@unique([programacaoId, dataEntrega])
+  @@map("portal_programacao_entregas")
 }
 
 /// Pedido de cadastro vindo do site. Vai para o Conta Azul quando a API aceita.
@@ -557,6 +614,7 @@ model PedidoOperacional {
   editadoPor        Usuario? @relation("PedidoEditadoPor", fields: [editadoPorId], references: [id], onDelete: SetNull)
   pedidoContaAzul   Pedido?  @relation("PedidoOperacionalVinculo", fields: [pedidoContaAzulId], references: [id], onDelete: SetNull)
   itens             PedidoOperacionalItem[]
+  programacaoEntrega PortalProgramacaoEntrega?
   avarias           PedidoOperacionalAvaria[]
   auditoria         PedidoOperacionalAuditoria[]
   eventosConciliacao PedidoConciliacaoEvento[]

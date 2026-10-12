@@ -275,6 +275,33 @@ exports.Prisma.PortalContratoAceiteScalarFieldEnum = {
   aceitoEm: 'aceitoEm'
 };
 
+exports.Prisma.PortalProgramacaoScalarFieldEnum = {
+  id: 'id',
+  clienteId: 'clienteId',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.PortalProgramacaoDiaScalarFieldEnum = {
+  id: 'id',
+  programacaoId: 'programacaoId',
+  diaSemana: 'diaSemana'
+};
+
+exports.Prisma.PortalProgramacaoItemScalarFieldEnum = {
+  id: 'id',
+  diaId: 'diaId',
+  produtoId: 'produtoId',
+  quantidade: 'quantidade'
+};
+
+exports.Prisma.PortalProgramacaoEntregaScalarFieldEnum = {
+  id: 'id',
+  programacaoId: 'programacaoId',
+  dataEntrega: 'dataEntrega',
+  pedidoId: 'pedidoId'
+};
+
 exports.Prisma.PortalCadastroScalarFieldEnum = {
   id: 'id',
   nome: 'nome',
@@ -761,6 +788,28 @@ exports.Prisma.PortalContratoAceiteOrderByRelevanceFieldEnum = {
   userAgent: 'userAgent'
 };
 
+exports.Prisma.PortalProgramacaoOrderByRelevanceFieldEnum = {
+  id: 'id',
+  clienteId: 'clienteId'
+};
+
+exports.Prisma.PortalProgramacaoDiaOrderByRelevanceFieldEnum = {
+  id: 'id',
+  programacaoId: 'programacaoId'
+};
+
+exports.Prisma.PortalProgramacaoItemOrderByRelevanceFieldEnum = {
+  id: 'id',
+  diaId: 'diaId',
+  produtoId: 'produtoId'
+};
+
+exports.Prisma.PortalProgramacaoEntregaOrderByRelevanceFieldEnum = {
+  id: 'id',
+  programacaoId: 'programacaoId',
+  pedidoId: 'pedidoId'
+};
+
 exports.Prisma.PortalCadastroOrderByRelevanceFieldEnum = {
   id: 'id',
   nome: 'nome',
@@ -1151,6 +1200,10 @@ exports.Prisma.ModelName = {
   PortalConta: 'PortalConta',
   PortalContrato: 'PortalContrato',
   PortalContratoAceite: 'PortalContratoAceite',
+  PortalProgramacao: 'PortalProgramacao',
+  PortalProgramacaoDia: 'PortalProgramacaoDia',
+  PortalProgramacaoItem: 'PortalProgramacaoItem',
+  PortalProgramacaoEntrega: 'PortalProgramacaoEntrega',
   PortalCadastro: 'PortalCadastro',
   PortalFoto: 'PortalFoto',
   RegraComercialCliente: 'RegraComercialCliente',

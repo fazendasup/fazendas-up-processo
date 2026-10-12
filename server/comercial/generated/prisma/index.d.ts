@@ -74,6 +74,26 @@ export type PortalContrato = $Result.DefaultSelection<Prisma.$PortalContratoPayl
  */
 export type PortalContratoAceite = $Result.DefaultSelection<Prisma.$PortalContratoAceitePayload>
 /**
+ * Model PortalProgramacao
+ * Cardápio semanal do cliente recorrente. Cada dia pode ter produtos diferentes e a semana se repete.
+ */
+export type PortalProgramacao = $Result.DefaultSelection<Prisma.$PortalProgramacaoPayload>
+/**
+ * Model PortalProgramacaoDia
+ * 
+ */
+export type PortalProgramacaoDia = $Result.DefaultSelection<Prisma.$PortalProgramacaoDiaPayload>
+/**
+ * Model PortalProgramacaoItem
+ * 
+ */
+export type PortalProgramacaoItem = $Result.DefaultSelection<Prisma.$PortalProgramacaoItemPayload>
+/**
+ * Model PortalProgramacaoEntrega
+ * Entrega já gerada a partir da programação. Pedido firme não é reescrito.
+ */
+export type PortalProgramacaoEntrega = $Result.DefaultSelection<Prisma.$PortalProgramacaoEntregaPayload>
+/**
  * Model PortalCadastro
  * Pedido de cadastro vindo do site. Vai para o Conta Azul quando a API aceita.
  */
@@ -771,6 +791,46 @@ export class PrismaClient<
     * ```
     */
   get portalContratoAceite(): Prisma.PortalContratoAceiteDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalProgramacao`: Exposes CRUD operations for the **PortalProgramacao** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalProgramacaos
+    * const portalProgramacaos = await prisma.portalProgramacao.findMany()
+    * ```
+    */
+  get portalProgramacao(): Prisma.PortalProgramacaoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalProgramacaoDia`: Exposes CRUD operations for the **PortalProgramacaoDia** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalProgramacaoDias
+    * const portalProgramacaoDias = await prisma.portalProgramacaoDia.findMany()
+    * ```
+    */
+  get portalProgramacaoDia(): Prisma.PortalProgramacaoDiaDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalProgramacaoItem`: Exposes CRUD operations for the **PortalProgramacaoItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalProgramacaoItems
+    * const portalProgramacaoItems = await prisma.portalProgramacaoItem.findMany()
+    * ```
+    */
+  get portalProgramacaoItem(): Prisma.PortalProgramacaoItemDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalProgramacaoEntrega`: Exposes CRUD operations for the **PortalProgramacaoEntrega** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalProgramacaoEntregas
+    * const portalProgramacaoEntregas = await prisma.portalProgramacaoEntrega.findMany()
+    * ```
+    */
+  get portalProgramacaoEntrega(): Prisma.PortalProgramacaoEntregaDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.portalCadastro`: Exposes CRUD operations for the **PortalCadastro** model.
@@ -1483,6 +1543,10 @@ export namespace Prisma {
     PortalConta: 'PortalConta',
     PortalContrato: 'PortalContrato',
     PortalContratoAceite: 'PortalContratoAceite',
+    PortalProgramacao: 'PortalProgramacao',
+    PortalProgramacaoDia: 'PortalProgramacaoDia',
+    PortalProgramacaoItem: 'PortalProgramacaoItem',
+    PortalProgramacaoEntrega: 'PortalProgramacaoEntrega',
     PortalCadastro: 'PortalCadastro',
     PortalFoto: 'PortalFoto',
     RegraComercialCliente: 'RegraComercialCliente',
@@ -1527,7 +1591,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalProgramacao" | "portalProgramacaoDia" | "portalProgramacaoItem" | "portalProgramacaoEntrega" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2320,6 +2384,270 @@ export namespace Prisma {
           count: {
             args: Prisma.PortalContratoAceiteCountArgs<ExtArgs>
             result: $Utils.Optional<PortalContratoAceiteCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalProgramacao: {
+        payload: Prisma.$PortalProgramacaoPayload<ExtArgs>
+        fields: Prisma.PortalProgramacaoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalProgramacaoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalProgramacaoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalProgramacaoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalProgramacaoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload>
+          }
+          findMany: {
+            args: Prisma.PortalProgramacaoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload>[]
+          }
+          create: {
+            args: Prisma.PortalProgramacaoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload>
+          }
+          createMany: {
+            args: Prisma.PortalProgramacaoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalProgramacaoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload>
+          }
+          update: {
+            args: Prisma.PortalProgramacaoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalProgramacaoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalProgramacaoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalProgramacaoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalProgramacaoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalProgramacao>
+          }
+          groupBy: {
+            args: Prisma.PortalProgramacaoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalProgramacaoCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalProgramacaoDia: {
+        payload: Prisma.$PortalProgramacaoDiaPayload<ExtArgs>
+        fields: Prisma.PortalProgramacaoDiaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalProgramacaoDiaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalProgramacaoDiaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalProgramacaoDiaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalProgramacaoDiaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload>
+          }
+          findMany: {
+            args: Prisma.PortalProgramacaoDiaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload>[]
+          }
+          create: {
+            args: Prisma.PortalProgramacaoDiaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload>
+          }
+          createMany: {
+            args: Prisma.PortalProgramacaoDiaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalProgramacaoDiaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload>
+          }
+          update: {
+            args: Prisma.PortalProgramacaoDiaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalProgramacaoDiaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalProgramacaoDiaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalProgramacaoDiaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoDiaPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalProgramacaoDiaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalProgramacaoDia>
+          }
+          groupBy: {
+            args: Prisma.PortalProgramacaoDiaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoDiaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalProgramacaoDiaCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoDiaCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalProgramacaoItem: {
+        payload: Prisma.$PortalProgramacaoItemPayload<ExtArgs>
+        fields: Prisma.PortalProgramacaoItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalProgramacaoItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalProgramacaoItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalProgramacaoItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalProgramacaoItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload>
+          }
+          findMany: {
+            args: Prisma.PortalProgramacaoItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload>[]
+          }
+          create: {
+            args: Prisma.PortalProgramacaoItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload>
+          }
+          createMany: {
+            args: Prisma.PortalProgramacaoItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalProgramacaoItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload>
+          }
+          update: {
+            args: Prisma.PortalProgramacaoItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalProgramacaoItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalProgramacaoItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalProgramacaoItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoItemPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalProgramacaoItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalProgramacaoItem>
+          }
+          groupBy: {
+            args: Prisma.PortalProgramacaoItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoItemGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalProgramacaoItemCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoItemCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalProgramacaoEntrega: {
+        payload: Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>
+        fields: Prisma.PortalProgramacaoEntregaFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalProgramacaoEntregaFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalProgramacaoEntregaFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalProgramacaoEntregaFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalProgramacaoEntregaFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload>
+          }
+          findMany: {
+            args: Prisma.PortalProgramacaoEntregaFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload>[]
+          }
+          create: {
+            args: Prisma.PortalProgramacaoEntregaCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload>
+          }
+          createMany: {
+            args: Prisma.PortalProgramacaoEntregaCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalProgramacaoEntregaDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload>
+          }
+          update: {
+            args: Prisma.PortalProgramacaoEntregaUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalProgramacaoEntregaDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalProgramacaoEntregaUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalProgramacaoEntregaUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalProgramacaoEntregaPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalProgramacaoEntregaAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalProgramacaoEntrega>
+          }
+          groupBy: {
+            args: Prisma.PortalProgramacaoEntregaGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoEntregaGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalProgramacaoEntregaCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalProgramacaoEntregaCountAggregateOutputType> | number
           }
         }
       }
@@ -4147,6 +4475,10 @@ export namespace Prisma {
     portalConta?: PortalContaOmit
     portalContrato?: PortalContratoOmit
     portalContratoAceite?: PortalContratoAceiteOmit
+    portalProgramacao?: PortalProgramacaoOmit
+    portalProgramacaoDia?: PortalProgramacaoDiaOmit
+    portalProgramacaoItem?: PortalProgramacaoItemOmit
+    portalProgramacaoEntrega?: PortalProgramacaoEntregaOmit
     portalCadastro?: PortalCadastroOmit
     portalFoto?: PortalFotoOmit
     regraComercialCliente?: RegraComercialClienteOmit
@@ -4530,6 +4862,7 @@ export namespace Prisma {
    */
 
   export type ProdutoComercialCountOutputType = {
+    programacaoItens: number
     precosEspeciais: number
     itensPedido: number
     avariasPedido: number
@@ -4539,6 +4872,7 @@ export namespace Prisma {
   }
 
   export type ProdutoComercialCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    programacaoItens?: boolean | ProdutoComercialCountOutputTypeCountProgramacaoItensArgs
     precosEspeciais?: boolean | ProdutoComercialCountOutputTypeCountPrecosEspeciaisArgs
     itensPedido?: boolean | ProdutoComercialCountOutputTypeCountItensPedidoArgs
     avariasPedido?: boolean | ProdutoComercialCountOutputTypeCountAvariasPedidoArgs
@@ -4556,6 +4890,13 @@ export namespace Prisma {
      * Select specific fields to fetch from the ProdutoComercialCountOutputType
      */
     select?: ProdutoComercialCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountProgramacaoItensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoItemWhereInput
   }
 
   /**
@@ -4629,6 +4970,77 @@ export namespace Prisma {
    */
   export type PortalContratoCountOutputTypeCountAceitesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PortalContratoAceiteWhereInput
+  }
+
+
+  /**
+   * Count Type PortalProgramacaoCountOutputType
+   */
+
+  export type PortalProgramacaoCountOutputType = {
+    dias: number
+    entregas: number
+  }
+
+  export type PortalProgramacaoCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    dias?: boolean | PortalProgramacaoCountOutputTypeCountDiasArgs
+    entregas?: boolean | PortalProgramacaoCountOutputTypeCountEntregasArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * PortalProgramacaoCountOutputType without action
+   */
+  export type PortalProgramacaoCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoCountOutputType
+     */
+    select?: PortalProgramacaoCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * PortalProgramacaoCountOutputType without action
+   */
+  export type PortalProgramacaoCountOutputTypeCountDiasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoDiaWhereInput
+  }
+
+  /**
+   * PortalProgramacaoCountOutputType without action
+   */
+  export type PortalProgramacaoCountOutputTypeCountEntregasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoEntregaWhereInput
+  }
+
+
+  /**
+   * Count Type PortalProgramacaoDiaCountOutputType
+   */
+
+  export type PortalProgramacaoDiaCountOutputType = {
+    itens: number
+  }
+
+  export type PortalProgramacaoDiaCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    itens?: boolean | PortalProgramacaoDiaCountOutputTypeCountItensArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * PortalProgramacaoDiaCountOutputType without action
+   */
+  export type PortalProgramacaoDiaCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDiaCountOutputType
+     */
+    select?: PortalProgramacaoDiaCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * PortalProgramacaoDiaCountOutputType without action
+   */
+  export type PortalProgramacaoDiaCountOutputTypeCountItensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoItemWhereInput
   }
 
 
@@ -8242,6 +8654,7 @@ export namespace Prisma {
     portalAcesso?: boolean | Cliente$portalAcessoArgs<ExtArgs>
     portalConta?: boolean | Cliente$portalContaArgs<ExtArgs>
     portalContrato?: boolean | Cliente$portalContratoArgs<ExtArgs>
+    portalProgramacao?: boolean | Cliente$portalProgramacaoArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cliente"]>
 
@@ -8283,6 +8696,7 @@ export namespace Prisma {
     portalAcesso?: boolean | Cliente$portalAcessoArgs<ExtArgs>
     portalConta?: boolean | Cliente$portalContaArgs<ExtArgs>
     portalContrato?: boolean | Cliente$portalContratoArgs<ExtArgs>
+    portalProgramacao?: boolean | Cliente$portalProgramacaoArgs<ExtArgs>
     _count?: boolean | ClienteCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -8303,6 +8717,7 @@ export namespace Prisma {
       portalAcesso: Prisma.$PortalAcessoPayload<ExtArgs> | null
       portalConta: Prisma.$PortalContaPayload<ExtArgs> | null
       portalContrato: Prisma.$PortalContratoPayload<ExtArgs> | null
+      portalProgramacao: Prisma.$PortalProgramacaoPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -8676,6 +9091,7 @@ export namespace Prisma {
     portalAcesso<T extends Cliente$portalAcessoArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalAcessoArgs<ExtArgs>>): Prisma__PortalAcessoClient<$Result.GetResult<Prisma.$PortalAcessoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     portalConta<T extends Cliente$portalContaArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalContaArgs<ExtArgs>>): Prisma__PortalContaClient<$Result.GetResult<Prisma.$PortalContaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     portalContrato<T extends Cliente$portalContratoArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalContratoArgs<ExtArgs>>): Prisma__PortalContratoClient<$Result.GetResult<Prisma.$PortalContratoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    portalProgramacao<T extends Cliente$portalProgramacaoArgs<ExtArgs> = {}>(args?: Subset<T, Cliente$portalProgramacaoArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9373,6 +9789,25 @@ export namespace Prisma {
      */
     include?: PortalContratoInclude<ExtArgs> | null
     where?: PortalContratoWhereInput
+  }
+
+  /**
+   * Cliente.portalProgramacao
+   */
+  export type Cliente$portalProgramacaoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    where?: PortalProgramacaoWhereInput
   }
 
   /**
@@ -12629,6 +13064,7 @@ export namespace Prisma {
     criadoEm?: boolean
     atualizadoEm?: boolean
     portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
+    programacaoItens?: boolean | ProdutoComercial$programacaoItensArgs<ExtArgs>
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
     itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
@@ -12673,6 +13109,7 @@ export namespace Prisma {
   export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "exclusivoPortal" | "descricaoLoja" | "aplicacaoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
+    programacaoItens?: boolean | ProdutoComercial$programacaoItensArgs<ExtArgs>
     precosEspeciais?: boolean | ProdutoComercial$precosEspeciaisArgs<ExtArgs>
     itensPedido?: boolean | ProdutoComercial$itensPedidoArgs<ExtArgs>
     avariasPedido?: boolean | ProdutoComercial$avariasPedidoArgs<ExtArgs>
@@ -12687,6 +13124,7 @@ export namespace Prisma {
     name: "ProdutoComercial"
     objects: {
       portalFoto: Prisma.$PortalFotoPayload<ExtArgs> | null
+      programacaoItens: Prisma.$PortalProgramacaoItemPayload<ExtArgs>[]
       precosEspeciais: Prisma.$PrecoEspecialClientePayload<ExtArgs>[]
       itensPedido: Prisma.$PedidoOperacionalItemPayload<ExtArgs>[]
       avariasPedido: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
@@ -13069,6 +13507,7 @@ export namespace Prisma {
   export interface Prisma__ProdutoComercialClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     portalFoto<T extends ProdutoComercial$portalFotoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$portalFotoArgs<ExtArgs>>): Prisma__PortalFotoClient<$Result.GetResult<Prisma.$PortalFotoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    programacaoItens<T extends ProdutoComercial$programacaoItensArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$programacaoItensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     precosEspeciais<T extends ProdutoComercial$precosEspeciaisArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$precosEspeciaisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PrecoEspecialClientePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     itensPedido<T extends ProdutoComercial$itensPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$itensPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     avariasPedido<T extends ProdutoComercial$avariasPedidoArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$avariasPedidoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -13490,6 +13929,30 @@ export namespace Prisma {
      */
     include?: PortalFotoInclude<ExtArgs> | null
     where?: PortalFotoWhereInput
+  }
+
+  /**
+   * ProdutoComercial.programacaoItens
+   */
+  export type ProdutoComercial$programacaoItensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    where?: PortalProgramacaoItemWhereInput
+    orderBy?: PortalProgramacaoItemOrderByWithRelationInput | PortalProgramacaoItemOrderByWithRelationInput[]
+    cursor?: PortalProgramacaoItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PortalProgramacaoItemScalarFieldEnum | PortalProgramacaoItemScalarFieldEnum[]
   }
 
   /**
@@ -17670,6 +18133,3834 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PortalContratoAceiteInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalProgramacao
+   */
+
+  export type AggregatePortalProgramacao = {
+    _count: PortalProgramacaoCountAggregateOutputType | null
+    _min: PortalProgramacaoMinAggregateOutputType | null
+    _max: PortalProgramacaoMaxAggregateOutputType | null
+  }
+
+  export type PortalProgramacaoMinAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalProgramacaoMaxAggregateOutputType = {
+    id: string | null
+    clienteId: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+  }
+
+  export type PortalProgramacaoCountAggregateOutputType = {
+    id: number
+    clienteId: number
+    criadoEm: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type PortalProgramacaoMinAggregateInputType = {
+    id?: true
+    clienteId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalProgramacaoMaxAggregateInputType = {
+    id?: true
+    clienteId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+  }
+
+  export type PortalProgramacaoCountAggregateInputType = {
+    id?: true
+    clienteId?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type PortalProgramacaoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacao to aggregate.
+     */
+    where?: PortalProgramacaoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaos to fetch.
+     */
+    orderBy?: PortalProgramacaoOrderByWithRelationInput | PortalProgramacaoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalProgramacaoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalProgramacaos
+    **/
+    _count?: true | PortalProgramacaoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalProgramacaoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalProgramacaoMaxAggregateInputType
+  }
+
+  export type GetPortalProgramacaoAggregateType<T extends PortalProgramacaoAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalProgramacao]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalProgramacao[P]>
+      : GetScalarType<T[P], AggregatePortalProgramacao[P]>
+  }
+
+
+
+
+  export type PortalProgramacaoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoWhereInput
+    orderBy?: PortalProgramacaoOrderByWithAggregationInput | PortalProgramacaoOrderByWithAggregationInput[]
+    by: PortalProgramacaoScalarFieldEnum[] | PortalProgramacaoScalarFieldEnum
+    having?: PortalProgramacaoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalProgramacaoCountAggregateInputType | true
+    _min?: PortalProgramacaoMinAggregateInputType
+    _max?: PortalProgramacaoMaxAggregateInputType
+  }
+
+  export type PortalProgramacaoGroupByOutputType = {
+    id: string
+    clienteId: string
+    criadoEm: Date
+    atualizadoEm: Date
+    _count: PortalProgramacaoCountAggregateOutputType | null
+    _min: PortalProgramacaoMinAggregateOutputType | null
+    _max: PortalProgramacaoMaxAggregateOutputType | null
+  }
+
+  type GetPortalProgramacaoGroupByPayload<T extends PortalProgramacaoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalProgramacaoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalProgramacaoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalProgramacaoGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalProgramacaoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalProgramacaoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    clienteId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+    dias?: boolean | PortalProgramacao$diasArgs<ExtArgs>
+    entregas?: boolean | PortalProgramacao$entregasArgs<ExtArgs>
+    _count?: boolean | PortalProgramacaoCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalProgramacao"]>
+
+
+
+  export type PortalProgramacaoSelectScalar = {
+    id?: boolean
+    clienteId?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type PortalProgramacaoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalProgramacao"]>
+  export type PortalProgramacaoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cliente?: boolean | ClienteDefaultArgs<ExtArgs>
+    dias?: boolean | PortalProgramacao$diasArgs<ExtArgs>
+    entregas?: boolean | PortalProgramacao$entregasArgs<ExtArgs>
+    _count?: boolean | PortalProgramacaoCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalProgramacaoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalProgramacao"
+    objects: {
+      cliente: Prisma.$ClientePayload<ExtArgs>
+      dias: Prisma.$PortalProgramacaoDiaPayload<ExtArgs>[]
+      entregas: Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      clienteId: string
+      criadoEm: Date
+      atualizadoEm: Date
+    }, ExtArgs["result"]["portalProgramacao"]>
+    composites: {}
+  }
+
+  type PortalProgramacaoGetPayload<S extends boolean | null | undefined | PortalProgramacaoDefaultArgs> = $Result.GetResult<Prisma.$PortalProgramacaoPayload, S>
+
+  type PortalProgramacaoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalProgramacaoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalProgramacaoCountAggregateInputType | true
+    }
+
+  export interface PortalProgramacaoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalProgramacao'], meta: { name: 'PortalProgramacao' } }
+    /**
+     * Find zero or one PortalProgramacao that matches the filter.
+     * @param {PortalProgramacaoFindUniqueArgs} args - Arguments to find a PortalProgramacao
+     * @example
+     * // Get one PortalProgramacao
+     * const portalProgramacao = await prisma.portalProgramacao.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalProgramacaoFindUniqueArgs>(args: SelectSubset<T, PortalProgramacaoFindUniqueArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalProgramacao that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalProgramacaoFindUniqueOrThrowArgs} args - Arguments to find a PortalProgramacao
+     * @example
+     * // Get one PortalProgramacao
+     * const portalProgramacao = await prisma.portalProgramacao.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalProgramacaoFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalProgramacaoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacao that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoFindFirstArgs} args - Arguments to find a PortalProgramacao
+     * @example
+     * // Get one PortalProgramacao
+     * const portalProgramacao = await prisma.portalProgramacao.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalProgramacaoFindFirstArgs>(args?: SelectSubset<T, PortalProgramacaoFindFirstArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacao that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoFindFirstOrThrowArgs} args - Arguments to find a PortalProgramacao
+     * @example
+     * // Get one PortalProgramacao
+     * const portalProgramacao = await prisma.portalProgramacao.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalProgramacaoFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalProgramacaoFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalProgramacaos that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalProgramacaos
+     * const portalProgramacaos = await prisma.portalProgramacao.findMany()
+     * 
+     * // Get first 10 PortalProgramacaos
+     * const portalProgramacaos = await prisma.portalProgramacao.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalProgramacaoWithIdOnly = await prisma.portalProgramacao.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalProgramacaoFindManyArgs>(args?: SelectSubset<T, PortalProgramacaoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalProgramacao.
+     * @param {PortalProgramacaoCreateArgs} args - Arguments to create a PortalProgramacao.
+     * @example
+     * // Create one PortalProgramacao
+     * const PortalProgramacao = await prisma.portalProgramacao.create({
+     *   data: {
+     *     // ... data to create a PortalProgramacao
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalProgramacaoCreateArgs>(args: SelectSubset<T, PortalProgramacaoCreateArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalProgramacaos.
+     * @param {PortalProgramacaoCreateManyArgs} args - Arguments to create many PortalProgramacaos.
+     * @example
+     * // Create many PortalProgramacaos
+     * const portalProgramacao = await prisma.portalProgramacao.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalProgramacaoCreateManyArgs>(args?: SelectSubset<T, PortalProgramacaoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalProgramacao.
+     * @param {PortalProgramacaoDeleteArgs} args - Arguments to delete one PortalProgramacao.
+     * @example
+     * // Delete one PortalProgramacao
+     * const PortalProgramacao = await prisma.portalProgramacao.delete({
+     *   where: {
+     *     // ... filter to delete one PortalProgramacao
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalProgramacaoDeleteArgs>(args: SelectSubset<T, PortalProgramacaoDeleteArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalProgramacao.
+     * @param {PortalProgramacaoUpdateArgs} args - Arguments to update one PortalProgramacao.
+     * @example
+     * // Update one PortalProgramacao
+     * const portalProgramacao = await prisma.portalProgramacao.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalProgramacaoUpdateArgs>(args: SelectSubset<T, PortalProgramacaoUpdateArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalProgramacaos.
+     * @param {PortalProgramacaoDeleteManyArgs} args - Arguments to filter PortalProgramacaos to delete.
+     * @example
+     * // Delete a few PortalProgramacaos
+     * const { count } = await prisma.portalProgramacao.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalProgramacaoDeleteManyArgs>(args?: SelectSubset<T, PortalProgramacaoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalProgramacaos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalProgramacaos
+     * const portalProgramacao = await prisma.portalProgramacao.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalProgramacaoUpdateManyArgs>(args: SelectSubset<T, PortalProgramacaoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalProgramacao.
+     * @param {PortalProgramacaoUpsertArgs} args - Arguments to update or create a PortalProgramacao.
+     * @example
+     * // Update or create a PortalProgramacao
+     * const portalProgramacao = await prisma.portalProgramacao.upsert({
+     *   create: {
+     *     // ... data to create a PortalProgramacao
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalProgramacao we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalProgramacaoUpsertArgs>(args: SelectSubset<T, PortalProgramacaoUpsertArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalProgramacaos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoCountArgs} args - Arguments to filter PortalProgramacaos to count.
+     * @example
+     * // Count the number of PortalProgramacaos
+     * const count = await prisma.portalProgramacao.count({
+     *   where: {
+     *     // ... the filter for the PortalProgramacaos we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalProgramacaoCountArgs>(
+      args?: Subset<T, PortalProgramacaoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalProgramacaoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalProgramacao.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalProgramacaoAggregateArgs>(args: Subset<T, PortalProgramacaoAggregateArgs>): Prisma.PrismaPromise<GetPortalProgramacaoAggregateType<T>>
+
+    /**
+     * Group by PortalProgramacao.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalProgramacaoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalProgramacaoGroupByArgs['orderBy'] }
+        : { orderBy?: PortalProgramacaoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalProgramacaoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalProgramacaoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalProgramacao model
+   */
+  readonly fields: PortalProgramacaoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalProgramacao.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalProgramacaoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    cliente<T extends ClienteDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ClienteDefaultArgs<ExtArgs>>): Prisma__ClienteClient<$Result.GetResult<Prisma.$ClientePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    dias<T extends PortalProgramacao$diasArgs<ExtArgs> = {}>(args?: Subset<T, PortalProgramacao$diasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    entregas<T extends PortalProgramacao$entregasArgs<ExtArgs> = {}>(args?: Subset<T, PortalProgramacao$entregasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalProgramacao model
+   */
+  interface PortalProgramacaoFieldRefs {
+    readonly id: FieldRef<"PortalProgramacao", 'String'>
+    readonly clienteId: FieldRef<"PortalProgramacao", 'String'>
+    readonly criadoEm: FieldRef<"PortalProgramacao", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"PortalProgramacao", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalProgramacao findUnique
+   */
+  export type PortalProgramacaoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacao to fetch.
+     */
+    where: PortalProgramacaoWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacao findUniqueOrThrow
+   */
+  export type PortalProgramacaoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacao to fetch.
+     */
+    where: PortalProgramacaoWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacao findFirst
+   */
+  export type PortalProgramacaoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacao to fetch.
+     */
+    where?: PortalProgramacaoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaos to fetch.
+     */
+    orderBy?: PortalProgramacaoOrderByWithRelationInput | PortalProgramacaoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaos.
+     */
+    cursor?: PortalProgramacaoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaos.
+     */
+    distinct?: PortalProgramacaoScalarFieldEnum | PortalProgramacaoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacao findFirstOrThrow
+   */
+  export type PortalProgramacaoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacao to fetch.
+     */
+    where?: PortalProgramacaoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaos to fetch.
+     */
+    orderBy?: PortalProgramacaoOrderByWithRelationInput | PortalProgramacaoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaos.
+     */
+    cursor?: PortalProgramacaoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaos.
+     */
+    distinct?: PortalProgramacaoScalarFieldEnum | PortalProgramacaoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacao findMany
+   */
+  export type PortalProgramacaoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaos to fetch.
+     */
+    where?: PortalProgramacaoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaos to fetch.
+     */
+    orderBy?: PortalProgramacaoOrderByWithRelationInput | PortalProgramacaoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalProgramacaos.
+     */
+    cursor?: PortalProgramacaoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaos.
+     */
+    skip?: number
+    distinct?: PortalProgramacaoScalarFieldEnum | PortalProgramacaoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacao create
+   */
+  export type PortalProgramacaoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalProgramacao.
+     */
+    data: XOR<PortalProgramacaoCreateInput, PortalProgramacaoUncheckedCreateInput>
+  }
+
+  /**
+   * PortalProgramacao createMany
+   */
+  export type PortalProgramacaoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalProgramacaos.
+     */
+    data: PortalProgramacaoCreateManyInput | PortalProgramacaoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalProgramacao update
+   */
+  export type PortalProgramacaoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalProgramacao.
+     */
+    data: XOR<PortalProgramacaoUpdateInput, PortalProgramacaoUncheckedUpdateInput>
+    /**
+     * Choose, which PortalProgramacao to update.
+     */
+    where: PortalProgramacaoWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacao updateMany
+   */
+  export type PortalProgramacaoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalProgramacaos.
+     */
+    data: XOR<PortalProgramacaoUpdateManyMutationInput, PortalProgramacaoUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalProgramacaos to update
+     */
+    where?: PortalProgramacaoWhereInput
+    /**
+     * Limit how many PortalProgramacaos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacao upsert
+   */
+  export type PortalProgramacaoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalProgramacao to update in case it exists.
+     */
+    where: PortalProgramacaoWhereUniqueInput
+    /**
+     * In case the PortalProgramacao found by the `where` argument doesn't exist, create a new PortalProgramacao with this data.
+     */
+    create: XOR<PortalProgramacaoCreateInput, PortalProgramacaoUncheckedCreateInput>
+    /**
+     * In case the PortalProgramacao was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalProgramacaoUpdateInput, PortalProgramacaoUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalProgramacao delete
+   */
+  export type PortalProgramacaoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+    /**
+     * Filter which PortalProgramacao to delete.
+     */
+    where: PortalProgramacaoWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacao deleteMany
+   */
+  export type PortalProgramacaoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacaos to delete
+     */
+    where?: PortalProgramacaoWhereInput
+    /**
+     * Limit how many PortalProgramacaos to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacao.dias
+   */
+  export type PortalProgramacao$diasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    where?: PortalProgramacaoDiaWhereInput
+    orderBy?: PortalProgramacaoDiaOrderByWithRelationInput | PortalProgramacaoDiaOrderByWithRelationInput[]
+    cursor?: PortalProgramacaoDiaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PortalProgramacaoDiaScalarFieldEnum | PortalProgramacaoDiaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacao.entregas
+   */
+  export type PortalProgramacao$entregasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    where?: PortalProgramacaoEntregaWhereInput
+    orderBy?: PortalProgramacaoEntregaOrderByWithRelationInput | PortalProgramacaoEntregaOrderByWithRelationInput[]
+    cursor?: PortalProgramacaoEntregaWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PortalProgramacaoEntregaScalarFieldEnum | PortalProgramacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacao without action
+   */
+  export type PortalProgramacaoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacao
+     */
+    select?: PortalProgramacaoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacao
+     */
+    omit?: PortalProgramacaoOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalProgramacaoDia
+   */
+
+  export type AggregatePortalProgramacaoDia = {
+    _count: PortalProgramacaoDiaCountAggregateOutputType | null
+    _avg: PortalProgramacaoDiaAvgAggregateOutputType | null
+    _sum: PortalProgramacaoDiaSumAggregateOutputType | null
+    _min: PortalProgramacaoDiaMinAggregateOutputType | null
+    _max: PortalProgramacaoDiaMaxAggregateOutputType | null
+  }
+
+  export type PortalProgramacaoDiaAvgAggregateOutputType = {
+    diaSemana: number | null
+  }
+
+  export type PortalProgramacaoDiaSumAggregateOutputType = {
+    diaSemana: number | null
+  }
+
+  export type PortalProgramacaoDiaMinAggregateOutputType = {
+    id: string | null
+    programacaoId: string | null
+    diaSemana: number | null
+  }
+
+  export type PortalProgramacaoDiaMaxAggregateOutputType = {
+    id: string | null
+    programacaoId: string | null
+    diaSemana: number | null
+  }
+
+  export type PortalProgramacaoDiaCountAggregateOutputType = {
+    id: number
+    programacaoId: number
+    diaSemana: number
+    _all: number
+  }
+
+
+  export type PortalProgramacaoDiaAvgAggregateInputType = {
+    diaSemana?: true
+  }
+
+  export type PortalProgramacaoDiaSumAggregateInputType = {
+    diaSemana?: true
+  }
+
+  export type PortalProgramacaoDiaMinAggregateInputType = {
+    id?: true
+    programacaoId?: true
+    diaSemana?: true
+  }
+
+  export type PortalProgramacaoDiaMaxAggregateInputType = {
+    id?: true
+    programacaoId?: true
+    diaSemana?: true
+  }
+
+  export type PortalProgramacaoDiaCountAggregateInputType = {
+    id?: true
+    programacaoId?: true
+    diaSemana?: true
+    _all?: true
+  }
+
+  export type PortalProgramacaoDiaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacaoDia to aggregate.
+     */
+    where?: PortalProgramacaoDiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoDias to fetch.
+     */
+    orderBy?: PortalProgramacaoDiaOrderByWithRelationInput | PortalProgramacaoDiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalProgramacaoDiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoDias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoDias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalProgramacaoDias
+    **/
+    _count?: true | PortalProgramacaoDiaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PortalProgramacaoDiaAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PortalProgramacaoDiaSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalProgramacaoDiaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalProgramacaoDiaMaxAggregateInputType
+  }
+
+  export type GetPortalProgramacaoDiaAggregateType<T extends PortalProgramacaoDiaAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalProgramacaoDia]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalProgramacaoDia[P]>
+      : GetScalarType<T[P], AggregatePortalProgramacaoDia[P]>
+  }
+
+
+
+
+  export type PortalProgramacaoDiaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoDiaWhereInput
+    orderBy?: PortalProgramacaoDiaOrderByWithAggregationInput | PortalProgramacaoDiaOrderByWithAggregationInput[]
+    by: PortalProgramacaoDiaScalarFieldEnum[] | PortalProgramacaoDiaScalarFieldEnum
+    having?: PortalProgramacaoDiaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalProgramacaoDiaCountAggregateInputType | true
+    _avg?: PortalProgramacaoDiaAvgAggregateInputType
+    _sum?: PortalProgramacaoDiaSumAggregateInputType
+    _min?: PortalProgramacaoDiaMinAggregateInputType
+    _max?: PortalProgramacaoDiaMaxAggregateInputType
+  }
+
+  export type PortalProgramacaoDiaGroupByOutputType = {
+    id: string
+    programacaoId: string
+    diaSemana: number
+    _count: PortalProgramacaoDiaCountAggregateOutputType | null
+    _avg: PortalProgramacaoDiaAvgAggregateOutputType | null
+    _sum: PortalProgramacaoDiaSumAggregateOutputType | null
+    _min: PortalProgramacaoDiaMinAggregateOutputType | null
+    _max: PortalProgramacaoDiaMaxAggregateOutputType | null
+  }
+
+  type GetPortalProgramacaoDiaGroupByPayload<T extends PortalProgramacaoDiaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalProgramacaoDiaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalProgramacaoDiaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalProgramacaoDiaGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalProgramacaoDiaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalProgramacaoDiaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    programacaoId?: boolean
+    diaSemana?: boolean
+    programacao?: boolean | PortalProgramacaoDefaultArgs<ExtArgs>
+    itens?: boolean | PortalProgramacaoDia$itensArgs<ExtArgs>
+    _count?: boolean | PortalProgramacaoDiaCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalProgramacaoDia"]>
+
+
+
+  export type PortalProgramacaoDiaSelectScalar = {
+    id?: boolean
+    programacaoId?: boolean
+    diaSemana?: boolean
+  }
+
+  export type PortalProgramacaoDiaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "programacaoId" | "diaSemana", ExtArgs["result"]["portalProgramacaoDia"]>
+  export type PortalProgramacaoDiaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    programacao?: boolean | PortalProgramacaoDefaultArgs<ExtArgs>
+    itens?: boolean | PortalProgramacaoDia$itensArgs<ExtArgs>
+    _count?: boolean | PortalProgramacaoDiaCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalProgramacaoDiaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalProgramacaoDia"
+    objects: {
+      programacao: Prisma.$PortalProgramacaoPayload<ExtArgs>
+      itens: Prisma.$PortalProgramacaoItemPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      programacaoId: string
+      /**
+       * 1 segunda … 5 sexta, no calendário de Manaus.
+       */
+      diaSemana: number
+    }, ExtArgs["result"]["portalProgramacaoDia"]>
+    composites: {}
+  }
+
+  type PortalProgramacaoDiaGetPayload<S extends boolean | null | undefined | PortalProgramacaoDiaDefaultArgs> = $Result.GetResult<Prisma.$PortalProgramacaoDiaPayload, S>
+
+  type PortalProgramacaoDiaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalProgramacaoDiaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalProgramacaoDiaCountAggregateInputType | true
+    }
+
+  export interface PortalProgramacaoDiaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalProgramacaoDia'], meta: { name: 'PortalProgramacaoDia' } }
+    /**
+     * Find zero or one PortalProgramacaoDia that matches the filter.
+     * @param {PortalProgramacaoDiaFindUniqueArgs} args - Arguments to find a PortalProgramacaoDia
+     * @example
+     * // Get one PortalProgramacaoDia
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalProgramacaoDiaFindUniqueArgs>(args: SelectSubset<T, PortalProgramacaoDiaFindUniqueArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalProgramacaoDia that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalProgramacaoDiaFindUniqueOrThrowArgs} args - Arguments to find a PortalProgramacaoDia
+     * @example
+     * // Get one PortalProgramacaoDia
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalProgramacaoDiaFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalProgramacaoDiaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacaoDia that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoDiaFindFirstArgs} args - Arguments to find a PortalProgramacaoDia
+     * @example
+     * // Get one PortalProgramacaoDia
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalProgramacaoDiaFindFirstArgs>(args?: SelectSubset<T, PortalProgramacaoDiaFindFirstArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacaoDia that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoDiaFindFirstOrThrowArgs} args - Arguments to find a PortalProgramacaoDia
+     * @example
+     * // Get one PortalProgramacaoDia
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalProgramacaoDiaFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalProgramacaoDiaFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalProgramacaoDias that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoDiaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalProgramacaoDias
+     * const portalProgramacaoDias = await prisma.portalProgramacaoDia.findMany()
+     * 
+     * // Get first 10 PortalProgramacaoDias
+     * const portalProgramacaoDias = await prisma.portalProgramacaoDia.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalProgramacaoDiaWithIdOnly = await prisma.portalProgramacaoDia.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalProgramacaoDiaFindManyArgs>(args?: SelectSubset<T, PortalProgramacaoDiaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalProgramacaoDia.
+     * @param {PortalProgramacaoDiaCreateArgs} args - Arguments to create a PortalProgramacaoDia.
+     * @example
+     * // Create one PortalProgramacaoDia
+     * const PortalProgramacaoDia = await prisma.portalProgramacaoDia.create({
+     *   data: {
+     *     // ... data to create a PortalProgramacaoDia
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalProgramacaoDiaCreateArgs>(args: SelectSubset<T, PortalProgramacaoDiaCreateArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalProgramacaoDias.
+     * @param {PortalProgramacaoDiaCreateManyArgs} args - Arguments to create many PortalProgramacaoDias.
+     * @example
+     * // Create many PortalProgramacaoDias
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalProgramacaoDiaCreateManyArgs>(args?: SelectSubset<T, PortalProgramacaoDiaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalProgramacaoDia.
+     * @param {PortalProgramacaoDiaDeleteArgs} args - Arguments to delete one PortalProgramacaoDia.
+     * @example
+     * // Delete one PortalProgramacaoDia
+     * const PortalProgramacaoDia = await prisma.portalProgramacaoDia.delete({
+     *   where: {
+     *     // ... filter to delete one PortalProgramacaoDia
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalProgramacaoDiaDeleteArgs>(args: SelectSubset<T, PortalProgramacaoDiaDeleteArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalProgramacaoDia.
+     * @param {PortalProgramacaoDiaUpdateArgs} args - Arguments to update one PortalProgramacaoDia.
+     * @example
+     * // Update one PortalProgramacaoDia
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalProgramacaoDiaUpdateArgs>(args: SelectSubset<T, PortalProgramacaoDiaUpdateArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalProgramacaoDias.
+     * @param {PortalProgramacaoDiaDeleteManyArgs} args - Arguments to filter PortalProgramacaoDias to delete.
+     * @example
+     * // Delete a few PortalProgramacaoDias
+     * const { count } = await prisma.portalProgramacaoDia.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalProgramacaoDiaDeleteManyArgs>(args?: SelectSubset<T, PortalProgramacaoDiaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalProgramacaoDias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoDiaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalProgramacaoDias
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalProgramacaoDiaUpdateManyArgs>(args: SelectSubset<T, PortalProgramacaoDiaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalProgramacaoDia.
+     * @param {PortalProgramacaoDiaUpsertArgs} args - Arguments to update or create a PortalProgramacaoDia.
+     * @example
+     * // Update or create a PortalProgramacaoDia
+     * const portalProgramacaoDia = await prisma.portalProgramacaoDia.upsert({
+     *   create: {
+     *     // ... data to create a PortalProgramacaoDia
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalProgramacaoDia we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalProgramacaoDiaUpsertArgs>(args: SelectSubset<T, PortalProgramacaoDiaUpsertArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalProgramacaoDias.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoDiaCountArgs} args - Arguments to filter PortalProgramacaoDias to count.
+     * @example
+     * // Count the number of PortalProgramacaoDias
+     * const count = await prisma.portalProgramacaoDia.count({
+     *   where: {
+     *     // ... the filter for the PortalProgramacaoDias we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalProgramacaoDiaCountArgs>(
+      args?: Subset<T, PortalProgramacaoDiaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalProgramacaoDiaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalProgramacaoDia.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoDiaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalProgramacaoDiaAggregateArgs>(args: Subset<T, PortalProgramacaoDiaAggregateArgs>): Prisma.PrismaPromise<GetPortalProgramacaoDiaAggregateType<T>>
+
+    /**
+     * Group by PortalProgramacaoDia.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoDiaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalProgramacaoDiaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalProgramacaoDiaGroupByArgs['orderBy'] }
+        : { orderBy?: PortalProgramacaoDiaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalProgramacaoDiaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalProgramacaoDiaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalProgramacaoDia model
+   */
+  readonly fields: PortalProgramacaoDiaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalProgramacaoDia.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalProgramacaoDiaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    programacao<T extends PortalProgramacaoDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PortalProgramacaoDefaultArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    itens<T extends PortalProgramacaoDia$itensArgs<ExtArgs> = {}>(args?: Subset<T, PortalProgramacaoDia$itensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalProgramacaoDia model
+   */
+  interface PortalProgramacaoDiaFieldRefs {
+    readonly id: FieldRef<"PortalProgramacaoDia", 'String'>
+    readonly programacaoId: FieldRef<"PortalProgramacaoDia", 'String'>
+    readonly diaSemana: FieldRef<"PortalProgramacaoDia", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalProgramacaoDia findUnique
+   */
+  export type PortalProgramacaoDiaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoDia to fetch.
+     */
+    where: PortalProgramacaoDiaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoDia findUniqueOrThrow
+   */
+  export type PortalProgramacaoDiaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoDia to fetch.
+     */
+    where: PortalProgramacaoDiaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoDia findFirst
+   */
+  export type PortalProgramacaoDiaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoDia to fetch.
+     */
+    where?: PortalProgramacaoDiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoDias to fetch.
+     */
+    orderBy?: PortalProgramacaoDiaOrderByWithRelationInput | PortalProgramacaoDiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaoDias.
+     */
+    cursor?: PortalProgramacaoDiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoDias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoDias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaoDias.
+     */
+    distinct?: PortalProgramacaoDiaScalarFieldEnum | PortalProgramacaoDiaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoDia findFirstOrThrow
+   */
+  export type PortalProgramacaoDiaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoDia to fetch.
+     */
+    where?: PortalProgramacaoDiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoDias to fetch.
+     */
+    orderBy?: PortalProgramacaoDiaOrderByWithRelationInput | PortalProgramacaoDiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaoDias.
+     */
+    cursor?: PortalProgramacaoDiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoDias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoDias.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaoDias.
+     */
+    distinct?: PortalProgramacaoDiaScalarFieldEnum | PortalProgramacaoDiaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoDia findMany
+   */
+  export type PortalProgramacaoDiaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoDias to fetch.
+     */
+    where?: PortalProgramacaoDiaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoDias to fetch.
+     */
+    orderBy?: PortalProgramacaoDiaOrderByWithRelationInput | PortalProgramacaoDiaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalProgramacaoDias.
+     */
+    cursor?: PortalProgramacaoDiaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoDias from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoDias.
+     */
+    skip?: number
+    distinct?: PortalProgramacaoDiaScalarFieldEnum | PortalProgramacaoDiaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoDia create
+   */
+  export type PortalProgramacaoDiaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalProgramacaoDia.
+     */
+    data: XOR<PortalProgramacaoDiaCreateInput, PortalProgramacaoDiaUncheckedCreateInput>
+  }
+
+  /**
+   * PortalProgramacaoDia createMany
+   */
+  export type PortalProgramacaoDiaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalProgramacaoDias.
+     */
+    data: PortalProgramacaoDiaCreateManyInput | PortalProgramacaoDiaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalProgramacaoDia update
+   */
+  export type PortalProgramacaoDiaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalProgramacaoDia.
+     */
+    data: XOR<PortalProgramacaoDiaUpdateInput, PortalProgramacaoDiaUncheckedUpdateInput>
+    /**
+     * Choose, which PortalProgramacaoDia to update.
+     */
+    where: PortalProgramacaoDiaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoDia updateMany
+   */
+  export type PortalProgramacaoDiaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalProgramacaoDias.
+     */
+    data: XOR<PortalProgramacaoDiaUpdateManyMutationInput, PortalProgramacaoDiaUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalProgramacaoDias to update
+     */
+    where?: PortalProgramacaoDiaWhereInput
+    /**
+     * Limit how many PortalProgramacaoDias to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacaoDia upsert
+   */
+  export type PortalProgramacaoDiaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalProgramacaoDia to update in case it exists.
+     */
+    where: PortalProgramacaoDiaWhereUniqueInput
+    /**
+     * In case the PortalProgramacaoDia found by the `where` argument doesn't exist, create a new PortalProgramacaoDia with this data.
+     */
+    create: XOR<PortalProgramacaoDiaCreateInput, PortalProgramacaoDiaUncheckedCreateInput>
+    /**
+     * In case the PortalProgramacaoDia was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalProgramacaoDiaUpdateInput, PortalProgramacaoDiaUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalProgramacaoDia delete
+   */
+  export type PortalProgramacaoDiaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+    /**
+     * Filter which PortalProgramacaoDia to delete.
+     */
+    where: PortalProgramacaoDiaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoDia deleteMany
+   */
+  export type PortalProgramacaoDiaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacaoDias to delete
+     */
+    where?: PortalProgramacaoDiaWhereInput
+    /**
+     * Limit how many PortalProgramacaoDias to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacaoDia.itens
+   */
+  export type PortalProgramacaoDia$itensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    where?: PortalProgramacaoItemWhereInput
+    orderBy?: PortalProgramacaoItemOrderByWithRelationInput | PortalProgramacaoItemOrderByWithRelationInput[]
+    cursor?: PortalProgramacaoItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PortalProgramacaoItemScalarFieldEnum | PortalProgramacaoItemScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoDia without action
+   */
+  export type PortalProgramacaoDiaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoDia
+     */
+    select?: PortalProgramacaoDiaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoDia
+     */
+    omit?: PortalProgramacaoDiaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoDiaInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalProgramacaoItem
+   */
+
+  export type AggregatePortalProgramacaoItem = {
+    _count: PortalProgramacaoItemCountAggregateOutputType | null
+    _avg: PortalProgramacaoItemAvgAggregateOutputType | null
+    _sum: PortalProgramacaoItemSumAggregateOutputType | null
+    _min: PortalProgramacaoItemMinAggregateOutputType | null
+    _max: PortalProgramacaoItemMaxAggregateOutputType | null
+  }
+
+  export type PortalProgramacaoItemAvgAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type PortalProgramacaoItemSumAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type PortalProgramacaoItemMinAggregateOutputType = {
+    id: string | null
+    diaId: string | null
+    produtoId: string | null
+    quantidade: Decimal | null
+  }
+
+  export type PortalProgramacaoItemMaxAggregateOutputType = {
+    id: string | null
+    diaId: string | null
+    produtoId: string | null
+    quantidade: Decimal | null
+  }
+
+  export type PortalProgramacaoItemCountAggregateOutputType = {
+    id: number
+    diaId: number
+    produtoId: number
+    quantidade: number
+    _all: number
+  }
+
+
+  export type PortalProgramacaoItemAvgAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type PortalProgramacaoItemSumAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type PortalProgramacaoItemMinAggregateInputType = {
+    id?: true
+    diaId?: true
+    produtoId?: true
+    quantidade?: true
+  }
+
+  export type PortalProgramacaoItemMaxAggregateInputType = {
+    id?: true
+    diaId?: true
+    produtoId?: true
+    quantidade?: true
+  }
+
+  export type PortalProgramacaoItemCountAggregateInputType = {
+    id?: true
+    diaId?: true
+    produtoId?: true
+    quantidade?: true
+    _all?: true
+  }
+
+  export type PortalProgramacaoItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacaoItem to aggregate.
+     */
+    where?: PortalProgramacaoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoItems to fetch.
+     */
+    orderBy?: PortalProgramacaoItemOrderByWithRelationInput | PortalProgramacaoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalProgramacaoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalProgramacaoItems
+    **/
+    _count?: true | PortalProgramacaoItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PortalProgramacaoItemAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PortalProgramacaoItemSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalProgramacaoItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalProgramacaoItemMaxAggregateInputType
+  }
+
+  export type GetPortalProgramacaoItemAggregateType<T extends PortalProgramacaoItemAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalProgramacaoItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalProgramacaoItem[P]>
+      : GetScalarType<T[P], AggregatePortalProgramacaoItem[P]>
+  }
+
+
+
+
+  export type PortalProgramacaoItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoItemWhereInput
+    orderBy?: PortalProgramacaoItemOrderByWithAggregationInput | PortalProgramacaoItemOrderByWithAggregationInput[]
+    by: PortalProgramacaoItemScalarFieldEnum[] | PortalProgramacaoItemScalarFieldEnum
+    having?: PortalProgramacaoItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalProgramacaoItemCountAggregateInputType | true
+    _avg?: PortalProgramacaoItemAvgAggregateInputType
+    _sum?: PortalProgramacaoItemSumAggregateInputType
+    _min?: PortalProgramacaoItemMinAggregateInputType
+    _max?: PortalProgramacaoItemMaxAggregateInputType
+  }
+
+  export type PortalProgramacaoItemGroupByOutputType = {
+    id: string
+    diaId: string
+    produtoId: string
+    quantidade: Decimal
+    _count: PortalProgramacaoItemCountAggregateOutputType | null
+    _avg: PortalProgramacaoItemAvgAggregateOutputType | null
+    _sum: PortalProgramacaoItemSumAggregateOutputType | null
+    _min: PortalProgramacaoItemMinAggregateOutputType | null
+    _max: PortalProgramacaoItemMaxAggregateOutputType | null
+  }
+
+  type GetPortalProgramacaoItemGroupByPayload<T extends PortalProgramacaoItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalProgramacaoItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalProgramacaoItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalProgramacaoItemGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalProgramacaoItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalProgramacaoItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    diaId?: boolean
+    produtoId?: boolean
+    quantidade?: boolean
+    dia?: boolean | PortalProgramacaoDiaDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalProgramacaoItem"]>
+
+
+
+  export type PortalProgramacaoItemSelectScalar = {
+    id?: boolean
+    diaId?: boolean
+    produtoId?: boolean
+    quantidade?: boolean
+  }
+
+  export type PortalProgramacaoItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "diaId" | "produtoId" | "quantidade", ExtArgs["result"]["portalProgramacaoItem"]>
+  export type PortalProgramacaoItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    dia?: boolean | PortalProgramacaoDiaDefaultArgs<ExtArgs>
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalProgramacaoItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalProgramacaoItem"
+    objects: {
+      dia: Prisma.$PortalProgramacaoDiaPayload<ExtArgs>
+      produto: Prisma.$ProdutoComercialPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      diaId: string
+      produtoId: string
+      quantidade: Prisma.Decimal
+    }, ExtArgs["result"]["portalProgramacaoItem"]>
+    composites: {}
+  }
+
+  type PortalProgramacaoItemGetPayload<S extends boolean | null | undefined | PortalProgramacaoItemDefaultArgs> = $Result.GetResult<Prisma.$PortalProgramacaoItemPayload, S>
+
+  type PortalProgramacaoItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalProgramacaoItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalProgramacaoItemCountAggregateInputType | true
+    }
+
+  export interface PortalProgramacaoItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalProgramacaoItem'], meta: { name: 'PortalProgramacaoItem' } }
+    /**
+     * Find zero or one PortalProgramacaoItem that matches the filter.
+     * @param {PortalProgramacaoItemFindUniqueArgs} args - Arguments to find a PortalProgramacaoItem
+     * @example
+     * // Get one PortalProgramacaoItem
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalProgramacaoItemFindUniqueArgs>(args: SelectSubset<T, PortalProgramacaoItemFindUniqueArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalProgramacaoItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalProgramacaoItemFindUniqueOrThrowArgs} args - Arguments to find a PortalProgramacaoItem
+     * @example
+     * // Get one PortalProgramacaoItem
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalProgramacaoItemFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalProgramacaoItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacaoItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoItemFindFirstArgs} args - Arguments to find a PortalProgramacaoItem
+     * @example
+     * // Get one PortalProgramacaoItem
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalProgramacaoItemFindFirstArgs>(args?: SelectSubset<T, PortalProgramacaoItemFindFirstArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacaoItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoItemFindFirstOrThrowArgs} args - Arguments to find a PortalProgramacaoItem
+     * @example
+     * // Get one PortalProgramacaoItem
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalProgramacaoItemFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalProgramacaoItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalProgramacaoItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalProgramacaoItems
+     * const portalProgramacaoItems = await prisma.portalProgramacaoItem.findMany()
+     * 
+     * // Get first 10 PortalProgramacaoItems
+     * const portalProgramacaoItems = await prisma.portalProgramacaoItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalProgramacaoItemWithIdOnly = await prisma.portalProgramacaoItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalProgramacaoItemFindManyArgs>(args?: SelectSubset<T, PortalProgramacaoItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalProgramacaoItem.
+     * @param {PortalProgramacaoItemCreateArgs} args - Arguments to create a PortalProgramacaoItem.
+     * @example
+     * // Create one PortalProgramacaoItem
+     * const PortalProgramacaoItem = await prisma.portalProgramacaoItem.create({
+     *   data: {
+     *     // ... data to create a PortalProgramacaoItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalProgramacaoItemCreateArgs>(args: SelectSubset<T, PortalProgramacaoItemCreateArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalProgramacaoItems.
+     * @param {PortalProgramacaoItemCreateManyArgs} args - Arguments to create many PortalProgramacaoItems.
+     * @example
+     * // Create many PortalProgramacaoItems
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalProgramacaoItemCreateManyArgs>(args?: SelectSubset<T, PortalProgramacaoItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalProgramacaoItem.
+     * @param {PortalProgramacaoItemDeleteArgs} args - Arguments to delete one PortalProgramacaoItem.
+     * @example
+     * // Delete one PortalProgramacaoItem
+     * const PortalProgramacaoItem = await prisma.portalProgramacaoItem.delete({
+     *   where: {
+     *     // ... filter to delete one PortalProgramacaoItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalProgramacaoItemDeleteArgs>(args: SelectSubset<T, PortalProgramacaoItemDeleteArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalProgramacaoItem.
+     * @param {PortalProgramacaoItemUpdateArgs} args - Arguments to update one PortalProgramacaoItem.
+     * @example
+     * // Update one PortalProgramacaoItem
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalProgramacaoItemUpdateArgs>(args: SelectSubset<T, PortalProgramacaoItemUpdateArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalProgramacaoItems.
+     * @param {PortalProgramacaoItemDeleteManyArgs} args - Arguments to filter PortalProgramacaoItems to delete.
+     * @example
+     * // Delete a few PortalProgramacaoItems
+     * const { count } = await prisma.portalProgramacaoItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalProgramacaoItemDeleteManyArgs>(args?: SelectSubset<T, PortalProgramacaoItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalProgramacaoItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalProgramacaoItems
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalProgramacaoItemUpdateManyArgs>(args: SelectSubset<T, PortalProgramacaoItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalProgramacaoItem.
+     * @param {PortalProgramacaoItemUpsertArgs} args - Arguments to update or create a PortalProgramacaoItem.
+     * @example
+     * // Update or create a PortalProgramacaoItem
+     * const portalProgramacaoItem = await prisma.portalProgramacaoItem.upsert({
+     *   create: {
+     *     // ... data to create a PortalProgramacaoItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalProgramacaoItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalProgramacaoItemUpsertArgs>(args: SelectSubset<T, PortalProgramacaoItemUpsertArgs<ExtArgs>>): Prisma__PortalProgramacaoItemClient<$Result.GetResult<Prisma.$PortalProgramacaoItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalProgramacaoItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoItemCountArgs} args - Arguments to filter PortalProgramacaoItems to count.
+     * @example
+     * // Count the number of PortalProgramacaoItems
+     * const count = await prisma.portalProgramacaoItem.count({
+     *   where: {
+     *     // ... the filter for the PortalProgramacaoItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalProgramacaoItemCountArgs>(
+      args?: Subset<T, PortalProgramacaoItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalProgramacaoItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalProgramacaoItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalProgramacaoItemAggregateArgs>(args: Subset<T, PortalProgramacaoItemAggregateArgs>): Prisma.PrismaPromise<GetPortalProgramacaoItemAggregateType<T>>
+
+    /**
+     * Group by PortalProgramacaoItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalProgramacaoItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalProgramacaoItemGroupByArgs['orderBy'] }
+        : { orderBy?: PortalProgramacaoItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalProgramacaoItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalProgramacaoItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalProgramacaoItem model
+   */
+  readonly fields: PortalProgramacaoItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalProgramacaoItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalProgramacaoItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    dia<T extends PortalProgramacaoDiaDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PortalProgramacaoDiaDefaultArgs<ExtArgs>>): Prisma__PortalProgramacaoDiaClient<$Result.GetResult<Prisma.$PortalProgramacaoDiaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    produto<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalProgramacaoItem model
+   */
+  interface PortalProgramacaoItemFieldRefs {
+    readonly id: FieldRef<"PortalProgramacaoItem", 'String'>
+    readonly diaId: FieldRef<"PortalProgramacaoItem", 'String'>
+    readonly produtoId: FieldRef<"PortalProgramacaoItem", 'String'>
+    readonly quantidade: FieldRef<"PortalProgramacaoItem", 'Decimal'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalProgramacaoItem findUnique
+   */
+  export type PortalProgramacaoItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoItem to fetch.
+     */
+    where: PortalProgramacaoItemWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoItem findUniqueOrThrow
+   */
+  export type PortalProgramacaoItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoItem to fetch.
+     */
+    where: PortalProgramacaoItemWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoItem findFirst
+   */
+  export type PortalProgramacaoItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoItem to fetch.
+     */
+    where?: PortalProgramacaoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoItems to fetch.
+     */
+    orderBy?: PortalProgramacaoItemOrderByWithRelationInput | PortalProgramacaoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaoItems.
+     */
+    cursor?: PortalProgramacaoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaoItems.
+     */
+    distinct?: PortalProgramacaoItemScalarFieldEnum | PortalProgramacaoItemScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoItem findFirstOrThrow
+   */
+  export type PortalProgramacaoItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoItem to fetch.
+     */
+    where?: PortalProgramacaoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoItems to fetch.
+     */
+    orderBy?: PortalProgramacaoItemOrderByWithRelationInput | PortalProgramacaoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaoItems.
+     */
+    cursor?: PortalProgramacaoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaoItems.
+     */
+    distinct?: PortalProgramacaoItemScalarFieldEnum | PortalProgramacaoItemScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoItem findMany
+   */
+  export type PortalProgramacaoItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoItems to fetch.
+     */
+    where?: PortalProgramacaoItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoItems to fetch.
+     */
+    orderBy?: PortalProgramacaoItemOrderByWithRelationInput | PortalProgramacaoItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalProgramacaoItems.
+     */
+    cursor?: PortalProgramacaoItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoItems.
+     */
+    skip?: number
+    distinct?: PortalProgramacaoItemScalarFieldEnum | PortalProgramacaoItemScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoItem create
+   */
+  export type PortalProgramacaoItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalProgramacaoItem.
+     */
+    data: XOR<PortalProgramacaoItemCreateInput, PortalProgramacaoItemUncheckedCreateInput>
+  }
+
+  /**
+   * PortalProgramacaoItem createMany
+   */
+  export type PortalProgramacaoItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalProgramacaoItems.
+     */
+    data: PortalProgramacaoItemCreateManyInput | PortalProgramacaoItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalProgramacaoItem update
+   */
+  export type PortalProgramacaoItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalProgramacaoItem.
+     */
+    data: XOR<PortalProgramacaoItemUpdateInput, PortalProgramacaoItemUncheckedUpdateInput>
+    /**
+     * Choose, which PortalProgramacaoItem to update.
+     */
+    where: PortalProgramacaoItemWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoItem updateMany
+   */
+  export type PortalProgramacaoItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalProgramacaoItems.
+     */
+    data: XOR<PortalProgramacaoItemUpdateManyMutationInput, PortalProgramacaoItemUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalProgramacaoItems to update
+     */
+    where?: PortalProgramacaoItemWhereInput
+    /**
+     * Limit how many PortalProgramacaoItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacaoItem upsert
+   */
+  export type PortalProgramacaoItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalProgramacaoItem to update in case it exists.
+     */
+    where: PortalProgramacaoItemWhereUniqueInput
+    /**
+     * In case the PortalProgramacaoItem found by the `where` argument doesn't exist, create a new PortalProgramacaoItem with this data.
+     */
+    create: XOR<PortalProgramacaoItemCreateInput, PortalProgramacaoItemUncheckedCreateInput>
+    /**
+     * In case the PortalProgramacaoItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalProgramacaoItemUpdateInput, PortalProgramacaoItemUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalProgramacaoItem delete
+   */
+  export type PortalProgramacaoItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+    /**
+     * Filter which PortalProgramacaoItem to delete.
+     */
+    where: PortalProgramacaoItemWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoItem deleteMany
+   */
+  export type PortalProgramacaoItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacaoItems to delete
+     */
+    where?: PortalProgramacaoItemWhereInput
+    /**
+     * Limit how many PortalProgramacaoItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacaoItem without action
+   */
+  export type PortalProgramacaoItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoItem
+     */
+    select?: PortalProgramacaoItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoItem
+     */
+    omit?: PortalProgramacaoItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoItemInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalProgramacaoEntrega
+   */
+
+  export type AggregatePortalProgramacaoEntrega = {
+    _count: PortalProgramacaoEntregaCountAggregateOutputType | null
+    _min: PortalProgramacaoEntregaMinAggregateOutputType | null
+    _max: PortalProgramacaoEntregaMaxAggregateOutputType | null
+  }
+
+  export type PortalProgramacaoEntregaMinAggregateOutputType = {
+    id: string | null
+    programacaoId: string | null
+    dataEntrega: Date | null
+    pedidoId: string | null
+  }
+
+  export type PortalProgramacaoEntregaMaxAggregateOutputType = {
+    id: string | null
+    programacaoId: string | null
+    dataEntrega: Date | null
+    pedidoId: string | null
+  }
+
+  export type PortalProgramacaoEntregaCountAggregateOutputType = {
+    id: number
+    programacaoId: number
+    dataEntrega: number
+    pedidoId: number
+    _all: number
+  }
+
+
+  export type PortalProgramacaoEntregaMinAggregateInputType = {
+    id?: true
+    programacaoId?: true
+    dataEntrega?: true
+    pedidoId?: true
+  }
+
+  export type PortalProgramacaoEntregaMaxAggregateInputType = {
+    id?: true
+    programacaoId?: true
+    dataEntrega?: true
+    pedidoId?: true
+  }
+
+  export type PortalProgramacaoEntregaCountAggregateInputType = {
+    id?: true
+    programacaoId?: true
+    dataEntrega?: true
+    pedidoId?: true
+    _all?: true
+  }
+
+  export type PortalProgramacaoEntregaAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacaoEntrega to aggregate.
+     */
+    where?: PortalProgramacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoEntregas to fetch.
+     */
+    orderBy?: PortalProgramacaoEntregaOrderByWithRelationInput | PortalProgramacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalProgramacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalProgramacaoEntregas
+    **/
+    _count?: true | PortalProgramacaoEntregaCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalProgramacaoEntregaMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalProgramacaoEntregaMaxAggregateInputType
+  }
+
+  export type GetPortalProgramacaoEntregaAggregateType<T extends PortalProgramacaoEntregaAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalProgramacaoEntrega]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalProgramacaoEntrega[P]>
+      : GetScalarType<T[P], AggregatePortalProgramacaoEntrega[P]>
+  }
+
+
+
+
+  export type PortalProgramacaoEntregaGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalProgramacaoEntregaWhereInput
+    orderBy?: PortalProgramacaoEntregaOrderByWithAggregationInput | PortalProgramacaoEntregaOrderByWithAggregationInput[]
+    by: PortalProgramacaoEntregaScalarFieldEnum[] | PortalProgramacaoEntregaScalarFieldEnum
+    having?: PortalProgramacaoEntregaScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalProgramacaoEntregaCountAggregateInputType | true
+    _min?: PortalProgramacaoEntregaMinAggregateInputType
+    _max?: PortalProgramacaoEntregaMaxAggregateInputType
+  }
+
+  export type PortalProgramacaoEntregaGroupByOutputType = {
+    id: string
+    programacaoId: string
+    dataEntrega: Date
+    pedidoId: string
+    _count: PortalProgramacaoEntregaCountAggregateOutputType | null
+    _min: PortalProgramacaoEntregaMinAggregateOutputType | null
+    _max: PortalProgramacaoEntregaMaxAggregateOutputType | null
+  }
+
+  type GetPortalProgramacaoEntregaGroupByPayload<T extends PortalProgramacaoEntregaGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalProgramacaoEntregaGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalProgramacaoEntregaGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalProgramacaoEntregaGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalProgramacaoEntregaGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalProgramacaoEntregaSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    programacaoId?: boolean
+    dataEntrega?: boolean
+    pedidoId?: boolean
+    programacao?: boolean | PortalProgramacaoDefaultArgs<ExtArgs>
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["portalProgramacaoEntrega"]>
+
+
+
+  export type PortalProgramacaoEntregaSelectScalar = {
+    id?: boolean
+    programacaoId?: boolean
+    dataEntrega?: boolean
+    pedidoId?: boolean
+  }
+
+  export type PortalProgramacaoEntregaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "programacaoId" | "dataEntrega" | "pedidoId", ExtArgs["result"]["portalProgramacaoEntrega"]>
+  export type PortalProgramacaoEntregaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    programacao?: boolean | PortalProgramacaoDefaultArgs<ExtArgs>
+    pedido?: boolean | PedidoOperacionalDefaultArgs<ExtArgs>
+  }
+
+  export type $PortalProgramacaoEntregaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalProgramacaoEntrega"
+    objects: {
+      programacao: Prisma.$PortalProgramacaoPayload<ExtArgs>
+      pedido: Prisma.$PedidoOperacionalPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      programacaoId: string
+      dataEntrega: Date
+      pedidoId: string
+    }, ExtArgs["result"]["portalProgramacaoEntrega"]>
+    composites: {}
+  }
+
+  type PortalProgramacaoEntregaGetPayload<S extends boolean | null | undefined | PortalProgramacaoEntregaDefaultArgs> = $Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload, S>
+
+  type PortalProgramacaoEntregaCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalProgramacaoEntregaFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalProgramacaoEntregaCountAggregateInputType | true
+    }
+
+  export interface PortalProgramacaoEntregaDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalProgramacaoEntrega'], meta: { name: 'PortalProgramacaoEntrega' } }
+    /**
+     * Find zero or one PortalProgramacaoEntrega that matches the filter.
+     * @param {PortalProgramacaoEntregaFindUniqueArgs} args - Arguments to find a PortalProgramacaoEntrega
+     * @example
+     * // Get one PortalProgramacaoEntrega
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalProgramacaoEntregaFindUniqueArgs>(args: SelectSubset<T, PortalProgramacaoEntregaFindUniqueArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalProgramacaoEntrega that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalProgramacaoEntregaFindUniqueOrThrowArgs} args - Arguments to find a PortalProgramacaoEntrega
+     * @example
+     * // Get one PortalProgramacaoEntrega
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalProgramacaoEntregaFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalProgramacaoEntregaFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacaoEntrega that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoEntregaFindFirstArgs} args - Arguments to find a PortalProgramacaoEntrega
+     * @example
+     * // Get one PortalProgramacaoEntrega
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalProgramacaoEntregaFindFirstArgs>(args?: SelectSubset<T, PortalProgramacaoEntregaFindFirstArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalProgramacaoEntrega that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoEntregaFindFirstOrThrowArgs} args - Arguments to find a PortalProgramacaoEntrega
+     * @example
+     * // Get one PortalProgramacaoEntrega
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalProgramacaoEntregaFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalProgramacaoEntregaFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalProgramacaoEntregas that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoEntregaFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalProgramacaoEntregas
+     * const portalProgramacaoEntregas = await prisma.portalProgramacaoEntrega.findMany()
+     * 
+     * // Get first 10 PortalProgramacaoEntregas
+     * const portalProgramacaoEntregas = await prisma.portalProgramacaoEntrega.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalProgramacaoEntregaWithIdOnly = await prisma.portalProgramacaoEntrega.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalProgramacaoEntregaFindManyArgs>(args?: SelectSubset<T, PortalProgramacaoEntregaFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalProgramacaoEntrega.
+     * @param {PortalProgramacaoEntregaCreateArgs} args - Arguments to create a PortalProgramacaoEntrega.
+     * @example
+     * // Create one PortalProgramacaoEntrega
+     * const PortalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.create({
+     *   data: {
+     *     // ... data to create a PortalProgramacaoEntrega
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalProgramacaoEntregaCreateArgs>(args: SelectSubset<T, PortalProgramacaoEntregaCreateArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalProgramacaoEntregas.
+     * @param {PortalProgramacaoEntregaCreateManyArgs} args - Arguments to create many PortalProgramacaoEntregas.
+     * @example
+     * // Create many PortalProgramacaoEntregas
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalProgramacaoEntregaCreateManyArgs>(args?: SelectSubset<T, PortalProgramacaoEntregaCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalProgramacaoEntrega.
+     * @param {PortalProgramacaoEntregaDeleteArgs} args - Arguments to delete one PortalProgramacaoEntrega.
+     * @example
+     * // Delete one PortalProgramacaoEntrega
+     * const PortalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.delete({
+     *   where: {
+     *     // ... filter to delete one PortalProgramacaoEntrega
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalProgramacaoEntregaDeleteArgs>(args: SelectSubset<T, PortalProgramacaoEntregaDeleteArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalProgramacaoEntrega.
+     * @param {PortalProgramacaoEntregaUpdateArgs} args - Arguments to update one PortalProgramacaoEntrega.
+     * @example
+     * // Update one PortalProgramacaoEntrega
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalProgramacaoEntregaUpdateArgs>(args: SelectSubset<T, PortalProgramacaoEntregaUpdateArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalProgramacaoEntregas.
+     * @param {PortalProgramacaoEntregaDeleteManyArgs} args - Arguments to filter PortalProgramacaoEntregas to delete.
+     * @example
+     * // Delete a few PortalProgramacaoEntregas
+     * const { count } = await prisma.portalProgramacaoEntrega.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalProgramacaoEntregaDeleteManyArgs>(args?: SelectSubset<T, PortalProgramacaoEntregaDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalProgramacaoEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoEntregaUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalProgramacaoEntregas
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalProgramacaoEntregaUpdateManyArgs>(args: SelectSubset<T, PortalProgramacaoEntregaUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalProgramacaoEntrega.
+     * @param {PortalProgramacaoEntregaUpsertArgs} args - Arguments to update or create a PortalProgramacaoEntrega.
+     * @example
+     * // Update or create a PortalProgramacaoEntrega
+     * const portalProgramacaoEntrega = await prisma.portalProgramacaoEntrega.upsert({
+     *   create: {
+     *     // ... data to create a PortalProgramacaoEntrega
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalProgramacaoEntrega we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalProgramacaoEntregaUpsertArgs>(args: SelectSubset<T, PortalProgramacaoEntregaUpsertArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalProgramacaoEntregas.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoEntregaCountArgs} args - Arguments to filter PortalProgramacaoEntregas to count.
+     * @example
+     * // Count the number of PortalProgramacaoEntregas
+     * const count = await prisma.portalProgramacaoEntrega.count({
+     *   where: {
+     *     // ... the filter for the PortalProgramacaoEntregas we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalProgramacaoEntregaCountArgs>(
+      args?: Subset<T, PortalProgramacaoEntregaCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalProgramacaoEntregaCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalProgramacaoEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoEntregaAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalProgramacaoEntregaAggregateArgs>(args: Subset<T, PortalProgramacaoEntregaAggregateArgs>): Prisma.PrismaPromise<GetPortalProgramacaoEntregaAggregateType<T>>
+
+    /**
+     * Group by PortalProgramacaoEntrega.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalProgramacaoEntregaGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalProgramacaoEntregaGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalProgramacaoEntregaGroupByArgs['orderBy'] }
+        : { orderBy?: PortalProgramacaoEntregaGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalProgramacaoEntregaGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalProgramacaoEntregaGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalProgramacaoEntrega model
+   */
+  readonly fields: PortalProgramacaoEntregaFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalProgramacaoEntrega.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalProgramacaoEntregaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    programacao<T extends PortalProgramacaoDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PortalProgramacaoDefaultArgs<ExtArgs>>): Prisma__PortalProgramacaoClient<$Result.GetResult<Prisma.$PortalProgramacaoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    pedido<T extends PedidoOperacionalDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacionalDefaultArgs<ExtArgs>>): Prisma__PedidoOperacionalClient<$Result.GetResult<Prisma.$PedidoOperacionalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalProgramacaoEntrega model
+   */
+  interface PortalProgramacaoEntregaFieldRefs {
+    readonly id: FieldRef<"PortalProgramacaoEntrega", 'String'>
+    readonly programacaoId: FieldRef<"PortalProgramacaoEntrega", 'String'>
+    readonly dataEntrega: FieldRef<"PortalProgramacaoEntrega", 'DateTime'>
+    readonly pedidoId: FieldRef<"PortalProgramacaoEntrega", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalProgramacaoEntrega findUnique
+   */
+  export type PortalProgramacaoEntregaFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoEntrega to fetch.
+     */
+    where: PortalProgramacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoEntrega findUniqueOrThrow
+   */
+  export type PortalProgramacaoEntregaFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoEntrega to fetch.
+     */
+    where: PortalProgramacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoEntrega findFirst
+   */
+  export type PortalProgramacaoEntregaFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoEntrega to fetch.
+     */
+    where?: PortalProgramacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoEntregas to fetch.
+     */
+    orderBy?: PortalProgramacaoEntregaOrderByWithRelationInput | PortalProgramacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaoEntregas.
+     */
+    cursor?: PortalProgramacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaoEntregas.
+     */
+    distinct?: PortalProgramacaoEntregaScalarFieldEnum | PortalProgramacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoEntrega findFirstOrThrow
+   */
+  export type PortalProgramacaoEntregaFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoEntrega to fetch.
+     */
+    where?: PortalProgramacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoEntregas to fetch.
+     */
+    orderBy?: PortalProgramacaoEntregaOrderByWithRelationInput | PortalProgramacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalProgramacaoEntregas.
+     */
+    cursor?: PortalProgramacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoEntregas.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalProgramacaoEntregas.
+     */
+    distinct?: PortalProgramacaoEntregaScalarFieldEnum | PortalProgramacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoEntrega findMany
+   */
+  export type PortalProgramacaoEntregaFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter, which PortalProgramacaoEntregas to fetch.
+     */
+    where?: PortalProgramacaoEntregaWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalProgramacaoEntregas to fetch.
+     */
+    orderBy?: PortalProgramacaoEntregaOrderByWithRelationInput | PortalProgramacaoEntregaOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalProgramacaoEntregas.
+     */
+    cursor?: PortalProgramacaoEntregaWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalProgramacaoEntregas from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalProgramacaoEntregas.
+     */
+    skip?: number
+    distinct?: PortalProgramacaoEntregaScalarFieldEnum | PortalProgramacaoEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * PortalProgramacaoEntrega create
+   */
+  export type PortalProgramacaoEntregaCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PortalProgramacaoEntrega.
+     */
+    data: XOR<PortalProgramacaoEntregaCreateInput, PortalProgramacaoEntregaUncheckedCreateInput>
+  }
+
+  /**
+   * PortalProgramacaoEntrega createMany
+   */
+  export type PortalProgramacaoEntregaCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalProgramacaoEntregas.
+     */
+    data: PortalProgramacaoEntregaCreateManyInput | PortalProgramacaoEntregaCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalProgramacaoEntrega update
+   */
+  export type PortalProgramacaoEntregaUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PortalProgramacaoEntrega.
+     */
+    data: XOR<PortalProgramacaoEntregaUpdateInput, PortalProgramacaoEntregaUncheckedUpdateInput>
+    /**
+     * Choose, which PortalProgramacaoEntrega to update.
+     */
+    where: PortalProgramacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoEntrega updateMany
+   */
+  export type PortalProgramacaoEntregaUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalProgramacaoEntregas.
+     */
+    data: XOR<PortalProgramacaoEntregaUpdateManyMutationInput, PortalProgramacaoEntregaUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalProgramacaoEntregas to update
+     */
+    where?: PortalProgramacaoEntregaWhereInput
+    /**
+     * Limit how many PortalProgramacaoEntregas to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacaoEntrega upsert
+   */
+  export type PortalProgramacaoEntregaUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PortalProgramacaoEntrega to update in case it exists.
+     */
+    where: PortalProgramacaoEntregaWhereUniqueInput
+    /**
+     * In case the PortalProgramacaoEntrega found by the `where` argument doesn't exist, create a new PortalProgramacaoEntrega with this data.
+     */
+    create: XOR<PortalProgramacaoEntregaCreateInput, PortalProgramacaoEntregaUncheckedCreateInput>
+    /**
+     * In case the PortalProgramacaoEntrega was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalProgramacaoEntregaUpdateInput, PortalProgramacaoEntregaUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalProgramacaoEntrega delete
+   */
+  export type PortalProgramacaoEntregaDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    /**
+     * Filter which PortalProgramacaoEntrega to delete.
+     */
+    where: PortalProgramacaoEntregaWhereUniqueInput
+  }
+
+  /**
+   * PortalProgramacaoEntrega deleteMany
+   */
+  export type PortalProgramacaoEntregaDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalProgramacaoEntregas to delete
+     */
+    where?: PortalProgramacaoEntregaWhereInput
+    /**
+     * Limit how many PortalProgramacaoEntregas to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalProgramacaoEntrega without action
+   */
+  export type PortalProgramacaoEntregaDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
   }
 
 
@@ -23119,6 +27410,7 @@ export namespace Prisma {
     editadoPor?: boolean | PedidoOperacional$editadoPorArgs<ExtArgs>
     pedidoContaAzul?: boolean | PedidoOperacional$pedidoContaAzulArgs<ExtArgs>
     itens?: boolean | PedidoOperacional$itensArgs<ExtArgs>
+    programacaoEntrega?: boolean | PedidoOperacional$programacaoEntregaArgs<ExtArgs>
     avarias?: boolean | PedidoOperacional$avariasArgs<ExtArgs>
     auditoria?: boolean | PedidoOperacional$auditoriaArgs<ExtArgs>
     eventosConciliacao?: boolean | PedidoOperacional$eventosConciliacaoArgs<ExtArgs>
@@ -23159,6 +27451,7 @@ export namespace Prisma {
     editadoPor?: boolean | PedidoOperacional$editadoPorArgs<ExtArgs>
     pedidoContaAzul?: boolean | PedidoOperacional$pedidoContaAzulArgs<ExtArgs>
     itens?: boolean | PedidoOperacional$itensArgs<ExtArgs>
+    programacaoEntrega?: boolean | PedidoOperacional$programacaoEntregaArgs<ExtArgs>
     avarias?: boolean | PedidoOperacional$avariasArgs<ExtArgs>
     auditoria?: boolean | PedidoOperacional$auditoriaArgs<ExtArgs>
     eventosConciliacao?: boolean | PedidoOperacional$eventosConciliacaoArgs<ExtArgs>
@@ -23173,6 +27466,7 @@ export namespace Prisma {
       editadoPor: Prisma.$UsuarioPayload<ExtArgs> | null
       pedidoContaAzul: Prisma.$PedidoPayload<ExtArgs> | null
       itens: Prisma.$PedidoOperacionalItemPayload<ExtArgs>[]
+      programacaoEntrega: Prisma.$PortalProgramacaoEntregaPayload<ExtArgs> | null
       avarias: Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>[]
       auditoria: Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>[]
       eventosConciliacao: Prisma.$PedidoConciliacaoEventoPayload<ExtArgs>[]
@@ -23548,6 +27842,7 @@ export namespace Prisma {
     editadoPor<T extends PedidoOperacional$editadoPorArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$editadoPorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     pedidoContaAzul<T extends PedidoOperacional$pedidoContaAzulArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$pedidoContaAzulArgs<ExtArgs>>): Prisma__PedidoClient<$Result.GetResult<Prisma.$PedidoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     itens<T extends PedidoOperacional$itensArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$itensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    programacaoEntrega<T extends PedidoOperacional$programacaoEntregaArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$programacaoEntregaArgs<ExtArgs>>): Prisma__PortalProgramacaoEntregaClient<$Result.GetResult<Prisma.$PortalProgramacaoEntregaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     avarias<T extends PedidoOperacional$avariasArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$avariasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAvariaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     auditoria<T extends PedidoOperacional$auditoriaArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$auditoriaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoOperacionalAuditoriaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     eventosConciliacao<T extends PedidoOperacional$eventosConciliacaoArgs<ExtArgs> = {}>(args?: Subset<T, PedidoOperacional$eventosConciliacaoArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PedidoConciliacaoEventoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -24042,6 +28337,25 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PedidoOperacionalItemScalarFieldEnum | PedidoOperacionalItemScalarFieldEnum[]
+  }
+
+  /**
+   * PedidoOperacional.programacaoEntrega
+   */
+  export type PedidoOperacional$programacaoEntregaArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalProgramacaoEntrega
+     */
+    select?: PortalProgramacaoEntregaSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalProgramacaoEntrega
+     */
+    omit?: PortalProgramacaoEntregaOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PortalProgramacaoEntregaInclude<ExtArgs> | null
+    where?: PortalProgramacaoEntregaWhereInput
   }
 
   /**
@@ -44491,6 +48805,45 @@ export namespace Prisma {
   export type PortalContratoAceiteScalarFieldEnum = (typeof PortalContratoAceiteScalarFieldEnum)[keyof typeof PortalContratoAceiteScalarFieldEnum]
 
 
+  export const PortalProgramacaoScalarFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type PortalProgramacaoScalarFieldEnum = (typeof PortalProgramacaoScalarFieldEnum)[keyof typeof PortalProgramacaoScalarFieldEnum]
+
+
+  export const PortalProgramacaoDiaScalarFieldEnum: {
+    id: 'id',
+    programacaoId: 'programacaoId',
+    diaSemana: 'diaSemana'
+  };
+
+  export type PortalProgramacaoDiaScalarFieldEnum = (typeof PortalProgramacaoDiaScalarFieldEnum)[keyof typeof PortalProgramacaoDiaScalarFieldEnum]
+
+
+  export const PortalProgramacaoItemScalarFieldEnum: {
+    id: 'id',
+    diaId: 'diaId',
+    produtoId: 'produtoId',
+    quantidade: 'quantidade'
+  };
+
+  export type PortalProgramacaoItemScalarFieldEnum = (typeof PortalProgramacaoItemScalarFieldEnum)[keyof typeof PortalProgramacaoItemScalarFieldEnum]
+
+
+  export const PortalProgramacaoEntregaScalarFieldEnum: {
+    id: 'id',
+    programacaoId: 'programacaoId',
+    dataEntrega: 'dataEntrega',
+    pedidoId: 'pedidoId'
+  };
+
+  export type PortalProgramacaoEntregaScalarFieldEnum = (typeof PortalProgramacaoEntregaScalarFieldEnum)[keyof typeof PortalProgramacaoEntregaScalarFieldEnum]
+
+
   export const PortalCadastroScalarFieldEnum: {
     id: 'id',
     nome: 'nome',
@@ -45109,6 +49462,40 @@ export namespace Prisma {
   export type PortalContratoAceiteOrderByRelevanceFieldEnum = (typeof PortalContratoAceiteOrderByRelevanceFieldEnum)[keyof typeof PortalContratoAceiteOrderByRelevanceFieldEnum]
 
 
+  export const PortalProgramacaoOrderByRelevanceFieldEnum: {
+    id: 'id',
+    clienteId: 'clienteId'
+  };
+
+  export type PortalProgramacaoOrderByRelevanceFieldEnum = (typeof PortalProgramacaoOrderByRelevanceFieldEnum)[keyof typeof PortalProgramacaoOrderByRelevanceFieldEnum]
+
+
+  export const PortalProgramacaoDiaOrderByRelevanceFieldEnum: {
+    id: 'id',
+    programacaoId: 'programacaoId'
+  };
+
+  export type PortalProgramacaoDiaOrderByRelevanceFieldEnum = (typeof PortalProgramacaoDiaOrderByRelevanceFieldEnum)[keyof typeof PortalProgramacaoDiaOrderByRelevanceFieldEnum]
+
+
+  export const PortalProgramacaoItemOrderByRelevanceFieldEnum: {
+    id: 'id',
+    diaId: 'diaId',
+    produtoId: 'produtoId'
+  };
+
+  export type PortalProgramacaoItemOrderByRelevanceFieldEnum = (typeof PortalProgramacaoItemOrderByRelevanceFieldEnum)[keyof typeof PortalProgramacaoItemOrderByRelevanceFieldEnum]
+
+
+  export const PortalProgramacaoEntregaOrderByRelevanceFieldEnum: {
+    id: 'id',
+    programacaoId: 'programacaoId',
+    pedidoId: 'pedidoId'
+  };
+
+  export type PortalProgramacaoEntregaOrderByRelevanceFieldEnum = (typeof PortalProgramacaoEntregaOrderByRelevanceFieldEnum)[keyof typeof PortalProgramacaoEntregaOrderByRelevanceFieldEnum]
+
+
   export const PortalCadastroOrderByRelevanceFieldEnum: {
     id: 'id',
     nome: 'nome',
@@ -45485,6 +49872,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Int'
+   */
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+  /**
    * Reference to a field of type 'Bytes'
    */
   export type BytesFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Bytes'>
@@ -45502,13 +49896,6 @@ export namespace Prisma {
    * Reference to a field of type 'PeriodoEntregaCliente'
    */
   export type EnumPeriodoEntregaClienteFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PeriodoEntregaCliente'>
-    
-
-
-  /**
-   * Reference to a field of type 'Int'
-   */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
     
 
 
@@ -45879,6 +50266,7 @@ export namespace Prisma {
     portalAcesso?: XOR<PortalAcessoNullableScalarRelationFilter, PortalAcessoWhereInput> | null
     portalConta?: XOR<PortalContaNullableScalarRelationFilter, PortalContaWhereInput> | null
     portalContrato?: XOR<PortalContratoNullableScalarRelationFilter, PortalContratoWhereInput> | null
+    portalProgramacao?: XOR<PortalProgramacaoNullableScalarRelationFilter, PortalProgramacaoWhereInput> | null
   }
 
   export type ClienteOrderByWithRelationInput = {
@@ -45913,6 +50301,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoOrderByWithRelationInput
     portalConta?: PortalContaOrderByWithRelationInput
     portalContrato?: PortalContratoOrderByWithRelationInput
+    portalProgramacao?: PortalProgramacaoOrderByWithRelationInput
     _relevance?: ClienteOrderByRelevanceInput
   }
 
@@ -45951,6 +50340,7 @@ export namespace Prisma {
     portalAcesso?: XOR<PortalAcessoNullableScalarRelationFilter, PortalAcessoWhereInput> | null
     portalConta?: XOR<PortalContaNullableScalarRelationFilter, PortalContaWhereInput> | null
     portalContrato?: XOR<PortalContratoNullableScalarRelationFilter, PortalContratoWhereInput> | null
+    portalProgramacao?: XOR<PortalProgramacaoNullableScalarRelationFilter, PortalProgramacaoWhereInput> | null
   }, "id" | "externalId">
 
   export type ClienteOrderByWithAggregationInput = {
@@ -46208,6 +50598,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     portalFoto?: XOR<PortalFotoNullableScalarRelationFilter, PortalFotoWhereInput> | null
+    programacaoItens?: PortalProgramacaoItemListRelationFilter
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
     itensPedido?: PedidoOperacionalItemListRelationFilter
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
@@ -46245,6 +50636,7 @@ export namespace Prisma {
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
     portalFoto?: PortalFotoOrderByWithRelationInput
+    programacaoItens?: PortalProgramacaoItemOrderByRelationAggregateInput
     precosEspeciais?: PrecoEspecialClienteOrderByRelationAggregateInput
     itensPedido?: PedidoOperacionalItemOrderByRelationAggregateInput
     avariasPedido?: PedidoOperacionalAvariaOrderByRelationAggregateInput
@@ -46286,6 +50678,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     portalFoto?: XOR<PortalFotoNullableScalarRelationFilter, PortalFotoWhereInput> | null
+    programacaoItens?: PortalProgramacaoItemListRelationFilter
     precosEspeciais?: PrecoEspecialClienteListRelationFilter
     itensPedido?: PedidoOperacionalItemListRelationFilter
     avariasPedido?: PedidoOperacionalAvariaListRelationFilter
@@ -46701,6 +51094,227 @@ export namespace Prisma {
     ip?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
     userAgent?: StringWithAggregatesFilter<"PortalContratoAceite"> | string
     aceitoEm?: DateTimeWithAggregatesFilter<"PortalContratoAceite"> | Date | string
+  }
+
+  export type PortalProgramacaoWhereInput = {
+    AND?: PortalProgramacaoWhereInput | PortalProgramacaoWhereInput[]
+    OR?: PortalProgramacaoWhereInput[]
+    NOT?: PortalProgramacaoWhereInput | PortalProgramacaoWhereInput[]
+    id?: StringFilter<"PortalProgramacao"> | string
+    clienteId?: StringFilter<"PortalProgramacao"> | string
+    criadoEm?: DateTimeFilter<"PortalProgramacao"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalProgramacao"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+    dias?: PortalProgramacaoDiaListRelationFilter
+    entregas?: PortalProgramacaoEntregaListRelationFilter
+  }
+
+  export type PortalProgramacaoOrderByWithRelationInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    cliente?: ClienteOrderByWithRelationInput
+    dias?: PortalProgramacaoDiaOrderByRelationAggregateInput
+    entregas?: PortalProgramacaoEntregaOrderByRelationAggregateInput
+    _relevance?: PortalProgramacaoOrderByRelevanceInput
+  }
+
+  export type PortalProgramacaoWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    clienteId?: string
+    AND?: PortalProgramacaoWhereInput | PortalProgramacaoWhereInput[]
+    OR?: PortalProgramacaoWhereInput[]
+    NOT?: PortalProgramacaoWhereInput | PortalProgramacaoWhereInput[]
+    criadoEm?: DateTimeFilter<"PortalProgramacao"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalProgramacao"> | Date | string
+    cliente?: XOR<ClienteScalarRelationFilter, ClienteWhereInput>
+    dias?: PortalProgramacaoDiaListRelationFilter
+    entregas?: PortalProgramacaoEntregaListRelationFilter
+  }, "id" | "clienteId">
+
+  export type PortalProgramacaoOrderByWithAggregationInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: PortalProgramacaoCountOrderByAggregateInput
+    _max?: PortalProgramacaoMaxOrderByAggregateInput
+    _min?: PortalProgramacaoMinOrderByAggregateInput
+  }
+
+  export type PortalProgramacaoScalarWhereWithAggregatesInput = {
+    AND?: PortalProgramacaoScalarWhereWithAggregatesInput | PortalProgramacaoScalarWhereWithAggregatesInput[]
+    OR?: PortalProgramacaoScalarWhereWithAggregatesInput[]
+    NOT?: PortalProgramacaoScalarWhereWithAggregatesInput | PortalProgramacaoScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalProgramacao"> | string
+    clienteId?: StringWithAggregatesFilter<"PortalProgramacao"> | string
+    criadoEm?: DateTimeWithAggregatesFilter<"PortalProgramacao"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PortalProgramacao"> | Date | string
+  }
+
+  export type PortalProgramacaoDiaWhereInput = {
+    AND?: PortalProgramacaoDiaWhereInput | PortalProgramacaoDiaWhereInput[]
+    OR?: PortalProgramacaoDiaWhereInput[]
+    NOT?: PortalProgramacaoDiaWhereInput | PortalProgramacaoDiaWhereInput[]
+    id?: StringFilter<"PortalProgramacaoDia"> | string
+    programacaoId?: StringFilter<"PortalProgramacaoDia"> | string
+    diaSemana?: IntFilter<"PortalProgramacaoDia"> | number
+    programacao?: XOR<PortalProgramacaoScalarRelationFilter, PortalProgramacaoWhereInput>
+    itens?: PortalProgramacaoItemListRelationFilter
+  }
+
+  export type PortalProgramacaoDiaOrderByWithRelationInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    diaSemana?: SortOrder
+    programacao?: PortalProgramacaoOrderByWithRelationInput
+    itens?: PortalProgramacaoItemOrderByRelationAggregateInput
+    _relevance?: PortalProgramacaoDiaOrderByRelevanceInput
+  }
+
+  export type PortalProgramacaoDiaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    programacaoId_diaSemana?: PortalProgramacaoDiaProgramacaoIdDiaSemanaCompoundUniqueInput
+    AND?: PortalProgramacaoDiaWhereInput | PortalProgramacaoDiaWhereInput[]
+    OR?: PortalProgramacaoDiaWhereInput[]
+    NOT?: PortalProgramacaoDiaWhereInput | PortalProgramacaoDiaWhereInput[]
+    programacaoId?: StringFilter<"PortalProgramacaoDia"> | string
+    diaSemana?: IntFilter<"PortalProgramacaoDia"> | number
+    programacao?: XOR<PortalProgramacaoScalarRelationFilter, PortalProgramacaoWhereInput>
+    itens?: PortalProgramacaoItemListRelationFilter
+  }, "id" | "programacaoId_diaSemana">
+
+  export type PortalProgramacaoDiaOrderByWithAggregationInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    diaSemana?: SortOrder
+    _count?: PortalProgramacaoDiaCountOrderByAggregateInput
+    _avg?: PortalProgramacaoDiaAvgOrderByAggregateInput
+    _max?: PortalProgramacaoDiaMaxOrderByAggregateInput
+    _min?: PortalProgramacaoDiaMinOrderByAggregateInput
+    _sum?: PortalProgramacaoDiaSumOrderByAggregateInput
+  }
+
+  export type PortalProgramacaoDiaScalarWhereWithAggregatesInput = {
+    AND?: PortalProgramacaoDiaScalarWhereWithAggregatesInput | PortalProgramacaoDiaScalarWhereWithAggregatesInput[]
+    OR?: PortalProgramacaoDiaScalarWhereWithAggregatesInput[]
+    NOT?: PortalProgramacaoDiaScalarWhereWithAggregatesInput | PortalProgramacaoDiaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalProgramacaoDia"> | string
+    programacaoId?: StringWithAggregatesFilter<"PortalProgramacaoDia"> | string
+    diaSemana?: IntWithAggregatesFilter<"PortalProgramacaoDia"> | number
+  }
+
+  export type PortalProgramacaoItemWhereInput = {
+    AND?: PortalProgramacaoItemWhereInput | PortalProgramacaoItemWhereInput[]
+    OR?: PortalProgramacaoItemWhereInput[]
+    NOT?: PortalProgramacaoItemWhereInput | PortalProgramacaoItemWhereInput[]
+    id?: StringFilter<"PortalProgramacaoItem"> | string
+    diaId?: StringFilter<"PortalProgramacaoItem"> | string
+    produtoId?: StringFilter<"PortalProgramacaoItem"> | string
+    quantidade?: DecimalFilter<"PortalProgramacaoItem"> | Decimal | DecimalJsLike | number | string
+    dia?: XOR<PortalProgramacaoDiaScalarRelationFilter, PortalProgramacaoDiaWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }
+
+  export type PortalProgramacaoItemOrderByWithRelationInput = {
+    id?: SortOrder
+    diaId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    dia?: PortalProgramacaoDiaOrderByWithRelationInput
+    produto?: ProdutoComercialOrderByWithRelationInput
+    _relevance?: PortalProgramacaoItemOrderByRelevanceInput
+  }
+
+  export type PortalProgramacaoItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    diaId_produtoId?: PortalProgramacaoItemDiaIdProdutoIdCompoundUniqueInput
+    AND?: PortalProgramacaoItemWhereInput | PortalProgramacaoItemWhereInput[]
+    OR?: PortalProgramacaoItemWhereInput[]
+    NOT?: PortalProgramacaoItemWhereInput | PortalProgramacaoItemWhereInput[]
+    diaId?: StringFilter<"PortalProgramacaoItem"> | string
+    produtoId?: StringFilter<"PortalProgramacaoItem"> | string
+    quantidade?: DecimalFilter<"PortalProgramacaoItem"> | Decimal | DecimalJsLike | number | string
+    dia?: XOR<PortalProgramacaoDiaScalarRelationFilter, PortalProgramacaoDiaWhereInput>
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+  }, "id" | "diaId_produtoId">
+
+  export type PortalProgramacaoItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    diaId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    _count?: PortalProgramacaoItemCountOrderByAggregateInput
+    _avg?: PortalProgramacaoItemAvgOrderByAggregateInput
+    _max?: PortalProgramacaoItemMaxOrderByAggregateInput
+    _min?: PortalProgramacaoItemMinOrderByAggregateInput
+    _sum?: PortalProgramacaoItemSumOrderByAggregateInput
+  }
+
+  export type PortalProgramacaoItemScalarWhereWithAggregatesInput = {
+    AND?: PortalProgramacaoItemScalarWhereWithAggregatesInput | PortalProgramacaoItemScalarWhereWithAggregatesInput[]
+    OR?: PortalProgramacaoItemScalarWhereWithAggregatesInput[]
+    NOT?: PortalProgramacaoItemScalarWhereWithAggregatesInput | PortalProgramacaoItemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalProgramacaoItem"> | string
+    diaId?: StringWithAggregatesFilter<"PortalProgramacaoItem"> | string
+    produtoId?: StringWithAggregatesFilter<"PortalProgramacaoItem"> | string
+    quantidade?: DecimalWithAggregatesFilter<"PortalProgramacaoItem"> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoEntregaWhereInput = {
+    AND?: PortalProgramacaoEntregaWhereInput | PortalProgramacaoEntregaWhereInput[]
+    OR?: PortalProgramacaoEntregaWhereInput[]
+    NOT?: PortalProgramacaoEntregaWhereInput | PortalProgramacaoEntregaWhereInput[]
+    id?: StringFilter<"PortalProgramacaoEntrega"> | string
+    programacaoId?: StringFilter<"PortalProgramacaoEntrega"> | string
+    dataEntrega?: DateTimeFilter<"PortalProgramacaoEntrega"> | Date | string
+    pedidoId?: StringFilter<"PortalProgramacaoEntrega"> | string
+    programacao?: XOR<PortalProgramacaoScalarRelationFilter, PortalProgramacaoWhereInput>
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+  }
+
+  export type PortalProgramacaoEntregaOrderByWithRelationInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    dataEntrega?: SortOrder
+    pedidoId?: SortOrder
+    programacao?: PortalProgramacaoOrderByWithRelationInput
+    pedido?: PedidoOperacionalOrderByWithRelationInput
+    _relevance?: PortalProgramacaoEntregaOrderByRelevanceInput
+  }
+
+  export type PortalProgramacaoEntregaWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    pedidoId?: string
+    programacaoId_dataEntrega?: PortalProgramacaoEntregaProgramacaoIdDataEntregaCompoundUniqueInput
+    AND?: PortalProgramacaoEntregaWhereInput | PortalProgramacaoEntregaWhereInput[]
+    OR?: PortalProgramacaoEntregaWhereInput[]
+    NOT?: PortalProgramacaoEntregaWhereInput | PortalProgramacaoEntregaWhereInput[]
+    programacaoId?: StringFilter<"PortalProgramacaoEntrega"> | string
+    dataEntrega?: DateTimeFilter<"PortalProgramacaoEntrega"> | Date | string
+    programacao?: XOR<PortalProgramacaoScalarRelationFilter, PortalProgramacaoWhereInput>
+    pedido?: XOR<PedidoOperacionalScalarRelationFilter, PedidoOperacionalWhereInput>
+  }, "id" | "pedidoId" | "programacaoId_dataEntrega">
+
+  export type PortalProgramacaoEntregaOrderByWithAggregationInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    dataEntrega?: SortOrder
+    pedidoId?: SortOrder
+    _count?: PortalProgramacaoEntregaCountOrderByAggregateInput
+    _max?: PortalProgramacaoEntregaMaxOrderByAggregateInput
+    _min?: PortalProgramacaoEntregaMinOrderByAggregateInput
+  }
+
+  export type PortalProgramacaoEntregaScalarWhereWithAggregatesInput = {
+    AND?: PortalProgramacaoEntregaScalarWhereWithAggregatesInput | PortalProgramacaoEntregaScalarWhereWithAggregatesInput[]
+    OR?: PortalProgramacaoEntregaScalarWhereWithAggregatesInput[]
+    NOT?: PortalProgramacaoEntregaScalarWhereWithAggregatesInput | PortalProgramacaoEntregaScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalProgramacaoEntrega"> | string
+    programacaoId?: StringWithAggregatesFilter<"PortalProgramacaoEntrega"> | string
+    dataEntrega?: DateTimeWithAggregatesFilter<"PortalProgramacaoEntrega"> | Date | string
+    pedidoId?: StringWithAggregatesFilter<"PortalProgramacaoEntrega"> | string
   }
 
   export type PortalCadastroWhereInput = {
@@ -47169,6 +51783,7 @@ export namespace Prisma {
     editadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
     pedidoContaAzul?: XOR<PedidoNullableScalarRelationFilter, PedidoWhereInput> | null
     itens?: PedidoOperacionalItemListRelationFilter
+    programacaoEntrega?: XOR<PortalProgramacaoEntregaNullableScalarRelationFilter, PortalProgramacaoEntregaWhereInput> | null
     avarias?: PedidoOperacionalAvariaListRelationFilter
     auditoria?: PedidoOperacionalAuditoriaListRelationFilter
     eventosConciliacao?: PedidoConciliacaoEventoListRelationFilter
@@ -47202,6 +51817,7 @@ export namespace Prisma {
     editadoPor?: UsuarioOrderByWithRelationInput
     pedidoContaAzul?: PedidoOrderByWithRelationInput
     itens?: PedidoOperacionalItemOrderByRelationAggregateInput
+    programacaoEntrega?: PortalProgramacaoEntregaOrderByWithRelationInput
     avarias?: PedidoOperacionalAvariaOrderByRelationAggregateInput
     auditoria?: PedidoOperacionalAuditoriaOrderByRelationAggregateInput
     eventosConciliacao?: PedidoConciliacaoEventoOrderByRelationAggregateInput
@@ -47239,6 +51855,7 @@ export namespace Prisma {
     editadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
     pedidoContaAzul?: XOR<PedidoNullableScalarRelationFilter, PedidoWhereInput> | null
     itens?: PedidoOperacionalItemListRelationFilter
+    programacaoEntrega?: XOR<PortalProgramacaoEntregaNullableScalarRelationFilter, PortalProgramacaoEntregaWhereInput> | null
     avarias?: PedidoOperacionalAvariaListRelationFilter
     auditoria?: PedidoOperacionalAuditoriaListRelationFilter
     eventosConciliacao?: PedidoConciliacaoEventoListRelationFilter
@@ -49200,6 +53817,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateInput = {
@@ -49233,6 +53851,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUpdateInput = {
@@ -49266,6 +53885,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateInput = {
@@ -49299,6 +53919,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateManyInput = {
@@ -49556,6 +54177,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -49593,6 +54215,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -49628,6 +54251,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -49665,6 +54289,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -50142,6 +54767,201 @@ export namespace Prisma {
     ip?: StringFieldUpdateOperationsInput | string
     userAgent?: StringFieldUpdateOperationsInput | string
     aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalProgramacaoCreateInput = {
+    id?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente: ClienteCreateNestedOneWithoutPortalProgramacaoInput
+    dias?: PortalProgramacaoDiaCreateNestedManyWithoutProgramacaoInput
+    entregas?: PortalProgramacaoEntregaCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoUncheckedCreateInput = {
+    id?: string
+    clienteId: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    dias?: PortalProgramacaoDiaUncheckedCreateNestedManyWithoutProgramacaoInput
+    entregas?: PortalProgramacaoEntregaUncheckedCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutPortalProgramacaoNestedInput
+    dias?: PortalProgramacaoDiaUpdateManyWithoutProgramacaoNestedInput
+    entregas?: PortalProgramacaoEntregaUpdateManyWithoutProgramacaoNestedInput
+  }
+
+  export type PortalProgramacaoUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    dias?: PortalProgramacaoDiaUncheckedUpdateManyWithoutProgramacaoNestedInput
+    entregas?: PortalProgramacaoEntregaUncheckedUpdateManyWithoutProgramacaoNestedInput
+  }
+
+  export type PortalProgramacaoCreateManyInput = {
+    id?: string
+    clienteId: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+  }
+
+  export type PortalProgramacaoUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalProgramacaoUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalProgramacaoDiaCreateInput = {
+    id?: string
+    diaSemana: number
+    programacao: PortalProgramacaoCreateNestedOneWithoutDiasInput
+    itens?: PortalProgramacaoItemCreateNestedManyWithoutDiaInput
+  }
+
+  export type PortalProgramacaoDiaUncheckedCreateInput = {
+    id?: string
+    programacaoId: string
+    diaSemana: number
+    itens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutDiaInput
+  }
+
+  export type PortalProgramacaoDiaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    programacao?: PortalProgramacaoUpdateOneRequiredWithoutDiasNestedInput
+    itens?: PortalProgramacaoItemUpdateManyWithoutDiaNestedInput
+  }
+
+  export type PortalProgramacaoDiaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    programacaoId?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    itens?: PortalProgramacaoItemUncheckedUpdateManyWithoutDiaNestedInput
+  }
+
+  export type PortalProgramacaoDiaCreateManyInput = {
+    id?: string
+    programacaoId: string
+    diaSemana: number
+  }
+
+  export type PortalProgramacaoDiaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PortalProgramacaoDiaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    programacaoId?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PortalProgramacaoItemCreateInput = {
+    id?: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    dia: PortalProgramacaoDiaCreateNestedOneWithoutItensInput
+    produto: ProdutoComercialCreateNestedOneWithoutProgramacaoItensInput
+  }
+
+  export type PortalProgramacaoItemUncheckedCreateInput = {
+    id?: string
+    diaId: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    dia?: PortalProgramacaoDiaUpdateOneRequiredWithoutItensNestedInput
+    produto?: ProdutoComercialUpdateOneRequiredWithoutProgramacaoItensNestedInput
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemCreateManyInput = {
+    id?: string
+    diaId: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaId?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoEntregaCreateInput = {
+    id?: string
+    dataEntrega: Date | string
+    programacao: PortalProgramacaoCreateNestedOneWithoutEntregasInput
+    pedido: PedidoOperacionalCreateNestedOneWithoutProgramacaoEntregaInput
+  }
+
+  export type PortalProgramacaoEntregaUncheckedCreateInput = {
+    id?: string
+    programacaoId: string
+    dataEntrega: Date | string
+    pedidoId: string
+  }
+
+  export type PortalProgramacaoEntregaUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    programacao?: PortalProgramacaoUpdateOneRequiredWithoutEntregasNestedInput
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutProgramacaoEntregaNestedInput
+  }
+
+  export type PortalProgramacaoEntregaUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    programacaoId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type PortalProgramacaoEntregaCreateManyInput = {
+    id?: string
+    programacaoId: string
+    dataEntrega: Date | string
+    pedidoId: string
+  }
+
+  export type PortalProgramacaoEntregaUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalProgramacaoEntregaUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    programacaoId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
   }
 
   export type PortalCadastroCreateInput = {
@@ -50650,6 +55470,7 @@ export namespace Prisma {
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -50679,6 +55500,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
@@ -50708,6 +55530,7 @@ export namespace Prisma {
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -50737,6 +55560,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
@@ -53032,6 +57856,11 @@ export namespace Prisma {
     isNot?: PortalContratoWhereInput | null
   }
 
+  export type PortalProgramacaoNullableScalarRelationFilter = {
+    is?: PortalProgramacaoWhereInput | null
+    isNot?: PortalProgramacaoWhereInput | null
+  }
+
   export type PedidoOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -53395,6 +58224,12 @@ export namespace Prisma {
     isNot?: PortalFotoWhereInput | null
   }
 
+  export type PortalProgramacaoItemListRelationFilter = {
+    every?: PortalProgramacaoItemWhereInput
+    some?: PortalProgramacaoItemWhereInput
+    none?: PortalProgramacaoItemWhereInput
+  }
+
   export type PrecoEspecialClienteListRelationFilter = {
     every?: PrecoEspecialClienteWhereInput
     some?: PrecoEspecialClienteWhereInput
@@ -53417,6 +58252,10 @@ export namespace Prisma {
     every?: EstoqueVivoMixWhereInput
     some?: EstoqueVivoMixWhereInput
     none?: EstoqueVivoMixWhereInput
+  }
+
+  export type PortalProgramacaoItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type PrecoEspecialClienteOrderByRelationAggregateInput = {
@@ -53785,6 +58624,204 @@ export namespace Prisma {
     aceitoEm?: SortOrder
   }
 
+  export type PortalProgramacaoDiaListRelationFilter = {
+    every?: PortalProgramacaoDiaWhereInput
+    some?: PortalProgramacaoDiaWhereInput
+    none?: PortalProgramacaoDiaWhereInput
+  }
+
+  export type PortalProgramacaoEntregaListRelationFilter = {
+    every?: PortalProgramacaoEntregaWhereInput
+    some?: PortalProgramacaoEntregaWhereInput
+    none?: PortalProgramacaoEntregaWhereInput
+  }
+
+  export type PortalProgramacaoDiaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PortalProgramacaoEntregaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PortalProgramacaoOrderByRelevanceInput = {
+    fields: PortalProgramacaoOrderByRelevanceFieldEnum | PortalProgramacaoOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalProgramacaoCountOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalProgramacaoMaxOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type PortalProgramacaoMinOrderByAggregateInput = {
+    id?: SortOrder
+    clienteId?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type PortalProgramacaoScalarRelationFilter = {
+    is?: PortalProgramacaoWhereInput
+    isNot?: PortalProgramacaoWhereInput
+  }
+
+  export type PortalProgramacaoDiaOrderByRelevanceInput = {
+    fields: PortalProgramacaoDiaOrderByRelevanceFieldEnum | PortalProgramacaoDiaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalProgramacaoDiaProgramacaoIdDiaSemanaCompoundUniqueInput = {
+    programacaoId: string
+    diaSemana: number
+  }
+
+  export type PortalProgramacaoDiaCountOrderByAggregateInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    diaSemana?: SortOrder
+  }
+
+  export type PortalProgramacaoDiaAvgOrderByAggregateInput = {
+    diaSemana?: SortOrder
+  }
+
+  export type PortalProgramacaoDiaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    diaSemana?: SortOrder
+  }
+
+  export type PortalProgramacaoDiaMinOrderByAggregateInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    diaSemana?: SortOrder
+  }
+
+  export type PortalProgramacaoDiaSumOrderByAggregateInput = {
+    diaSemana?: SortOrder
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type PortalProgramacaoDiaScalarRelationFilter = {
+    is?: PortalProgramacaoDiaWhereInput
+    isNot?: PortalProgramacaoDiaWhereInput
+  }
+
+  export type PortalProgramacaoItemOrderByRelevanceInput = {
+    fields: PortalProgramacaoItemOrderByRelevanceFieldEnum | PortalProgramacaoItemOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalProgramacaoItemDiaIdProdutoIdCompoundUniqueInput = {
+    diaId: string
+    produtoId: string
+  }
+
+  export type PortalProgramacaoItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    diaId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+  }
+
+  export type PortalProgramacaoItemAvgOrderByAggregateInput = {
+    quantidade?: SortOrder
+  }
+
+  export type PortalProgramacaoItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    diaId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+  }
+
+  export type PortalProgramacaoItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    diaId?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+  }
+
+  export type PortalProgramacaoItemSumOrderByAggregateInput = {
+    quantidade?: SortOrder
+  }
+
+  export type PedidoOperacionalScalarRelationFilter = {
+    is?: PedidoOperacionalWhereInput
+    isNot?: PedidoOperacionalWhereInput
+  }
+
+  export type PortalProgramacaoEntregaOrderByRelevanceInput = {
+    fields: PortalProgramacaoEntregaOrderByRelevanceFieldEnum | PortalProgramacaoEntregaOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalProgramacaoEntregaProgramacaoIdDataEntregaCompoundUniqueInput = {
+    programacaoId: string
+    dataEntrega: Date | string
+  }
+
+  export type PortalProgramacaoEntregaCountOrderByAggregateInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    dataEntrega?: SortOrder
+    pedidoId?: SortOrder
+  }
+
+  export type PortalProgramacaoEntregaMaxOrderByAggregateInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    dataEntrega?: SortOrder
+    pedidoId?: SortOrder
+  }
+
+  export type PortalProgramacaoEntregaMinOrderByAggregateInput = {
+    id?: SortOrder
+    programacaoId?: SortOrder
+    dataEntrega?: SortOrder
+    pedidoId?: SortOrder
+  }
+
   export type PortalCadastroOrderByRelevanceInput = {
     fields: PortalCadastroOrderByRelevanceFieldEnum | PortalCadastroOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -54147,17 +59184,6 @@ export namespace Prisma {
     preco?: SortOrder
   }
 
-  export type IntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[]
-    notIn?: number[]
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
-  }
-
   export type EnumTipoVendaPedidoFilter<$PrismaModel = never> = {
     equals?: $Enums.TipoVendaPedido | EnumTipoVendaPedidoFieldRefInput<$PrismaModel>
     in?: $Enums.TipoVendaPedido[]
@@ -54194,6 +59220,11 @@ export namespace Prisma {
   export type PedidoNullableScalarRelationFilter = {
     is?: PedidoWhereInput | null
     isNot?: PedidoWhereInput | null
+  }
+
+  export type PortalProgramacaoEntregaNullableScalarRelationFilter = {
+    is?: PortalProgramacaoEntregaWhereInput | null
+    isNot?: PortalProgramacaoEntregaWhereInput | null
   }
 
   export type PedidoConciliacaoEventoListRelationFilter = {
@@ -54293,22 +59324,6 @@ export namespace Prisma {
   export type PedidoOperacionalSumOrderByAggregateInput = {
     diaSemana?: SortOrder
     prioridadeEntrega?: SortOrder
-  }
-
-  export type IntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[]
-    notIn?: number[]
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
   }
 
   export type EnumTipoVendaPedidoWithAggregatesFilter<$PrismaModel = never> = {
@@ -54591,11 +59606,6 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     precisaoMetros?: SortOrder
-  }
-
-  export type PedidoOperacionalScalarRelationFilter = {
-    is?: PedidoOperacionalWhereInput
-    isNot?: PedidoOperacionalWhereInput
   }
 
   export type PedidoOperacionalItemOrderByRelevanceInput = {
@@ -56212,6 +61222,12 @@ export namespace Prisma {
     connect?: PortalContratoWhereUniqueInput
   }
 
+  export type PortalProgramacaoCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutClienteInput, PortalProgramacaoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutClienteInput
+    connect?: PortalProgramacaoWhereUniqueInput
+  }
+
   export type PedidoUncheckedCreateNestedManyWithoutClienteInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -56297,6 +61313,12 @@ export namespace Prisma {
     create?: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
     connectOrCreate?: PortalContratoCreateOrConnectWithoutClienteInput
     connect?: PortalContratoWhereUniqueInput
+  }
+
+  export type PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutClienteInput, PortalProgramacaoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutClienteInput
+    connect?: PortalProgramacaoWhereUniqueInput
   }
 
   export type EnumTipoClienteFieldUpdateOperationsInput = {
@@ -56491,6 +61513,16 @@ export namespace Prisma {
     update?: XOR<XOR<PortalContratoUpdateToOneWithWhereWithoutClienteInput, PortalContratoUpdateWithoutClienteInput>, PortalContratoUncheckedUpdateWithoutClienteInput>
   }
 
+  export type PortalProgramacaoUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutClienteInput, PortalProgramacaoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutClienteInput
+    upsert?: PortalProgramacaoUpsertWithoutClienteInput
+    disconnect?: PortalProgramacaoWhereInput | boolean
+    delete?: PortalProgramacaoWhereInput | boolean
+    connect?: PortalProgramacaoWhereUniqueInput
+    update?: XOR<XOR<PortalProgramacaoUpdateToOneWithWhereWithoutClienteInput, PortalProgramacaoUpdateWithoutClienteInput>, PortalProgramacaoUncheckedUpdateWithoutClienteInput>
+  }
+
   export type PedidoUncheckedUpdateManyWithoutClienteNestedInput = {
     create?: XOR<PedidoCreateWithoutClienteInput, PedidoUncheckedCreateWithoutClienteInput> | PedidoCreateWithoutClienteInput[] | PedidoUncheckedCreateWithoutClienteInput[]
     connectOrCreate?: PedidoCreateOrConnectWithoutClienteInput | PedidoCreateOrConnectWithoutClienteInput[]
@@ -56657,6 +61689,16 @@ export namespace Prisma {
     update?: XOR<XOR<PortalContratoUpdateToOneWithWhereWithoutClienteInput, PortalContratoUpdateWithoutClienteInput>, PortalContratoUncheckedUpdateWithoutClienteInput>
   }
 
+  export type PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutClienteInput, PortalProgramacaoUncheckedCreateWithoutClienteInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutClienteInput
+    upsert?: PortalProgramacaoUpsertWithoutClienteInput
+    disconnect?: PortalProgramacaoWhereInput | boolean
+    delete?: PortalProgramacaoWhereInput | boolean
+    connect?: PortalProgramacaoWhereUniqueInput
+    update?: XOR<XOR<PortalProgramacaoUpdateToOneWithWhereWithoutClienteInput, PortalProgramacaoUpdateWithoutClienteInput>, PortalProgramacaoUncheckedUpdateWithoutClienteInput>
+  }
+
   export type ProdutoComercialCreateNestedOneWithoutEstoqueVivoMixesReferenciaInput = {
     create?: XOR<ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput, ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixesReferenciaInput>
     connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixesReferenciaInput
@@ -56761,6 +61803,13 @@ export namespace Prisma {
     connect?: PortalFotoWhereUniqueInput
   }
 
+  export type PortalProgramacaoItemCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutProdutoInput, PortalProgramacaoItemUncheckedCreateWithoutProdutoInput> | PortalProgramacaoItemCreateWithoutProdutoInput[] | PortalProgramacaoItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutProdutoInput | PortalProgramacaoItemCreateOrConnectWithoutProdutoInput[]
+    createMany?: PortalProgramacaoItemCreateManyProdutoInputEnvelope
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+  }
+
   export type PrecoEspecialClienteCreateNestedManyWithoutProdutoInput = {
     create?: XOR<PrecoEspecialClienteCreateWithoutProdutoInput, PrecoEspecialClienteUncheckedCreateWithoutProdutoInput> | PrecoEspecialClienteCreateWithoutProdutoInput[] | PrecoEspecialClienteUncheckedCreateWithoutProdutoInput[]
     connectOrCreate?: PrecoEspecialClienteCreateOrConnectWithoutProdutoInput | PrecoEspecialClienteCreateOrConnectWithoutProdutoInput[]
@@ -56813,6 +61862,13 @@ export namespace Prisma {
     create?: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
     connectOrCreate?: PortalFotoCreateOrConnectWithoutProdutoInput
     connect?: PortalFotoWhereUniqueInput
+  }
+
+  export type PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutProdutoInput, PortalProgramacaoItemUncheckedCreateWithoutProdutoInput> | PortalProgramacaoItemCreateWithoutProdutoInput[] | PortalProgramacaoItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutProdutoInput | PortalProgramacaoItemCreateOrConnectWithoutProdutoInput[]
+    createMany?: PortalProgramacaoItemCreateManyProdutoInputEnvelope
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
   }
 
   export type PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput = {
@@ -56869,6 +61925,20 @@ export namespace Prisma {
     delete?: PortalFotoWhereInput | boolean
     connect?: PortalFotoWhereUniqueInput
     update?: XOR<XOR<PortalFotoUpdateToOneWithWhereWithoutProdutoInput, PortalFotoUpdateWithoutProdutoInput>, PortalFotoUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutProdutoInput, PortalProgramacaoItemUncheckedCreateWithoutProdutoInput> | PortalProgramacaoItemCreateWithoutProdutoInput[] | PortalProgramacaoItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutProdutoInput | PortalProgramacaoItemCreateOrConnectWithoutProdutoInput[]
+    upsert?: PortalProgramacaoItemUpsertWithWhereUniqueWithoutProdutoInput | PortalProgramacaoItemUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PortalProgramacaoItemCreateManyProdutoInputEnvelope
+    set?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    disconnect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    delete?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    update?: PortalProgramacaoItemUpdateWithWhereUniqueWithoutProdutoInput | PortalProgramacaoItemUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PortalProgramacaoItemUpdateManyWithWhereWithoutProdutoInput | PortalProgramacaoItemUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PortalProgramacaoItemScalarWhereInput | PortalProgramacaoItemScalarWhereInput[]
   }
 
   export type PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput = {
@@ -56973,6 +62043,20 @@ export namespace Prisma {
     delete?: PortalFotoWhereInput | boolean
     connect?: PortalFotoWhereUniqueInput
     update?: XOR<XOR<PortalFotoUpdateToOneWithWhereWithoutProdutoInput, PortalFotoUpdateWithoutProdutoInput>, PortalFotoUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutProdutoInput, PortalProgramacaoItemUncheckedCreateWithoutProdutoInput> | PortalProgramacaoItemCreateWithoutProdutoInput[] | PortalProgramacaoItemUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutProdutoInput | PortalProgramacaoItemCreateOrConnectWithoutProdutoInput[]
+    upsert?: PortalProgramacaoItemUpsertWithWhereUniqueWithoutProdutoInput | PortalProgramacaoItemUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: PortalProgramacaoItemCreateManyProdutoInputEnvelope
+    set?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    disconnect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    delete?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    update?: PortalProgramacaoItemUpdateWithWhereUniqueWithoutProdutoInput | PortalProgramacaoItemUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: PortalProgramacaoItemUpdateManyWithWhereWithoutProdutoInput | PortalProgramacaoItemUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: PortalProgramacaoItemScalarWhereInput | PortalProgramacaoItemScalarWhereInput[]
   }
 
   export type PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput = {
@@ -57157,6 +62241,224 @@ export namespace Prisma {
     update?: XOR<XOR<PortalContratoUpdateToOneWithWhereWithoutAceitesInput, PortalContratoUpdateWithoutAceitesInput>, PortalContratoUncheckedUpdateWithoutAceitesInput>
   }
 
+  export type ClienteCreateNestedOneWithoutPortalProgramacaoInput = {
+    create?: XOR<ClienteCreateWithoutPortalProgramacaoInput, ClienteUncheckedCreateWithoutPortalProgramacaoInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalProgramacaoInput
+    connect?: ClienteWhereUniqueInput
+  }
+
+  export type PortalProgramacaoDiaCreateNestedManyWithoutProgramacaoInput = {
+    create?: XOR<PortalProgramacaoDiaCreateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoDiaCreateWithoutProgramacaoInput[] | PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoDiaCreateManyProgramacaoInputEnvelope
+    connect?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+  }
+
+  export type PortalProgramacaoEntregaCreateNestedManyWithoutProgramacaoInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoEntregaCreateWithoutProgramacaoInput[] | PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoEntregaCreateManyProgramacaoInputEnvelope
+    connect?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+  }
+
+  export type PortalProgramacaoDiaUncheckedCreateNestedManyWithoutProgramacaoInput = {
+    create?: XOR<PortalProgramacaoDiaCreateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoDiaCreateWithoutProgramacaoInput[] | PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoDiaCreateManyProgramacaoInputEnvelope
+    connect?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+  }
+
+  export type PortalProgramacaoEntregaUncheckedCreateNestedManyWithoutProgramacaoInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoEntregaCreateWithoutProgramacaoInput[] | PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoEntregaCreateManyProgramacaoInputEnvelope
+    connect?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+  }
+
+  export type ClienteUpdateOneRequiredWithoutPortalProgramacaoNestedInput = {
+    create?: XOR<ClienteCreateWithoutPortalProgramacaoInput, ClienteUncheckedCreateWithoutPortalProgramacaoInput>
+    connectOrCreate?: ClienteCreateOrConnectWithoutPortalProgramacaoInput
+    upsert?: ClienteUpsertWithoutPortalProgramacaoInput
+    connect?: ClienteWhereUniqueInput
+    update?: XOR<XOR<ClienteUpdateToOneWithWhereWithoutPortalProgramacaoInput, ClienteUpdateWithoutPortalProgramacaoInput>, ClienteUncheckedUpdateWithoutPortalProgramacaoInput>
+  }
+
+  export type PortalProgramacaoDiaUpdateManyWithoutProgramacaoNestedInput = {
+    create?: XOR<PortalProgramacaoDiaCreateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoDiaCreateWithoutProgramacaoInput[] | PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput[]
+    upsert?: PortalProgramacaoDiaUpsertWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoDiaUpsertWithWhereUniqueWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoDiaCreateManyProgramacaoInputEnvelope
+    set?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    disconnect?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    delete?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    connect?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    update?: PortalProgramacaoDiaUpdateWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoDiaUpdateWithWhereUniqueWithoutProgramacaoInput[]
+    updateMany?: PortalProgramacaoDiaUpdateManyWithWhereWithoutProgramacaoInput | PortalProgramacaoDiaUpdateManyWithWhereWithoutProgramacaoInput[]
+    deleteMany?: PortalProgramacaoDiaScalarWhereInput | PortalProgramacaoDiaScalarWhereInput[]
+  }
+
+  export type PortalProgramacaoEntregaUpdateManyWithoutProgramacaoNestedInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoEntregaCreateWithoutProgramacaoInput[] | PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput[]
+    upsert?: PortalProgramacaoEntregaUpsertWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoEntregaUpsertWithWhereUniqueWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoEntregaCreateManyProgramacaoInputEnvelope
+    set?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    disconnect?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    delete?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    connect?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    update?: PortalProgramacaoEntregaUpdateWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoEntregaUpdateWithWhereUniqueWithoutProgramacaoInput[]
+    updateMany?: PortalProgramacaoEntregaUpdateManyWithWhereWithoutProgramacaoInput | PortalProgramacaoEntregaUpdateManyWithWhereWithoutProgramacaoInput[]
+    deleteMany?: PortalProgramacaoEntregaScalarWhereInput | PortalProgramacaoEntregaScalarWhereInput[]
+  }
+
+  export type PortalProgramacaoDiaUncheckedUpdateManyWithoutProgramacaoNestedInput = {
+    create?: XOR<PortalProgramacaoDiaCreateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoDiaCreateWithoutProgramacaoInput[] | PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput[]
+    upsert?: PortalProgramacaoDiaUpsertWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoDiaUpsertWithWhereUniqueWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoDiaCreateManyProgramacaoInputEnvelope
+    set?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    disconnect?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    delete?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    connect?: PortalProgramacaoDiaWhereUniqueInput | PortalProgramacaoDiaWhereUniqueInput[]
+    update?: PortalProgramacaoDiaUpdateWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoDiaUpdateWithWhereUniqueWithoutProgramacaoInput[]
+    updateMany?: PortalProgramacaoDiaUpdateManyWithWhereWithoutProgramacaoInput | PortalProgramacaoDiaUpdateManyWithWhereWithoutProgramacaoInput[]
+    deleteMany?: PortalProgramacaoDiaScalarWhereInput | PortalProgramacaoDiaScalarWhereInput[]
+  }
+
+  export type PortalProgramacaoEntregaUncheckedUpdateManyWithoutProgramacaoNestedInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput> | PortalProgramacaoEntregaCreateWithoutProgramacaoInput[] | PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput[]
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput | PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput[]
+    upsert?: PortalProgramacaoEntregaUpsertWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoEntregaUpsertWithWhereUniqueWithoutProgramacaoInput[]
+    createMany?: PortalProgramacaoEntregaCreateManyProgramacaoInputEnvelope
+    set?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    disconnect?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    delete?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    connect?: PortalProgramacaoEntregaWhereUniqueInput | PortalProgramacaoEntregaWhereUniqueInput[]
+    update?: PortalProgramacaoEntregaUpdateWithWhereUniqueWithoutProgramacaoInput | PortalProgramacaoEntregaUpdateWithWhereUniqueWithoutProgramacaoInput[]
+    updateMany?: PortalProgramacaoEntregaUpdateManyWithWhereWithoutProgramacaoInput | PortalProgramacaoEntregaUpdateManyWithWhereWithoutProgramacaoInput[]
+    deleteMany?: PortalProgramacaoEntregaScalarWhereInput | PortalProgramacaoEntregaScalarWhereInput[]
+  }
+
+  export type PortalProgramacaoCreateNestedOneWithoutDiasInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutDiasInput, PortalProgramacaoUncheckedCreateWithoutDiasInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutDiasInput
+    connect?: PortalProgramacaoWhereUniqueInput
+  }
+
+  export type PortalProgramacaoItemCreateNestedManyWithoutDiaInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutDiaInput, PortalProgramacaoItemUncheckedCreateWithoutDiaInput> | PortalProgramacaoItemCreateWithoutDiaInput[] | PortalProgramacaoItemUncheckedCreateWithoutDiaInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutDiaInput | PortalProgramacaoItemCreateOrConnectWithoutDiaInput[]
+    createMany?: PortalProgramacaoItemCreateManyDiaInputEnvelope
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+  }
+
+  export type PortalProgramacaoItemUncheckedCreateNestedManyWithoutDiaInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutDiaInput, PortalProgramacaoItemUncheckedCreateWithoutDiaInput> | PortalProgramacaoItemCreateWithoutDiaInput[] | PortalProgramacaoItemUncheckedCreateWithoutDiaInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutDiaInput | PortalProgramacaoItemCreateOrConnectWithoutDiaInput[]
+    createMany?: PortalProgramacaoItemCreateManyDiaInputEnvelope
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type PortalProgramacaoUpdateOneRequiredWithoutDiasNestedInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutDiasInput, PortalProgramacaoUncheckedCreateWithoutDiasInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutDiasInput
+    upsert?: PortalProgramacaoUpsertWithoutDiasInput
+    connect?: PortalProgramacaoWhereUniqueInput
+    update?: XOR<XOR<PortalProgramacaoUpdateToOneWithWhereWithoutDiasInput, PortalProgramacaoUpdateWithoutDiasInput>, PortalProgramacaoUncheckedUpdateWithoutDiasInput>
+  }
+
+  export type PortalProgramacaoItemUpdateManyWithoutDiaNestedInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutDiaInput, PortalProgramacaoItemUncheckedCreateWithoutDiaInput> | PortalProgramacaoItemCreateWithoutDiaInput[] | PortalProgramacaoItemUncheckedCreateWithoutDiaInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutDiaInput | PortalProgramacaoItemCreateOrConnectWithoutDiaInput[]
+    upsert?: PortalProgramacaoItemUpsertWithWhereUniqueWithoutDiaInput | PortalProgramacaoItemUpsertWithWhereUniqueWithoutDiaInput[]
+    createMany?: PortalProgramacaoItemCreateManyDiaInputEnvelope
+    set?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    disconnect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    delete?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    update?: PortalProgramacaoItemUpdateWithWhereUniqueWithoutDiaInput | PortalProgramacaoItemUpdateWithWhereUniqueWithoutDiaInput[]
+    updateMany?: PortalProgramacaoItemUpdateManyWithWhereWithoutDiaInput | PortalProgramacaoItemUpdateManyWithWhereWithoutDiaInput[]
+    deleteMany?: PortalProgramacaoItemScalarWhereInput | PortalProgramacaoItemScalarWhereInput[]
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateManyWithoutDiaNestedInput = {
+    create?: XOR<PortalProgramacaoItemCreateWithoutDiaInput, PortalProgramacaoItemUncheckedCreateWithoutDiaInput> | PortalProgramacaoItemCreateWithoutDiaInput[] | PortalProgramacaoItemUncheckedCreateWithoutDiaInput[]
+    connectOrCreate?: PortalProgramacaoItemCreateOrConnectWithoutDiaInput | PortalProgramacaoItemCreateOrConnectWithoutDiaInput[]
+    upsert?: PortalProgramacaoItemUpsertWithWhereUniqueWithoutDiaInput | PortalProgramacaoItemUpsertWithWhereUniqueWithoutDiaInput[]
+    createMany?: PortalProgramacaoItemCreateManyDiaInputEnvelope
+    set?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    disconnect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    delete?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    connect?: PortalProgramacaoItemWhereUniqueInput | PortalProgramacaoItemWhereUniqueInput[]
+    update?: PortalProgramacaoItemUpdateWithWhereUniqueWithoutDiaInput | PortalProgramacaoItemUpdateWithWhereUniqueWithoutDiaInput[]
+    updateMany?: PortalProgramacaoItemUpdateManyWithWhereWithoutDiaInput | PortalProgramacaoItemUpdateManyWithWhereWithoutDiaInput[]
+    deleteMany?: PortalProgramacaoItemScalarWhereInput | PortalProgramacaoItemScalarWhereInput[]
+  }
+
+  export type PortalProgramacaoDiaCreateNestedOneWithoutItensInput = {
+    create?: XOR<PortalProgramacaoDiaCreateWithoutItensInput, PortalProgramacaoDiaUncheckedCreateWithoutItensInput>
+    connectOrCreate?: PortalProgramacaoDiaCreateOrConnectWithoutItensInput
+    connect?: PortalProgramacaoDiaWhereUniqueInput
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutProgramacaoItensInput = {
+    create?: XOR<ProdutoComercialCreateWithoutProgramacaoItensInput, ProdutoComercialUncheckedCreateWithoutProgramacaoItensInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutProgramacaoItensInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type PortalProgramacaoDiaUpdateOneRequiredWithoutItensNestedInput = {
+    create?: XOR<PortalProgramacaoDiaCreateWithoutItensInput, PortalProgramacaoDiaUncheckedCreateWithoutItensInput>
+    connectOrCreate?: PortalProgramacaoDiaCreateOrConnectWithoutItensInput
+    upsert?: PortalProgramacaoDiaUpsertWithoutItensInput
+    connect?: PortalProgramacaoDiaWhereUniqueInput
+    update?: XOR<XOR<PortalProgramacaoDiaUpdateToOneWithWhereWithoutItensInput, PortalProgramacaoDiaUpdateWithoutItensInput>, PortalProgramacaoDiaUncheckedUpdateWithoutItensInput>
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutProgramacaoItensNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutProgramacaoItensInput, ProdutoComercialUncheckedCreateWithoutProgramacaoItensInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutProgramacaoItensInput
+    upsert?: ProdutoComercialUpsertWithoutProgramacaoItensInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutProgramacaoItensInput, ProdutoComercialUpdateWithoutProgramacaoItensInput>, ProdutoComercialUncheckedUpdateWithoutProgramacaoItensInput>
+  }
+
+  export type PortalProgramacaoCreateNestedOneWithoutEntregasInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutEntregasInput, PortalProgramacaoUncheckedCreateWithoutEntregasInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutEntregasInput
+    connect?: PortalProgramacaoWhereUniqueInput
+  }
+
+  export type PedidoOperacionalCreateNestedOneWithoutProgramacaoEntregaInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutProgramacaoEntregaInput, PedidoOperacionalUncheckedCreateWithoutProgramacaoEntregaInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutProgramacaoEntregaInput
+    connect?: PedidoOperacionalWhereUniqueInput
+  }
+
+  export type PortalProgramacaoUpdateOneRequiredWithoutEntregasNestedInput = {
+    create?: XOR<PortalProgramacaoCreateWithoutEntregasInput, PortalProgramacaoUncheckedCreateWithoutEntregasInput>
+    connectOrCreate?: PortalProgramacaoCreateOrConnectWithoutEntregasInput
+    upsert?: PortalProgramacaoUpsertWithoutEntregasInput
+    connect?: PortalProgramacaoWhereUniqueInput
+    update?: XOR<XOR<PortalProgramacaoUpdateToOneWithWhereWithoutEntregasInput, PortalProgramacaoUpdateWithoutEntregasInput>, PortalProgramacaoUncheckedUpdateWithoutEntregasInput>
+  }
+
+  export type PedidoOperacionalUpdateOneRequiredWithoutProgramacaoEntregaNestedInput = {
+    create?: XOR<PedidoOperacionalCreateWithoutProgramacaoEntregaInput, PedidoOperacionalUncheckedCreateWithoutProgramacaoEntregaInput>
+    connectOrCreate?: PedidoOperacionalCreateOrConnectWithoutProgramacaoEntregaInput
+    upsert?: PedidoOperacionalUpsertWithoutProgramacaoEntregaInput
+    connect?: PedidoOperacionalWhereUniqueInput
+    update?: XOR<XOR<PedidoOperacionalUpdateToOneWithWhereWithoutProgramacaoEntregaInput, PedidoOperacionalUpdateWithoutProgramacaoEntregaInput>, PedidoOperacionalUncheckedUpdateWithoutProgramacaoEntregaInput>
+  }
+
   export type ProdutoComercialCreateNestedOneWithoutPortalFotoInput = {
     create?: XOR<ProdutoComercialCreateWithoutPortalFotoInput, ProdutoComercialUncheckedCreateWithoutPortalFotoInput>
     connectOrCreate?: ProdutoComercialCreateOrConnectWithoutPortalFotoInput
@@ -57324,6 +62626,12 @@ export namespace Prisma {
     connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
   }
 
+  export type PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedCreateWithoutPedidoInput>
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutPedidoInput
+    connect?: PortalProgramacaoEntregaWhereUniqueInput
+  }
+
   export type PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput = {
     create?: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAvariaCreateWithoutPedidoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput[]
     connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput[]
@@ -57352,6 +62660,12 @@ export namespace Prisma {
     connect?: PedidoOperacionalItemWhereUniqueInput | PedidoOperacionalItemWhereUniqueInput[]
   }
 
+  export type PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedCreateWithoutPedidoInput>
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutPedidoInput
+    connect?: PortalProgramacaoEntregaWhereUniqueInput
+  }
+
   export type PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput = {
     create?: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAvariaCreateWithoutPedidoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput[]
     connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput[]
@@ -57371,14 +62685,6 @@ export namespace Prisma {
     connectOrCreate?: PedidoConciliacaoEventoCreateOrConnectWithoutPedidoOperacionalInput | PedidoConciliacaoEventoCreateOrConnectWithoutPedidoOperacionalInput[]
     createMany?: PedidoConciliacaoEventoCreateManyPedidoOperacionalInputEnvelope
     connect?: PedidoConciliacaoEventoWhereUniqueInput | PedidoConciliacaoEventoWhereUniqueInput[]
-  }
-
-  export type IntFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type EnumTipoVendaPedidoFieldUpdateOperationsInput = {
@@ -57451,6 +62757,16 @@ export namespace Prisma {
     deleteMany?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
   }
 
+  export type PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedCreateWithoutPedidoInput>
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutPedidoInput
+    upsert?: PortalProgramacaoEntregaUpsertWithoutPedidoInput
+    disconnect?: PortalProgramacaoEntregaWhereInput | boolean
+    delete?: PortalProgramacaoEntregaWhereInput | boolean
+    connect?: PortalProgramacaoEntregaWhereUniqueInput
+    update?: XOR<XOR<PortalProgramacaoEntregaUpdateToOneWithWhereWithoutPedidoInput, PortalProgramacaoEntregaUpdateWithoutPedidoInput>, PortalProgramacaoEntregaUncheckedUpdateWithoutPedidoInput>
+  }
+
   export type PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput = {
     create?: XOR<PedidoOperacionalAvariaCreateWithoutPedidoInput, PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput> | PedidoOperacionalAvariaCreateWithoutPedidoInput[] | PedidoOperacionalAvariaUncheckedCreateWithoutPedidoInput[]
     connectOrCreate?: PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput | PedidoOperacionalAvariaCreateOrConnectWithoutPedidoInput[]
@@ -57505,6 +62821,16 @@ export namespace Prisma {
     update?: PedidoOperacionalItemUpdateWithWhereUniqueWithoutPedidoInput | PedidoOperacionalItemUpdateWithWhereUniqueWithoutPedidoInput[]
     updateMany?: PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput | PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput[]
     deleteMany?: PedidoOperacionalItemScalarWhereInput | PedidoOperacionalItemScalarWhereInput[]
+  }
+
+  export type PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput = {
+    create?: XOR<PortalProgramacaoEntregaCreateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedCreateWithoutPedidoInput>
+    connectOrCreate?: PortalProgramacaoEntregaCreateOrConnectWithoutPedidoInput
+    upsert?: PortalProgramacaoEntregaUpsertWithoutPedidoInput
+    disconnect?: PortalProgramacaoEntregaWhereInput | boolean
+    delete?: PortalProgramacaoEntregaWhereInput | boolean
+    connect?: PortalProgramacaoEntregaWhereUniqueInput
+    update?: XOR<XOR<PortalProgramacaoEntregaUpdateToOneWithWhereWithoutPedidoInput, PortalProgramacaoEntregaUpdateWithoutPedidoInput>, PortalProgramacaoEntregaUncheckedUpdateWithoutPedidoInput>
   }
 
   export type PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput = {
@@ -58524,6 +63850,33 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
   export type NestedBytesFilter<$PrismaModel = never> = {
     equals?: Uint8Array | BytesFieldRefInput<$PrismaModel>
     in?: Uint8Array[]
@@ -58628,33 +63981,6 @@ export namespace Prisma {
     in?: $Enums.StatusEnvioContaAzul[]
     notIn?: $Enums.StatusEnvioContaAzul[]
     not?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel> | $Enums.StatusEnvioContaAzul
-  }
-
-  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[]
-    notIn?: number[]
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
-  }
-
-  export type NestedFloatFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[]
-    notIn?: number[]
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatFilter<$PrismaModel> | number
   }
 
   export type NestedEnumTipoVendaPedidoWithAggregatesFilter<$PrismaModel = never> = {
@@ -59043,6 +64369,7 @@ export namespace Prisma {
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -59071,6 +64398,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
@@ -59109,6 +64437,7 @@ export namespace Prisma {
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -59137,6 +64466,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
@@ -59796,6 +65126,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutGrupoInput = {
@@ -59828,6 +65159,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutGrupoInput = {
@@ -60156,6 +65488,7 @@ export namespace Prisma {
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -60184,6 +65517,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
@@ -60398,6 +65732,27 @@ export namespace Prisma {
   export type PortalContratoCreateOrConnectWithoutClienteInput = {
     where: PortalContratoWhereUniqueInput
     create: XOR<PortalContratoCreateWithoutClienteInput, PortalContratoUncheckedCreateWithoutClienteInput>
+  }
+
+  export type PortalProgramacaoCreateWithoutClienteInput = {
+    id?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    dias?: PortalProgramacaoDiaCreateNestedManyWithoutProgramacaoInput
+    entregas?: PortalProgramacaoEntregaCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoUncheckedCreateWithoutClienteInput = {
+    id?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    dias?: PortalProgramacaoDiaUncheckedCreateNestedManyWithoutProgramacaoInput
+    entregas?: PortalProgramacaoEntregaUncheckedCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoCreateOrConnectWithoutClienteInput = {
+    where: PortalProgramacaoWhereUniqueInput
+    create: XOR<PortalProgramacaoCreateWithoutClienteInput, PortalProgramacaoUncheckedCreateWithoutClienteInput>
   }
 
   export type GrupoClienteUpsertWithoutClientesInput = {
@@ -60812,6 +66167,33 @@ export namespace Prisma {
     aceites?: PortalContratoAceiteUncheckedUpdateManyWithoutContratoNestedInput
   }
 
+  export type PortalProgramacaoUpsertWithoutClienteInput = {
+    update: XOR<PortalProgramacaoUpdateWithoutClienteInput, PortalProgramacaoUncheckedUpdateWithoutClienteInput>
+    create: XOR<PortalProgramacaoCreateWithoutClienteInput, PortalProgramacaoUncheckedCreateWithoutClienteInput>
+    where?: PortalProgramacaoWhereInput
+  }
+
+  export type PortalProgramacaoUpdateToOneWithWhereWithoutClienteInput = {
+    where?: PortalProgramacaoWhereInput
+    data: XOR<PortalProgramacaoUpdateWithoutClienteInput, PortalProgramacaoUncheckedUpdateWithoutClienteInput>
+  }
+
+  export type PortalProgramacaoUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    dias?: PortalProgramacaoDiaUpdateManyWithoutProgramacaoNestedInput
+    entregas?: PortalProgramacaoEntregaUpdateManyWithoutProgramacaoNestedInput
+  }
+
+  export type PortalProgramacaoUncheckedUpdateWithoutClienteInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    dias?: PortalProgramacaoDiaUncheckedUpdateManyWithoutProgramacaoNestedInput
+    entregas?: PortalProgramacaoEntregaUncheckedUpdateManyWithoutProgramacaoNestedInput
+  }
+
   export type ProdutoComercialCreateWithoutEstoqueVivoMixesReferenciaInput = {
     id?: string
     nome: string
@@ -60839,6 +66221,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -60875,6 +66258,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -60947,6 +66331,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -60983,6 +66368,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -61068,6 +66454,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -61104,6 +66491,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -61185,6 +66573,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -61221,6 +66610,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -61241,6 +66631,28 @@ export namespace Prisma {
   export type PortalFotoCreateOrConnectWithoutProdutoInput = {
     where: PortalFotoWhereUniqueInput
     create: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PortalProgramacaoItemCreateWithoutProdutoInput = {
+    id?: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    dia: PortalProgramacaoDiaCreateNestedOneWithoutItensInput
+  }
+
+  export type PortalProgramacaoItemUncheckedCreateWithoutProdutoInput = {
+    id?: string
+    diaId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemCreateOrConnectWithoutProdutoInput = {
+    where: PortalProgramacaoItemWhereUniqueInput
+    create: XOR<PortalProgramacaoItemCreateWithoutProdutoInput, PortalProgramacaoItemUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PortalProgramacaoItemCreateManyProdutoInputEnvelope = {
+    data: PortalProgramacaoItemCreateManyProdutoInput | PortalProgramacaoItemCreateManyProdutoInput[]
+    skipDuplicates?: boolean
   }
 
   export type PrecoEspecialClienteCreateWithoutProdutoInput = {
@@ -61370,6 +66782,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -61406,6 +66819,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -61445,6 +66859,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -61480,6 +66895,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -61569,6 +66985,32 @@ export namespace Prisma {
   export type PortalFotoUncheckedUpdateWithoutProdutoInput = {
     conteudo?: BytesFieldUpdateOperationsInput | Uint8Array
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalProgramacaoItemUpsertWithWhereUniqueWithoutProdutoInput = {
+    where: PortalProgramacaoItemWhereUniqueInput
+    update: XOR<PortalProgramacaoItemUpdateWithoutProdutoInput, PortalProgramacaoItemUncheckedUpdateWithoutProdutoInput>
+    create: XOR<PortalProgramacaoItemCreateWithoutProdutoInput, PortalProgramacaoItemUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type PortalProgramacaoItemUpdateWithWhereUniqueWithoutProdutoInput = {
+    where: PortalProgramacaoItemWhereUniqueInput
+    data: XOR<PortalProgramacaoItemUpdateWithoutProdutoInput, PortalProgramacaoItemUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type PortalProgramacaoItemUpdateManyWithWhereWithoutProdutoInput = {
+    where: PortalProgramacaoItemScalarWhereInput
+    data: XOR<PortalProgramacaoItemUpdateManyMutationInput, PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoInput>
+  }
+
+  export type PortalProgramacaoItemScalarWhereInput = {
+    AND?: PortalProgramacaoItemScalarWhereInput | PortalProgramacaoItemScalarWhereInput[]
+    OR?: PortalProgramacaoItemScalarWhereInput[]
+    NOT?: PortalProgramacaoItemScalarWhereInput | PortalProgramacaoItemScalarWhereInput[]
+    id?: StringFilter<"PortalProgramacaoItem"> | string
+    diaId?: StringFilter<"PortalProgramacaoItem"> | string
+    produtoId?: StringFilter<"PortalProgramacaoItem"> | string
+    quantidade?: DecimalFilter<"PortalProgramacaoItem"> | Decimal | DecimalJsLike | number | string
   }
 
   export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutProdutoInput = {
@@ -61686,6 +67128,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -61722,6 +67165,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -61852,6 +67296,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPortalAcessoInput = {
@@ -61884,6 +67329,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPortalAcessoInput = {
@@ -61932,6 +67378,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPortalAcessoInput = {
@@ -61964,6 +67411,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateWithoutPortalContaInput = {
@@ -61996,6 +67444,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPortalContaInput = {
@@ -62028,6 +67477,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPortalContaInput = {
@@ -62076,6 +67526,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPortalContaInput = {
@@ -62108,6 +67559,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateWithoutPortalContratoInput = {
@@ -62140,6 +67592,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPortalContratoInput = {
@@ -62172,6 +67625,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPortalContratoInput = {
@@ -62260,6 +67714,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPortalContratoInput = {
@@ -62292,6 +67747,7 @@ export namespace Prisma {
     paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type PortalContratoAceiteUpsertWithWhereUniqueWithoutContratoInput = {
@@ -62389,6 +67845,715 @@ export namespace Prisma {
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ClienteCreateWithoutPortalProgramacaoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    grupo?: GrupoClienteCreateNestedOneWithoutClientesInput
+    pedidos?: PedidoCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+  }
+
+  export type ClienteUncheckedCreateWithoutPortalProgramacaoInput = {
+    id?: string
+    externalId?: string | null
+    nome: string
+    tipo: $Enums.TipoCliente
+    grupoId?: string | null
+    cnpjCpf?: string | null
+    endereco?: string | null
+    contatoPrincipal?: string | null
+    emailPrincipal?: string | null
+    telefoneWhatsapp?: string | null
+    scoreComercial?: Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento: $Enums.StatusRelacionamento
+    tags: JsonNullValueInput | InputJsonValue
+    urlInstagram?: string | null
+    urlSite?: string | null
+    dataCadastro?: Date | string
+    dataUltimaAtualizacao?: Date | string
+    pedidos?: PedidoUncheckedCreateNestedManyWithoutClienteInput
+    interacoes?: InteracaoUncheckedCreateNestedManyWithoutClienteInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutClienteInput
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutClienteInput
+    execucoes?: ExecucaoApiUncheckedCreateNestedManyWithoutClienteInput
+    regraComercial?: RegraComercialClienteUncheckedCreateNestedOneWithoutClienteInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedCreateNestedManyWithoutClienteInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutClienteInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedCreateNestedManyWithoutClienteInput
+    paradasEntrega?: ParadaEntregaUncheckedCreateNestedManyWithoutClienteInput
+    portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
+    portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
+    portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+  }
+
+  export type ClienteCreateOrConnectWithoutPortalProgramacaoInput = {
+    where: ClienteWhereUniqueInput
+    create: XOR<ClienteCreateWithoutPortalProgramacaoInput, ClienteUncheckedCreateWithoutPortalProgramacaoInput>
+  }
+
+  export type PortalProgramacaoDiaCreateWithoutProgramacaoInput = {
+    id?: string
+    diaSemana: number
+    itens?: PortalProgramacaoItemCreateNestedManyWithoutDiaInput
+  }
+
+  export type PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput = {
+    id?: string
+    diaSemana: number
+    itens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutDiaInput
+  }
+
+  export type PortalProgramacaoDiaCreateOrConnectWithoutProgramacaoInput = {
+    where: PortalProgramacaoDiaWhereUniqueInput
+    create: XOR<PortalProgramacaoDiaCreateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoDiaCreateManyProgramacaoInputEnvelope = {
+    data: PortalProgramacaoDiaCreateManyProgramacaoInput | PortalProgramacaoDiaCreateManyProgramacaoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PortalProgramacaoEntregaCreateWithoutProgramacaoInput = {
+    id?: string
+    dataEntrega: Date | string
+    pedido: PedidoOperacionalCreateNestedOneWithoutProgramacaoEntregaInput
+  }
+
+  export type PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput = {
+    id?: string
+    dataEntrega: Date | string
+    pedidoId: string
+  }
+
+  export type PortalProgramacaoEntregaCreateOrConnectWithoutProgramacaoInput = {
+    where: PortalProgramacaoEntregaWhereUniqueInput
+    create: XOR<PortalProgramacaoEntregaCreateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoEntregaCreateManyProgramacaoInputEnvelope = {
+    data: PortalProgramacaoEntregaCreateManyProgramacaoInput | PortalProgramacaoEntregaCreateManyProgramacaoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ClienteUpsertWithoutPortalProgramacaoInput = {
+    update: XOR<ClienteUpdateWithoutPortalProgramacaoInput, ClienteUncheckedUpdateWithoutPortalProgramacaoInput>
+    create: XOR<ClienteCreateWithoutPortalProgramacaoInput, ClienteUncheckedCreateWithoutPortalProgramacaoInput>
+    where?: ClienteWhereInput
+  }
+
+  export type ClienteUpdateToOneWithWhereWithoutPortalProgramacaoInput = {
+    where?: ClienteWhereInput
+    data: XOR<ClienteUpdateWithoutPortalProgramacaoInput, ClienteUncheckedUpdateWithoutPortalProgramacaoInput>
+  }
+
+  export type ClienteUpdateWithoutPortalProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    grupo?: GrupoClienteUpdateOneWithoutClientesNestedInput
+    pedidos?: PedidoUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+  }
+
+  export type ClienteUncheckedUpdateWithoutPortalProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    externalId?: NullableStringFieldUpdateOperationsInput | string | null
+    nome?: StringFieldUpdateOperationsInput | string
+    tipo?: EnumTipoClienteFieldUpdateOperationsInput | $Enums.TipoCliente
+    grupoId?: NullableStringFieldUpdateOperationsInput | string | null
+    cnpjCpf?: NullableStringFieldUpdateOperationsInput | string | null
+    endereco?: NullableStringFieldUpdateOperationsInput | string | null
+    contatoPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    emailPrincipal?: NullableStringFieldUpdateOperationsInput | string | null
+    telefoneWhatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    scoreComercial?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    statusRelacionamento?: EnumStatusRelacionamentoFieldUpdateOperationsInput | $Enums.StatusRelacionamento
+    tags?: JsonNullValueInput | InputJsonValue
+    urlInstagram?: NullableStringFieldUpdateOperationsInput | string | null
+    urlSite?: NullableStringFieldUpdateOperationsInput | string | null
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    dataUltimaAtualizacao?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidos?: PedidoUncheckedUpdateManyWithoutClienteNestedInput
+    interacoes?: InteracaoUncheckedUpdateManyWithoutClienteNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutClienteNestedInput
+    mensagens?: MensagemUncheckedUpdateManyWithoutClienteNestedInput
+    execucoes?: ExecucaoApiUncheckedUpdateManyWithoutClienteNestedInput
+    regraComercial?: RegraComercialClienteUncheckedUpdateOneWithoutClienteNestedInput
+    pedidosOperacionais?: PedidoOperacionalUncheckedUpdateManyWithoutClienteNestedInput
+    avariasOperacionais?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutClienteNestedInput
+    linksLegadoContaAzul?: ClienteLegadoContaAzulLinkUncheckedUpdateManyWithoutClienteNestedInput
+    paradasEntrega?: ParadaEntregaUncheckedUpdateManyWithoutClienteNestedInput
+    portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
+    portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
+    portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+  }
+
+  export type PortalProgramacaoDiaUpsertWithWhereUniqueWithoutProgramacaoInput = {
+    where: PortalProgramacaoDiaWhereUniqueInput
+    update: XOR<PortalProgramacaoDiaUpdateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedUpdateWithoutProgramacaoInput>
+    create: XOR<PortalProgramacaoDiaCreateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedCreateWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoDiaUpdateWithWhereUniqueWithoutProgramacaoInput = {
+    where: PortalProgramacaoDiaWhereUniqueInput
+    data: XOR<PortalProgramacaoDiaUpdateWithoutProgramacaoInput, PortalProgramacaoDiaUncheckedUpdateWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoDiaUpdateManyWithWhereWithoutProgramacaoInput = {
+    where: PortalProgramacaoDiaScalarWhereInput
+    data: XOR<PortalProgramacaoDiaUpdateManyMutationInput, PortalProgramacaoDiaUncheckedUpdateManyWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoDiaScalarWhereInput = {
+    AND?: PortalProgramacaoDiaScalarWhereInput | PortalProgramacaoDiaScalarWhereInput[]
+    OR?: PortalProgramacaoDiaScalarWhereInput[]
+    NOT?: PortalProgramacaoDiaScalarWhereInput | PortalProgramacaoDiaScalarWhereInput[]
+    id?: StringFilter<"PortalProgramacaoDia"> | string
+    programacaoId?: StringFilter<"PortalProgramacaoDia"> | string
+    diaSemana?: IntFilter<"PortalProgramacaoDia"> | number
+  }
+
+  export type PortalProgramacaoEntregaUpsertWithWhereUniqueWithoutProgramacaoInput = {
+    where: PortalProgramacaoEntregaWhereUniqueInput
+    update: XOR<PortalProgramacaoEntregaUpdateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedUpdateWithoutProgramacaoInput>
+    create: XOR<PortalProgramacaoEntregaCreateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedCreateWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoEntregaUpdateWithWhereUniqueWithoutProgramacaoInput = {
+    where: PortalProgramacaoEntregaWhereUniqueInput
+    data: XOR<PortalProgramacaoEntregaUpdateWithoutProgramacaoInput, PortalProgramacaoEntregaUncheckedUpdateWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoEntregaUpdateManyWithWhereWithoutProgramacaoInput = {
+    where: PortalProgramacaoEntregaScalarWhereInput
+    data: XOR<PortalProgramacaoEntregaUpdateManyMutationInput, PortalProgramacaoEntregaUncheckedUpdateManyWithoutProgramacaoInput>
+  }
+
+  export type PortalProgramacaoEntregaScalarWhereInput = {
+    AND?: PortalProgramacaoEntregaScalarWhereInput | PortalProgramacaoEntregaScalarWhereInput[]
+    OR?: PortalProgramacaoEntregaScalarWhereInput[]
+    NOT?: PortalProgramacaoEntregaScalarWhereInput | PortalProgramacaoEntregaScalarWhereInput[]
+    id?: StringFilter<"PortalProgramacaoEntrega"> | string
+    programacaoId?: StringFilter<"PortalProgramacaoEntrega"> | string
+    dataEntrega?: DateTimeFilter<"PortalProgramacaoEntrega"> | Date | string
+    pedidoId?: StringFilter<"PortalProgramacaoEntrega"> | string
+  }
+
+  export type PortalProgramacaoCreateWithoutDiasInput = {
+    id?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente: ClienteCreateNestedOneWithoutPortalProgramacaoInput
+    entregas?: PortalProgramacaoEntregaCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoUncheckedCreateWithoutDiasInput = {
+    id?: string
+    clienteId: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    entregas?: PortalProgramacaoEntregaUncheckedCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoCreateOrConnectWithoutDiasInput = {
+    where: PortalProgramacaoWhereUniqueInput
+    create: XOR<PortalProgramacaoCreateWithoutDiasInput, PortalProgramacaoUncheckedCreateWithoutDiasInput>
+  }
+
+  export type PortalProgramacaoItemCreateWithoutDiaInput = {
+    id?: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    produto: ProdutoComercialCreateNestedOneWithoutProgramacaoItensInput
+  }
+
+  export type PortalProgramacaoItemUncheckedCreateWithoutDiaInput = {
+    id?: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemCreateOrConnectWithoutDiaInput = {
+    where: PortalProgramacaoItemWhereUniqueInput
+    create: XOR<PortalProgramacaoItemCreateWithoutDiaInput, PortalProgramacaoItemUncheckedCreateWithoutDiaInput>
+  }
+
+  export type PortalProgramacaoItemCreateManyDiaInputEnvelope = {
+    data: PortalProgramacaoItemCreateManyDiaInput | PortalProgramacaoItemCreateManyDiaInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PortalProgramacaoUpsertWithoutDiasInput = {
+    update: XOR<PortalProgramacaoUpdateWithoutDiasInput, PortalProgramacaoUncheckedUpdateWithoutDiasInput>
+    create: XOR<PortalProgramacaoCreateWithoutDiasInput, PortalProgramacaoUncheckedCreateWithoutDiasInput>
+    where?: PortalProgramacaoWhereInput
+  }
+
+  export type PortalProgramacaoUpdateToOneWithWhereWithoutDiasInput = {
+    where?: PortalProgramacaoWhereInput
+    data: XOR<PortalProgramacaoUpdateWithoutDiasInput, PortalProgramacaoUncheckedUpdateWithoutDiasInput>
+  }
+
+  export type PortalProgramacaoUpdateWithoutDiasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutPortalProgramacaoNestedInput
+    entregas?: PortalProgramacaoEntregaUpdateManyWithoutProgramacaoNestedInput
+  }
+
+  export type PortalProgramacaoUncheckedUpdateWithoutDiasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    entregas?: PortalProgramacaoEntregaUncheckedUpdateManyWithoutProgramacaoNestedInput
+  }
+
+  export type PortalProgramacaoItemUpsertWithWhereUniqueWithoutDiaInput = {
+    where: PortalProgramacaoItemWhereUniqueInput
+    update: XOR<PortalProgramacaoItemUpdateWithoutDiaInput, PortalProgramacaoItemUncheckedUpdateWithoutDiaInput>
+    create: XOR<PortalProgramacaoItemCreateWithoutDiaInput, PortalProgramacaoItemUncheckedCreateWithoutDiaInput>
+  }
+
+  export type PortalProgramacaoItemUpdateWithWhereUniqueWithoutDiaInput = {
+    where: PortalProgramacaoItemWhereUniqueInput
+    data: XOR<PortalProgramacaoItemUpdateWithoutDiaInput, PortalProgramacaoItemUncheckedUpdateWithoutDiaInput>
+  }
+
+  export type PortalProgramacaoItemUpdateManyWithWhereWithoutDiaInput = {
+    where: PortalProgramacaoItemScalarWhereInput
+    data: XOR<PortalProgramacaoItemUpdateManyMutationInput, PortalProgramacaoItemUncheckedUpdateManyWithoutDiaInput>
+  }
+
+  export type PortalProgramacaoDiaCreateWithoutItensInput = {
+    id?: string
+    diaSemana: number
+    programacao: PortalProgramacaoCreateNestedOneWithoutDiasInput
+  }
+
+  export type PortalProgramacaoDiaUncheckedCreateWithoutItensInput = {
+    id?: string
+    programacaoId: string
+    diaSemana: number
+  }
+
+  export type PortalProgramacaoDiaCreateOrConnectWithoutItensInput = {
+    where: PortalProgramacaoDiaWhereUniqueInput
+    create: XOR<PortalProgramacaoDiaCreateWithoutItensInput, PortalProgramacaoDiaUncheckedCreateWithoutItensInput>
+  }
+
+  export type ProdutoComercialCreateWithoutProgramacaoItensInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
+    exclusivoPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutProgramacaoItensInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
+    exclusivoPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutProgramacaoItensInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutProgramacaoItensInput, ProdutoComercialUncheckedCreateWithoutProgramacaoItensInput>
+  }
+
+  export type PortalProgramacaoDiaUpsertWithoutItensInput = {
+    update: XOR<PortalProgramacaoDiaUpdateWithoutItensInput, PortalProgramacaoDiaUncheckedUpdateWithoutItensInput>
+    create: XOR<PortalProgramacaoDiaCreateWithoutItensInput, PortalProgramacaoDiaUncheckedCreateWithoutItensInput>
+    where?: PortalProgramacaoDiaWhereInput
+  }
+
+  export type PortalProgramacaoDiaUpdateToOneWithWhereWithoutItensInput = {
+    where?: PortalProgramacaoDiaWhereInput
+    data: XOR<PortalProgramacaoDiaUpdateWithoutItensInput, PortalProgramacaoDiaUncheckedUpdateWithoutItensInput>
+  }
+
+  export type PortalProgramacaoDiaUpdateWithoutItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    programacao?: PortalProgramacaoUpdateOneRequiredWithoutDiasNestedInput
+  }
+
+  export type PortalProgramacaoDiaUncheckedUpdateWithoutItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    programacaoId?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type ProdutoComercialUpsertWithoutProgramacaoItensInput = {
+    update: XOR<ProdutoComercialUpdateWithoutProgramacaoItensInput, ProdutoComercialUncheckedUpdateWithoutProgramacaoItensInput>
+    create: XOR<ProdutoComercialCreateWithoutProgramacaoItensInput, ProdutoComercialUncheckedCreateWithoutProgramacaoItensInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutProgramacaoItensInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutProgramacaoItensInput, ProdutoComercialUncheckedUpdateWithoutProgramacaoItensInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutProgramacaoItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutProgramacaoItensInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type PortalProgramacaoCreateWithoutEntregasInput = {
+    id?: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente: ClienteCreateNestedOneWithoutPortalProgramacaoInput
+    dias?: PortalProgramacaoDiaCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoUncheckedCreateWithoutEntregasInput = {
+    id?: string
+    clienteId: string
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    dias?: PortalProgramacaoDiaUncheckedCreateNestedManyWithoutProgramacaoInput
+  }
+
+  export type PortalProgramacaoCreateOrConnectWithoutEntregasInput = {
+    where: PortalProgramacaoWhereUniqueInput
+    create: XOR<PortalProgramacaoCreateWithoutEntregasInput, PortalProgramacaoUncheckedCreateWithoutEntregasInput>
+  }
+
+  export type PedidoOperacionalCreateWithoutProgramacaoEntregaInput = {
+    id?: string
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    statusConciliacao?: $Enums.StatusConciliacaoOperacional
+    sugestaoPedidoContaAzulId?: string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: string | null
+    freteCortesia?: boolean
+    prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    cliente?: ClienteCreateNestedOneWithoutPedidosOperacionaisInput
+    criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
+    editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
+    pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
+    itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
+    eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
+  }
+
+  export type PedidoOperacionalUncheckedCreateWithoutProgramacaoEntregaInput = {
+    id?: string
+    clienteId?: string | null
+    contaAzulCustomerId: string
+    dataEntrega: Date | string
+    diaSemana: number
+    tipoVenda: $Enums.TipoVendaPedido
+    status?: $Enums.PedidoOperacionalStatus
+    statusConciliacao?: $Enums.StatusConciliacaoOperacional
+    pedidoContaAzulId?: string | null
+    sugestaoPedidoContaAzulId?: string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: string | null
+    freteCortesia?: boolean
+    prioridadeEntrega?: number | null
+    statusEnvioContaAzul?: $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: string | null
+    enviadoContaAzulEm?: Date | string | null
+    ultimoErroEnvioCa?: string | null
+    criadoPorId?: string | null
+    editadoPorId?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
+    eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
+  }
+
+  export type PedidoOperacionalCreateOrConnectWithoutProgramacaoEntregaInput = {
+    where: PedidoOperacionalWhereUniqueInput
+    create: XOR<PedidoOperacionalCreateWithoutProgramacaoEntregaInput, PedidoOperacionalUncheckedCreateWithoutProgramacaoEntregaInput>
+  }
+
+  export type PortalProgramacaoUpsertWithoutEntregasInput = {
+    update: XOR<PortalProgramacaoUpdateWithoutEntregasInput, PortalProgramacaoUncheckedUpdateWithoutEntregasInput>
+    create: XOR<PortalProgramacaoCreateWithoutEntregasInput, PortalProgramacaoUncheckedCreateWithoutEntregasInput>
+    where?: PortalProgramacaoWhereInput
+  }
+
+  export type PortalProgramacaoUpdateToOneWithWhereWithoutEntregasInput = {
+    where?: PortalProgramacaoWhereInput
+    data: XOR<PortalProgramacaoUpdateWithoutEntregasInput, PortalProgramacaoUncheckedUpdateWithoutEntregasInput>
+  }
+
+  export type PortalProgramacaoUpdateWithoutEntregasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneRequiredWithoutPortalProgramacaoNestedInput
+    dias?: PortalProgramacaoDiaUpdateManyWithoutProgramacaoNestedInput
+  }
+
+  export type PortalProgramacaoUncheckedUpdateWithoutEntregasInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: StringFieldUpdateOperationsInput | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    dias?: PortalProgramacaoDiaUncheckedUpdateManyWithoutProgramacaoNestedInput
+  }
+
+  export type PedidoOperacionalUpsertWithoutProgramacaoEntregaInput = {
+    update: XOR<PedidoOperacionalUpdateWithoutProgramacaoEntregaInput, PedidoOperacionalUncheckedUpdateWithoutProgramacaoEntregaInput>
+    create: XOR<PedidoOperacionalCreateWithoutProgramacaoEntregaInput, PedidoOperacionalUncheckedCreateWithoutProgramacaoEntregaInput>
+    where?: PedidoOperacionalWhereInput
+  }
+
+  export type PedidoOperacionalUpdateToOneWithWhereWithoutProgramacaoEntregaInput = {
+    where?: PedidoOperacionalWhereInput
+    data: XOR<PedidoOperacionalUpdateWithoutProgramacaoEntregaInput, PedidoOperacionalUncheckedUpdateWithoutProgramacaoEntregaInput>
+  }
+
+  export type PedidoOperacionalUpdateWithoutProgramacaoEntregaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    statusConciliacao?: EnumStatusConciliacaoOperacionalFieldUpdateOperationsInput | $Enums.StatusConciliacaoOperacional
+    sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    cliente?: ClienteUpdateOneWithoutPedidosOperacionaisNestedInput
+    criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
+    editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
+    pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
+    itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
+    eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
+  }
+
+  export type PedidoOperacionalUncheckedUpdateWithoutProgramacaoEntregaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    clienteId?: NullableStringFieldUpdateOperationsInput | string | null
+    contaAzulCustomerId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    tipoVenda?: EnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido
+    status?: EnumPedidoOperacionalStatusFieldUpdateOperationsInput | $Enums.PedidoOperacionalStatus
+    statusConciliacao?: EnumStatusConciliacaoOperacionalFieldUpdateOperationsInput | $Enums.StatusConciliacaoOperacional
+    pedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    sugestaoPedidoContaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
+    snapshotConciliacao?: NullableJsonNullValueInput | InputJsonValue
+    observacoes?: NullableStringFieldUpdateOperationsInput | string | null
+    freteCortesia?: BoolFieldUpdateOperationsInput | boolean
+    prioridadeEntrega?: NullableIntFieldUpdateOperationsInput | number | null
+    statusEnvioContaAzul?: EnumStatusEnvioContaAzulFieldUpdateOperationsInput | $Enums.StatusEnvioContaAzul
+    contaAzulEnvioExternalId?: NullableStringFieldUpdateOperationsInput | string | null
+    enviadoContaAzulEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ultimoErroEnvioCa?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
+    auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
+    eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
+  }
+
   export type ProdutoComercialCreateWithoutPortalFotoInput = {
     id?: string
     nome: string
@@ -62415,6 +68580,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
@@ -62451,6 +68617,7 @@ export namespace Prisma {
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
@@ -62501,6 +68668,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -62537,6 +68705,7 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -62575,6 +68744,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutRegraComercialInput = {
@@ -62607,6 +68777,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutRegraComercialInput = {
@@ -62681,6 +68852,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutRegraComercialInput = {
@@ -62713,6 +68885,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type PrecoEspecialClienteUpsertWithWhereUniqueWithoutRegraInput = {
@@ -62761,6 +68934,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutLinksLegadoContaAzulInput = {
@@ -62793,6 +68967,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutLinksLegadoContaAzulInput = {
@@ -62841,6 +69016,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutLinksLegadoContaAzulInput = {
@@ -62873,6 +69049,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type RegraComercialClienteCreateWithoutPrecosEspeciaisInput = {
@@ -62943,6 +69120,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
@@ -62979,6 +69157,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
@@ -63076,6 +69255,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
@@ -63112,6 +69292,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
@@ -63149,6 +69330,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosOperacionaisInput = {
@@ -63181,6 +69363,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosOperacionaisInput = {
@@ -63355,6 +69538,23 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PortalProgramacaoEntregaCreateWithoutPedidoInput = {
+    id?: string
+    dataEntrega: Date | string
+    programacao: PortalProgramacaoCreateNestedOneWithoutEntregasInput
+  }
+
+  export type PortalProgramacaoEntregaUncheckedCreateWithoutPedidoInput = {
+    id?: string
+    programacaoId: string
+    dataEntrega: Date | string
+  }
+
+  export type PortalProgramacaoEntregaCreateOrConnectWithoutPedidoInput = {
+    where: PortalProgramacaoEntregaWhereUniqueInput
+    create: XOR<PortalProgramacaoEntregaCreateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedCreateWithoutPedidoInput>
+  }
+
   export type PedidoOperacionalAvariaCreateWithoutPedidoInput = {
     id?: string
     contaAzulCustomerId: string
@@ -63500,6 +69700,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosOperacionaisInput = {
@@ -63532,6 +69733,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutPedidosCriadosInput = {
@@ -63697,6 +69899,29 @@ export namespace Prisma {
   export type PedidoOperacionalItemUpdateManyWithWhereWithoutPedidoInput = {
     where: PedidoOperacionalItemScalarWhereInput
     data: XOR<PedidoOperacionalItemUpdateManyMutationInput, PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoInput>
+  }
+
+  export type PortalProgramacaoEntregaUpsertWithoutPedidoInput = {
+    update: XOR<PortalProgramacaoEntregaUpdateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedUpdateWithoutPedidoInput>
+    create: XOR<PortalProgramacaoEntregaCreateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedCreateWithoutPedidoInput>
+    where?: PortalProgramacaoEntregaWhereInput
+  }
+
+  export type PortalProgramacaoEntregaUpdateToOneWithWhereWithoutPedidoInput = {
+    where?: PortalProgramacaoEntregaWhereInput
+    data: XOR<PortalProgramacaoEntregaUpdateWithoutPedidoInput, PortalProgramacaoEntregaUncheckedUpdateWithoutPedidoInput>
+  }
+
+  export type PortalProgramacaoEntregaUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    programacao?: PortalProgramacaoUpdateOneRequiredWithoutEntregasNestedInput
+  }
+
+  export type PortalProgramacaoEntregaUncheckedUpdateWithoutPedidoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    programacaoId?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PedidoOperacionalAvariaUpsertWithWhereUniqueWithoutPedidoInput = {
@@ -64229,6 +70454,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutParadasEntregaInput = {
@@ -64261,6 +70487,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutParadasEntregaInput = {
@@ -64364,6 +70591,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutParadasEntregaInput = {
@@ -64396,6 +70624,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type RotaEntregaCreateWithoutLocalizacoesInput = {
@@ -64525,6 +70754,7 @@ export namespace Prisma {
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -64553,6 +70783,7 @@ export namespace Prisma {
     editadoPorId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
@@ -64590,6 +70821,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
@@ -64626,6 +70858,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
@@ -64672,6 +70905,7 @@ export namespace Prisma {
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -64700,6 +70934,7 @@ export namespace Prisma {
     editadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
@@ -64743,6 +70978,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
@@ -64779,6 +71015,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
@@ -64810,6 +71047,7 @@ export namespace Prisma {
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
   }
@@ -64838,6 +71076,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
   }
@@ -64877,6 +71116,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutAvariasOperacionaisInput = {
@@ -64909,6 +71149,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutAvariasOperacionaisInput = {
@@ -64943,6 +71184,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
@@ -64979,6 +71221,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
     precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
     itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
@@ -65069,6 +71312,7 @@ export namespace Prisma {
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
   }
@@ -65097,6 +71341,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
   }
@@ -65142,6 +71387,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutAvariasOperacionaisInput = {
@@ -65174,6 +71420,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ProdutoComercialUpsertWithoutAvariasPedidoInput = {
@@ -65214,6 +71461,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
@@ -65250,6 +71498,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
@@ -65330,6 +71579,7 @@ export namespace Prisma {
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
   }
@@ -65358,6 +71608,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
   }
@@ -65445,6 +71696,7 @@ export namespace Prisma {
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
   }
@@ -65473,6 +71725,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
   }
@@ -65556,6 +71809,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutPedidosInput = {
@@ -65588,6 +71842,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutPedidosInput = {
@@ -65648,6 +71903,7 @@ export namespace Prisma {
     criadoPor?: UsuarioCreateNestedOneWithoutPedidosCriadosInput
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoCreateNestedManyWithoutPedidoOperacionalInput
@@ -65676,6 +71932,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedCreateNestedManyWithoutPedidoOperacionalInput
@@ -65768,6 +72025,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutPedidosInput = {
@@ -65800,6 +72058,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ItemPedidoUpsertWithWhereUniqueWithoutPedidoInput = {
@@ -65888,6 +72147,7 @@ export namespace Prisma {
     editadoPor?: UsuarioCreateNestedOneWithoutPedidosEditadosInput
     pedidoContaAzul?: PedidoCreateNestedOneWithoutPedidosOperacionaisVinculoInput
     itens?: PedidoOperacionalItemCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaCreateNestedManyWithoutPedidoInput
   }
@@ -65916,6 +72176,7 @@ export namespace Prisma {
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     itens?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutPedidoInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedCreateNestedOneWithoutPedidoInput
     avarias?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutPedidoInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutPedidoInput
   }
@@ -66005,6 +72266,7 @@ export namespace Prisma {
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
   }
@@ -66033,6 +72295,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
   }
@@ -66214,6 +72477,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutInteracoesInput = {
@@ -66246,6 +72510,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutInteracoesInput = {
@@ -66294,6 +72559,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutInteracoesInput = {
@@ -66326,6 +72592,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteCreateWithoutOportunidadesInput = {
@@ -66358,6 +72625,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutOportunidadesInput = {
@@ -66390,6 +72658,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutOportunidadesInput = {
@@ -66481,6 +72750,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutOportunidadesInput = {
@@ -66513,6 +72783,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutOportunidadesInput = {
@@ -66594,6 +72865,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutMensagensInput = {
@@ -66626,6 +72898,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutMensagensInput = {
@@ -66717,6 +72990,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutMensagensInput = {
@@ -66749,6 +73023,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type UsuarioUpsertWithoutMensagensInput = {
@@ -66830,6 +73105,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteUncheckedCreateWithoutExecucoesInput = {
@@ -66862,6 +73138,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedCreateNestedOneWithoutClienteInput
     portalConta?: PortalContaUncheckedCreateNestedOneWithoutClienteInput
     portalContrato?: PortalContratoUncheckedCreateNestedOneWithoutClienteInput
+    portalProgramacao?: PortalProgramacaoUncheckedCreateNestedOneWithoutClienteInput
   }
 
   export type ClienteCreateOrConnectWithoutExecucoesInput = {
@@ -66910,6 +73187,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutExecucoesInput = {
@@ -66942,6 +73220,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type MensagemCreateManyAprovadorInput = {
@@ -67243,6 +73522,7 @@ export namespace Prisma {
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -67271,6 +73551,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
@@ -67323,6 +73604,7 @@ export namespace Prisma {
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -67351,6 +73633,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
@@ -67693,6 +73976,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateWithoutGrupoInput = {
@@ -67725,6 +74009,7 @@ export namespace Prisma {
     portalAcesso?: PortalAcessoUncheckedUpdateOneWithoutClienteNestedInput
     portalConta?: PortalContaUncheckedUpdateOneWithoutClienteNestedInput
     portalContrato?: PortalContratoUncheckedUpdateOneWithoutClienteNestedInput
+    portalProgramacao?: PortalProgramacaoUncheckedUpdateOneWithoutClienteNestedInput
   }
 
   export type ClienteUncheckedUpdateManyWithoutGrupoInput = {
@@ -68108,6 +74393,7 @@ export namespace Prisma {
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     pedidoContaAzul?: PedidoUpdateOneWithoutPedidosOperacionaisVinculoNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -68136,6 +74422,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
@@ -68312,6 +74599,12 @@ export namespace Prisma {
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
   }
 
+  export type PortalProgramacaoItemCreateManyProdutoInput = {
+    id?: string
+    diaId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
   export type PrecoEspecialClienteCreateManyProdutoInput = {
     id?: string
     regraId: string
@@ -68388,6 +74681,24 @@ export namespace Prisma {
     id?: string
     mixId: string
     quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    dia?: PortalProgramacaoDiaUpdateOneRequiredWithoutItensNestedInput
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
   }
 
   export type PrecoEspecialClienteUpdateWithoutProdutoInput = {
@@ -68522,6 +74833,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
@@ -68557,6 +74869,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
     precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
     itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
@@ -68698,6 +75011,76 @@ export namespace Prisma {
     ip?: StringFieldUpdateOperationsInput | string
     userAgent?: StringFieldUpdateOperationsInput | string
     aceitoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalProgramacaoDiaCreateManyProgramacaoInput = {
+    id?: string
+    diaSemana: number
+  }
+
+  export type PortalProgramacaoEntregaCreateManyProgramacaoInput = {
+    id?: string
+    dataEntrega: Date | string
+    pedidoId: string
+  }
+
+  export type PortalProgramacaoDiaUpdateWithoutProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    itens?: PortalProgramacaoItemUpdateManyWithoutDiaNestedInput
+  }
+
+  export type PortalProgramacaoDiaUncheckedUpdateWithoutProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+    itens?: PortalProgramacaoItemUncheckedUpdateManyWithoutDiaNestedInput
+  }
+
+  export type PortalProgramacaoDiaUncheckedUpdateManyWithoutProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    diaSemana?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type PortalProgramacaoEntregaUpdateWithoutProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedido?: PedidoOperacionalUpdateOneRequiredWithoutProgramacaoEntregaNestedInput
+  }
+
+  export type PortalProgramacaoEntregaUncheckedUpdateWithoutProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type PortalProgramacaoEntregaUncheckedUpdateManyWithoutProgramacaoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dataEntrega?: DateTimeFieldUpdateOperationsInput | Date | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type PortalProgramacaoItemCreateManyDiaInput = {
+    id?: string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemUpdateWithoutDiaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    produto?: ProdutoComercialUpdateOneRequiredWithoutProgramacaoItensNestedInput
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateWithoutDiaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type PortalProgramacaoItemUncheckedUpdateManyWithoutDiaInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
   }
 
   export type PrecoEspecialClienteCreateManyRegraInput = {
@@ -69124,6 +75507,7 @@ export namespace Prisma {
     criadoPor?: UsuarioUpdateOneWithoutPedidosCriadosNestedInput
     editadoPor?: UsuarioUpdateOneWithoutPedidosEditadosNestedInput
     itens?: PedidoOperacionalItemUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUpdateManyWithoutPedidoOperacionalNestedInput
@@ -69152,6 +75536,7 @@ export namespace Prisma {
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     itens?: PedidoOperacionalItemUncheckedUpdateManyWithoutPedidoNestedInput
+    programacaoEntrega?: PortalProgramacaoEntregaUncheckedUpdateOneWithoutPedidoNestedInput
     avarias?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutPedidoNestedInput
     auditoria?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutPedidoNestedInput
     eventosConciliacao?: PedidoConciliacaoEventoUncheckedUpdateManyWithoutPedidoOperacionalNestedInput
