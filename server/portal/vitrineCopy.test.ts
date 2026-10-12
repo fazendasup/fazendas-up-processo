@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jpegValido, produtoVisivelNaLoja } from "./portalLoja";
+import { bytesDaFoto, jpegValido, produtoVisivelNaLoja } from "./portalLoja";
 import { fichaDoProduto } from "./vitrineCopy";
 
 describe("fichaDoProduto", () => {
@@ -26,5 +26,13 @@ describe("fichaDoProduto", () => {
     const jpeg = Buffer.from([0xff, 0xd8, 0xff, ...new Array(120).fill(1)]);
     expect(jpegValido(jpeg)).toBe(true);
     expect(jpegValido(Buffer.from("nao-e-foto"))).toBe(false);
+  });
+
+  it("entrega a foto como buffer, mesmo quando o banco devolve um array de bytes", () => {
+    const jpeg = Uint8Array.from([0xff, 0xd8, 0xff, 1, 2, 3]);
+    const bytes = bytesDaFoto(jpeg);
+    expect(Buffer.isBuffer(bytes)).toBe(true);
+    expect(bytes[0]).toBe(0xff);
+    expect(bytes[1]).toBe(0xd8);
   });
 });

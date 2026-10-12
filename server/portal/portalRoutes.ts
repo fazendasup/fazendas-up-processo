@@ -15,7 +15,7 @@ import {
   upcomingDeliveryDates,
 } from "./portalCalendario";
 import { fichaDoProduto } from "./vitrineCopy";
-import { cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
+import { bytesDaFoto, cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import {
   emitirSessaoCliente,
@@ -357,9 +357,11 @@ export function registerPortalRoutes(app: Express): void {
         res.status(404).end();
         return;
       }
+      const bytes = bytesDaFoto(foto.conteudo);
       res.setHeader("Content-Type", "image/jpeg");
-      res.setHeader("Cache-Control", "public, max-age=60");
-      res.send(foto.conteudo);
+      res.setHeader("Content-Length", String(bytes.length));
+      res.setHeader("Cache-Control", "public, max-age=300");
+      res.end(bytes);
     } catch (error) {
       console.error("[portal] foto", error);
       res.status(404).end();
@@ -1055,7 +1057,7 @@ export function registerPortalRoutes(app: Express): void {
         falha(res, 404, "Produto não encontrado.");
         return;
       }
-      const imagemUrl = `/api/portal/foto/${produto.id}`;
+      const imagemUrl = `/api/portal/foto/${produto.id}?v=${Date.now()}`;
       await prisma.portalFoto.upsert({
         where: { produtoId: produto.id },
         create: { produtoId: produto.id, conteudo },
