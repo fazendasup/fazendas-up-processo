@@ -17,6 +17,8 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("Alface Crespa 200g").foto).toBe("/produtos/alface.jpg?v=1");
     expect(fichaDoProduto("Rúcula").grupo).toBe("Folhas");
     expect(fichaDoProduto("Manjericão Folha Fina 60g").grupo).toBe("Ervas");
+    expect(fichaDoProduto("Folhas de Manjericão 50g").foto).toBe("/produtos/manjericao.jpg?v=1");
+    expect(fichaDoProduto("Baby Leaf -Manjericão").foto).toBe("/produtos/baby-manjericao.jpg");
     expect(fichaDoProduto("Mix Clássico 80g").grupo).toBe("Saladas");
     expect(fichaDoProduto("Mix Clássico 80g").foto).toBe("/produtos/mix-classico.jpg?v=1");
     expect(fichaDoProduto("Mix Chefe - Seleção Especial").foto).toBe("/produtos/mix-chefe.jpg?v=1");

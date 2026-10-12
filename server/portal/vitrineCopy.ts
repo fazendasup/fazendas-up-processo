@@ -124,7 +124,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
       grupo: "Ervas",
       descricao: "Manjericão de folha fina, colhido para uso fresco.",
       aplicacao: "Molho, finalização e salada.",
-      foto: "/produtos/manjericao.jpg",
+      foto: "/produtos/manjericao.jpg?v=1",
     };
   }
   if (/hortela/.test(n)) {
