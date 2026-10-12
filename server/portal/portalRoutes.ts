@@ -15,7 +15,7 @@ import {
   upcomingDeliveryDates,
 } from "./portalCalendario";
 import { fichaDoProduto } from "./vitrineCopy";
-import { bytesDaFoto, cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
+import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import {
   emitirSessaoCliente,
@@ -237,6 +237,7 @@ export function registerPortalRoutes(app: Express): void {
     try {
       const prisma = getComercialPrisma();
       await preencherFichasDaVitrine(prisma);
+      await alinharFotosDeEstoque(prisma);
       const acesso = await clienteDaSessao(req);
       const especiais = await precosDoCliente(acesso?.cliente.externalId ?? null);
       const produtos = await prisma.produtoComercial.findMany({

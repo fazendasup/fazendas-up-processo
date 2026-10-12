@@ -29,7 +29,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
       grupo: "Flores",
       descricao: "Flores comestíveis, colhidas para ir ao prato.",
       aplicacao: "Finalização de prato, drink e sobremesa.",
-      foto: "/produtos/flores.jpg",
+      foto: "/produtos/flores.jpg?v=2",
     };
   }
   if (/molho/.test(n)) {
@@ -42,13 +42,36 @@ export function fichaDoProduto(nome: string): FichaProduto {
   }
   if (micro) {
     const qual = planta(nome).replace("microverde", "").replace("microverdes", "").trim();
+    const fotoMicro = /beterraba/.test(n)
+      ? "/produtos/micro-beterraba.jpg"
+      : /coentro/.test(n)
+        ? "/produtos/micro-coentro.jpg"
+        : /couve/.test(n)
+          ? "/produtos/micro-couve.jpg"
+          : /mostarda/.test(n)
+            ? "/produtos/micro-mostarda.jpg"
+            : /rabanete|rabano/.test(n)
+              ? "/produtos/micro-rabanete.jpg"
+              : /repolho/.test(n)
+                ? "/produtos/micro-repolho-roxo.jpg"
+                : /rucula/.test(n)
+                  ? "/produtos/micro-rucula.jpg"
+                  : "/produtos/microverde.jpg";
     return {
       grupo: "Microverdes",
       descricao: qual
         ? `Microverde de ${qual}, colhido jovem e com sabor concentrado.`
         : "Microverdes colhidos jovens, com sabor concentrado.",
       aplicacao: "Finalização de prato, sanduíche e entrada.",
-      foto: "/produtos/microverde.jpg",
+      foto: fotoMicro,
+    };
+  }
+  if (/baby/.test(n) && /manjericao/.test(n)) {
+    return {
+      grupo: "Ervas",
+      descricao: "Manjericão jovem, de folha macia.",
+      aplicacao: "Finalização, molho e salada.",
+      foto: "/produtos/baby-manjericao.jpg",
     };
   }
   if (/baby/.test(n)) {
@@ -68,7 +91,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
       aplicacao: /crocante|classico|leve|chefe|tudo/.test(n)
         ? "Salada servida, bowl e acompanhamento."
         : "Salada, bowl e linha fria.",
-      foto: "/produtos/mix.jpg",
+      foto: /rucula/.test(n) ? "/produtos/mix-rucula.jpg" : "/produtos/mix.jpg?v=2",
     };
   }
 
@@ -125,12 +148,12 @@ export function fichaDoProduto(nome: string): FichaProduto {
   if (/repolho roxo/.test(n)) return legume("Repolho roxo, de cor firme.", "/produtos/repolho-roxo.jpg");
   if (/repolho/.test(n)) return legume("Repolho verde.", "/produtos/repolho.jpg");
   if (/cebola roxa/.test(n)) return legume("Cebola roxa.", "/produtos/cebola-roxa.jpg");
-  if (/cebola/.test(n)) return legume("Cebola branca.", "/produtos/cebola.jpg");
-  if (/alho/.test(n)) return legume("Alho descascado e higienizado.", "/produtos/alho.jpg");
-  if (/batata portuguesa/.test(n)) return legume("Batata portuguesa.", "/produtos/batata.jpg");
-  if (/batata/.test(n)) return legume("Batata bolinha.", "/produtos/batata-bolinha.jpg");
-  if (/cenoura/.test(n)) return legume("Cenoura.", "/produtos/cenoura.jpg");
-  if (/beterraba/.test(n)) return legume("Beterraba.", "/produtos/beterraba.jpg");
+  if (/cebola/.test(n)) return legume("Cebola branca.", "/produtos/cebola.jpg?v=2");
+  if (/alho/.test(n)) return legume("Alho descascado e higienizado.", "/produtos/alho.jpg?v=2");
+  if (/batata portuguesa/.test(n)) return legume("Batata portuguesa.", "/produtos/batata.jpg?v=2");
+  if (/batata/.test(n)) return legume("Batata bolinha.", "/produtos/batata-bolinha.jpg?v=2");
+  if (/cenoura/.test(n)) return legume("Cenoura.", "/produtos/cenoura.jpg?v=2");
+  if (/beterraba/.test(n)) return legume("Beterraba.", "/produtos/beterraba.jpg?v=2");
   if (/tomate/.test(n)) return legume("Tomate.", "/produtos/tomate.jpg");
   if (/nabo/.test(n)) return legume("Nabo japonês, de sabor suave.", "/produtos/nabo.jpg");
   if (/rabanete|rabano/.test(n)) return legume("Rabanete, de polpa firme e sabor leve.", "/produtos/rabanete.jpg");
@@ -140,7 +163,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
       grupo: "Planos",
       descricao: "Porção fechada do plano, no peso combinado.",
       aplicacao: restaurante ? "Entrega recorrente para a cozinha." : "Entrega recorrente.",
-      foto: "/produtos/mix.jpg",
+      foto: "/produtos/mix.jpg?v=2",
     };
   }
 

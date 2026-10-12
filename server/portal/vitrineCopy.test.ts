@@ -5,6 +5,11 @@ import { fichaDoProduto } from "./vitrineCopy";
 describe("fichaDoProduto", () => {
   it("separa microverde, flor, processado e folha", () => {
     expect(fichaDoProduto("Beterraba / Microverdes").grupo).toBe("Microverdes");
+    expect(fichaDoProduto("Beterraba / Microverdes").foto).toBe("/produtos/micro-beterraba.jpg");
+    expect(fichaDoProduto("Coentro / Microverdes").foto).toBe("/produtos/micro-coentro.jpg");
+    expect(fichaDoProduto("Baby Leaf -Manjericão").foto).toBe("/produtos/baby-manjericao.jpg");
+    expect(fichaDoProduto("MIx de Alfaces com Rúcula 100g").foto).toBe("/produtos/mix-rucula.jpg");
+    expect(fichaDoProduto("Batata Bolinha Kg").foto).not.toBe(fichaDoProduto("Batata Portuguesa Kg").foto);
     expect(fichaDoProduto("Mix de flores - Flores").grupo).toBe("Flores");
     expect(fichaDoProduto("Cenoura Higienizada e Descascada- 200g").grupo).toBe("Processados");
     expect(fichaDoProduto("Alface Crespa Roxa 100g").foto).toBe("/produtos/alface-roxa.jpg");

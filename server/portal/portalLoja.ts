@@ -87,6 +87,28 @@ export async function preencherFichasDaVitrine(prisma: PrismaClient): Promise<vo
   fichasProntas = true;
 }
 
+let fotosAlinhadas = false;
+
+/** Troca a foto de estoque quando ela ainda aponta para um arquivo genérico. A foto enviada pela equipe permanece. */
+export async function alinharFotosDeEstoque(prisma: PrismaClient): Promise<void> {
+  if (fotosAlinhadas) return;
+  const produtos = await prisma.produtoComercial.findMany({
+    where: { importadoOperacao: true },
+    select: { id: true, nome: true, imagemUrl: true },
+  });
+  for (const produto of produtos) {
+    const atual = produto.imagemUrl ?? "";
+    if (atual.startsWith("/api/portal/foto/")) continue;
+    const foto = fichaDoProduto(produto.nome).foto;
+    if (!foto || atual === foto) continue;
+    await prisma.produtoComercial.update({
+      where: { id: produto.id },
+      data: { imagemUrl: foto },
+    });
+  }
+  fotosAlinhadas = true;
+}
+
 function corpoPessoa(dados: DadosEmpresa, comInscricao: boolean): Record<string, unknown> {
   const corpo: Record<string, unknown> = {
     nome: dados.nome,
