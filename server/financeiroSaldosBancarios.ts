@@ -1,8 +1,13 @@
 /**
  * Saldo bancário consolidado do dashboard financeiro.
  * Conta Azul API de saldo-atual é ignorada (costuma vir errada).
- * O usuário informa saldo inicial + data; o sistema aplica baixas de
- * TODAS as contas (recebido − pago) a partir dessa data.
+ * O usuário informa saldo inicial + data. A partir daí o sistema soma
+ * o caixa do Bradesco e da Conta Azul IP:
+ * baixas recebidas − baixas pagas, sem PIX entre essas contas,
+ * e abate transferência que sai delas (cartão, Inter e as demais).
+ * Lançamento que existe só no extrato, sem título nem transferência,
+ * não entra — a fatura do cartão precisa ser informada como pagamento
+ * da conta corrente para o cartão.
  */
 import { getComercialEnv } from "./comercial/env";
 import { getComercialPrisma } from "./comercial/db";
@@ -12,14 +17,54 @@ import {
 } from "./comercial/integrations/conta-azul/conta-azul.client";
 import { ensureValidAccessToken } from "./comercial/integrations/conta-azul/sync.service";
 import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
+import {
+  ehRecebimentoDaPropriaEmpresa,
+  ehTransferenciaEntreContas,
+  efeitoTransferenciaNoCaixaConsolidado,
+} from "@shared/financeiroProjecaoDesembolso";
 import { getFinanceiroCaConfig } from "./financeiroConfigDb";
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+type ParcelaBuscaSaldo = {
+  id?: string;
+  pago?: number;
+  descricao?: string;
+  categorias?: Array<{ nome?: string }>;
+};
+
 type BuscaParcelasResponse = {
-  itens?: Array<{ id?: string; pago?: number }>;
+  itens?: ParcelaBuscaSaldo[];
+  itens_totais?: number;
+};
+
+type LadoSaldo = "rec" | "pag";
+
+/** PIX entre Bradesco e Conta Azul não muda o caixa dos dois juntos. */
+function parcelaEntraNoSaldo(item: ParcelaBuscaSaldo, lado: LadoSaldo): boolean {
+  const pago = Number(item.pago ?? 0);
+  if (!Number.isFinite(pago) || pago <= 0) return false;
+  const descricao = item.descricao ?? "";
+  if (lado === "rec" && ehRecebimentoDaPropriaEmpresa(descricao)) return false;
+  if (lado !== "pag") return true;
+  const categoria =
+    item.categorias
+      ?.map(c => c.nome?.trim())
+      .filter(Boolean)
+      .join(" ") ?? "";
+  return !ehTransferenciaEntreContas(descricao, categoria);
+}
+
+type TransferenciaCaixa = {
+  valor?: number;
+  origem?: { conta_financeira?: { nome?: string } };
+  destino?: { conta_financeira?: { nome?: string } };
+};
+
+type TransferenciasResponse = {
+  itens?: TransferenciaCaixa[];
   itens_totais?: number;
 };
 
@@ -78,7 +123,7 @@ async function somarBaixasTodasContasDesde(
   const vencAmploDe = `${anoDe}-01-01`;
   const vencAmploAte = `${anoAte}-12-31`;
 
-  const somarPath = async (pathBase: string): Promise<number> => {
+  const somarPath = async (pathBase: string, lado: LadoSaldo): Promise<number> => {
     let total = 0;
     const tamanho = 200;
     for (let pagina = 1; pagina <= 80; pagina++) {
@@ -101,19 +146,71 @@ async function somarBaixasTodasContasDesde(
       }
       const batch = res.itens ?? [];
       for (const item of batch) {
-        const pago = Number(item.pago ?? 0);
-        if (Number.isFinite(pago) && pago > 0) total += pago;
+        if (!parcelaEntraNoSaldo(item, lado)) continue;
+        total += Number(item.pago ?? 0);
       }
       if (batch.length < tamanho) break;
     }
     return round2(total);
   };
 
-  const [recebido, pago] = await Promise.all([
-    somarPath("/v1/financeiro/eventos-financeiros/contas-a-receber/buscar"),
-    somarPath("/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar"),
+  const somarTransferenciasForaDoCaixa = async (): Promise<{
+    saida: number;
+    entrada: number;
+    aviso?: string;
+  }> => {
+    let saida = 0;
+    let entrada = 0;
+    const tamanho = 200;
+    try {
+      for (let pagina = 1; pagina <= 40; pagina++) {
+        const qs = new URLSearchParams({
+          pagina: String(pagina),
+          tamanho_pagina: String(tamanho),
+          data_inicio: dataDe,
+          data_fim: hoje,
+        });
+        const res = await contaAzulGet<TransferenciasResponse>(
+          http,
+          `/v1/financeiro/transferencias?${qs.toString()}`,
+        );
+        const batch = res.itens ?? [];
+        for (const item of batch) {
+          const valor = Number(item.valor ?? 0);
+          if (!Number.isFinite(valor) || valor === 0) continue;
+          const efeito = efeitoTransferenciaNoCaixaConsolidado(
+            item.origem?.conta_financeira?.nome,
+            item.destino?.conta_financeira?.nome,
+          );
+          if (efeito === "saida") saida += Math.abs(valor);
+          else if (efeito === "entrada") entrada += Math.abs(valor);
+        }
+        if (batch.length < tamanho) break;
+      }
+    } catch {
+      return {
+        saida: 0,
+        entrada: 0,
+        aviso:
+          "Não foi possível ler as transferências para cartão e outras contas.",
+      };
+    }
+    return { saida: round2(saida), entrada: round2(entrada) };
+  };
+
+  const [recebidoTitulos, pagoTitulos, transferencias] = await Promise.all([
+    somarPath(
+      "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+      "rec",
+    ),
+    somarPath("/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar", "pag"),
+    somarTransferenciasForaDoCaixa(),
   ]);
-  const value = { recebido, pago };
+  const value = {
+    recebido: round2(recebidoTitulos + transferencias.entrada),
+    pago: round2(pagoTitulos + transferencias.saida),
+    aviso: transferencias.aviso,
+  };
   baixasDesdeCache.set(dataDe, { at: Date.now(), value });
   return value;
 }

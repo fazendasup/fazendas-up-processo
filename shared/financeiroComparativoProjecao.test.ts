@@ -10,8 +10,11 @@ import {
 import {
   ehCreditoOuDescontoObtido,
   ehNaoDesembolsoCusto,
+  ehRecebimentoDaPropriaEmpresa,
   ehReceitaVendasCaixa,
   ehTransferenciaEntreContas,
+  efeitoTransferenciaNoCaixaConsolidado,
+  contaCompoeCaixaConsolidado,
   escolherCategoriaReceitaPrincipal,
   type LinhaProjecao,
   type ParcelaBaseProjecao,
@@ -202,6 +205,58 @@ describe("ehTransferenciaEntreContas", () => {
     ).toBe(true);
     expect(ehNaoDesembolsoCusto("", "Transferência entre contas")).toBe(true);
     expect(ehTransferenciaEntreContas("Compra", "Insumos")).toBe(false);
+  });
+});
+
+describe("caixa consolidado Bradesco e Conta Azul", () => {
+  it("soma Bradesco e Conta Azul IP e deixa cartão e Inter de fora", () => {
+    expect(contaCompoeCaixaConsolidado("Conta Bradesco")).toBe(true);
+    expect(contaCompoeCaixaConsolidado("Bradesco- Aplic.Invest facil")).toBe(
+      true,
+    );
+    expect(contaCompoeCaixaConsolidado("Conta PJ Conta Azul IP")).toBe(true);
+    expect(
+      contaCompoeCaixaConsolidado("Cartão Empresarial Sócios - ADSON"),
+    ).toBe(false);
+    expect(contaCompoeCaixaConsolidado("Inter (PJ)")).toBe(false);
+  });
+
+  it("ignora PIX entre as duas contas e abate saída para cartão ou Inter", () => {
+    expect(
+      efeitoTransferenciaNoCaixaConsolidado(
+        "Conta Bradesco",
+        "Conta PJ Conta Azul IP",
+      ),
+    ).toBe("interno");
+    expect(
+      efeitoTransferenciaNoCaixaConsolidado(
+        "Bradesco- Aplic.Invest facil",
+        "Conta Bradesco",
+      ),
+    ).toBe("interno");
+    expect(
+      efeitoTransferenciaNoCaixaConsolidado(
+        "Conta Bradesco",
+        "Cartão Empresarial Sócios - ADSON",
+      ),
+    ).toBe("saida");
+    expect(
+      efeitoTransferenciaNoCaixaConsolidado(
+        "Conta PJ Conta Azul IP",
+        "Inter (PJ)",
+      ),
+    ).toBe("saida");
+  });
+
+  it("não trata PIX da própria empresa como receita", () => {
+    expect(
+      ehRecebimentoDaPropriaEmpresa(
+        "PIX RECEBIDO - REM FAZENDAS UP 02/10 - DOCTO: 1015310",
+      ),
+    ).toBe(true);
+    expect(
+      ehRecebimentoDaPropriaEmpresa("Venda 5613 / NF-e:4514"),
+    ).toBe(false);
   });
 });
 

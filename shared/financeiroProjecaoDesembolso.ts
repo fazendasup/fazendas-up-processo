@@ -369,6 +369,50 @@ export function ehTransferenciaEntreContas(
   );
 }
 
+/**
+ * Caixa que o saldo disponível soma: Conta Azul IP e Bradesco
+ * (corrente e Invest Fácil, que é o mesmo dinheiro).
+ * Cartão, Inter e as demais contas ficam de fora.
+ */
+export function contaCompoeCaixaConsolidado(
+  nome: string | null | undefined,
+): boolean {
+  const n = (nome ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+  if (!n || /\bcartao\b/.test(n)) return false;
+  if (/\bbradesco\b/.test(n)) return true;
+  return /conta\s+azul\s+ip/.test(n);
+}
+
+/** Efeito de uma transferência formal no caixa Bradesco + Conta Azul. */
+export function efeitoTransferenciaNoCaixaConsolidado(
+  origem: string | null | undefined,
+  destino: string | null | undefined,
+): "interno" | "saida" | "entrada" | "fora" {
+  const saiDaConta = contaCompoeCaixaConsolidado(origem);
+  const entraNaConta = contaCompoeCaixaConsolidado(destino);
+  if (saiDaConta && entraNaConta) return "interno";
+  if (saiDaConta) return "saida";
+  if (entraNaConta) return "entrada";
+  return "fora";
+}
+
+/**
+ * PIX da própria empresa (Visioneer / Fazendas UP) não é receita do caixa
+ * consolidado: é o outro lado de uma transferência entre as contas.
+ */
+export function ehRecebimentoDaPropriaEmpresa(descricao: string): boolean {
+  const d = textoNatureza(descricao);
+  if (!/\b(visioneer|fazendas\s+up)\b/.test(d)) return false;
+  return (
+    /\bpix\s+recebido\b/.test(d) ||
+    /\brecebimento\s+por\s+pix\b/.test(d) ||
+    /\brem\b/.test(d)
+  );
+}
+
 /** Não conta como desembolso de custo (desconto obtido, transferência etc.). */
 export function ehNaoDesembolsoCusto(
   descricao: string,

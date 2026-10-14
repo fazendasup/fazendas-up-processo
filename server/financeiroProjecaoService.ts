@@ -1415,7 +1415,8 @@ export async function carregarDashboardKpiDetalhe(
       linhas.push({
         id: "mov-recebido",
         titulo: "Recebido (todas as contas)",
-        subtitulo: "Baixas a receber desde a âncora",
+        subtitulo:
+          "Baixas a receber desde a âncora, sem PIX da própria empresa",
         valor: saldos.movimentos.recebido,
         meta: null,
         grupo: null,
@@ -1423,7 +1424,8 @@ export async function carregarDashboardKpiDetalhe(
       linhas.push({
         id: "mov-pago",
         titulo: "Pago (todas as contas)",
-        subtitulo: "Baixas a pagar desde a âncora",
+        subtitulo:
+          "Baixas a pagar desde a âncora, sem transferência entre Bradesco e Conta Azul, com saída para cartão e outras contas",
         valor: -saldos.movimentos.pago,
         meta: null,
         grupo: null,
@@ -1442,7 +1444,7 @@ export async function carregarDashboardKpiDetalhe(
     return linhasDe(
       linhas,
       "Saldo disponível",
-      "Saldo bancário consolidado (todas as contas): valor manual na data âncora + movimentações Conta Azul.",
+      "Saldo do Bradesco e da Conta Azul: valor na data âncora mais o que entrou e saiu dessas contas. PIX entre elas não entra. Pagamento de cartão e transferência para outra conta entram quando estão lançados na Conta Azul.",
       saldos.saldoBancario ?? 0,
     );
   }
