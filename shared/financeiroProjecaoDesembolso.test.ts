@@ -227,6 +227,45 @@ describe("financeiroProjecaoDesembolso", () => {
     ).toBe(true);
   });
 
+  it("item essencial que só apareceu no mês recente não entra sozinho no plano", () => {
+    const grade = montarProjecaoDesembolso({
+      mesInicioYm: "2026-10",
+      parcelas: [
+        {
+          id: "novo",
+          descricao: "Transporte Urbano (táxi, Uber)",
+          fornecedor: "Uber",
+          rubrica: "Transporte Urbano (táxi, Uber)",
+          valor: 1963.63,
+          valorPago: 1963.63,
+          valorEmAberto: 0,
+          status: "RECEBIDO",
+          dataVencimento: "2026-09-15",
+          dataPagamento: "2026-09-15",
+        },
+      ],
+      parcelasContextoAnterior: [
+        {
+          id: "energia-ago",
+          descricao: "Conta de energia",
+          fornecedor: "CPFL",
+          rubrica: "Energia elétrica",
+          valor: 1000,
+          valorPago: 1000,
+          valorEmAberto: 0,
+          status: "RECEBIDO",
+          dataVencimento: "2026-08-10",
+          dataPagamento: "2026-08-10",
+        },
+      ],
+    });
+    const uber = grade.linhas.find(l =>
+      l.label.includes("Transporte Urbano"),
+    );
+    expect(uber).toBeTruthy();
+    expect(uber!.celulas.find(c => c.mesYm === "2026-10")?.ativo).toBe(false);
+  });
+
   it("sugere valor ao ativar a partir da base da linha", () => {
     expect(
       sugerirValorAoAtivarProjecao(

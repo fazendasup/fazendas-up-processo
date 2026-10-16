@@ -594,9 +594,13 @@ export async function carregarComparativoProjecao(
   const idsVendas = idsCategoriasReceitaVendas(catalogo);
   // Sempre busca todas as baixas do período; filtro de vendas/investimento no cliente.
 
+  const hojeYmCmp = mesIsoAmericaSp();
+  const mesInicioPlanoCmp =
+    mesYm >= hojeYmCmp ? mesAnteriorProjecao(mesYm) : mesYm;
+
   const [grade, pagarMes, receberMes, baixas1, baixas2, receber1, receber2, vendas, rubricasConcluidas] =
     await Promise.all([
-      carregarProjecaoDesembolso(projetoId, mesYm, {
+      carregarProjecaoDesembolso(projetoId, mesInicioPlanoCmp, {
         forceRefreshCa: opts?.forceRefreshCa,
       }),
       carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
@@ -760,7 +764,7 @@ export async function carregarFinanceiroDashboard(
 
   const [
     gradeSerie,
-    gradeAtual,
+    gradePlano,
     pagar2,
     pagar1,
     pagarMes,
@@ -779,7 +783,9 @@ export async function carregarFinanceiroDashboard(
     pagarImpostosHistorico,
   ] = await Promise.all([
     carregarProjecaoDesembolso(projetoId, mes2, { forceRefreshCa: force }),
-    carregarProjecaoDesembolso(projetoId, mesYm, { forceRefreshCa: force }),
+    // Plano do mês atual = grade iniciada no mês anterior (ex.: out lê a
+    // grade de set, com contexto ago), a mesma que a tela de projeção.
+    carregarProjecaoDesembolso(projetoId, mes1, { forceRefreshCa: force }),
     carregarParcelasBaseMes(projetoId, mes2, force),
     carregarParcelasBaseMes(projetoId, mes1, force),
     carregarParcelasBaseMes(projetoId, mesYm, force),
@@ -911,12 +917,12 @@ export async function carregarFinanceiroDashboard(
       diaHoje,
     });
 
-  // Grade série (início em mes−2) tem células dos 3 meses; mês atual
-  // usa a grade “oficial” do comparativo para o projetado do mês.
+  // Grade série (início em mes−2) alimenta mes−2; mes−1 e mês atual
+  // usam a grade iniciada em mes−1 (mesmo horizonte da tela de projeção).
   const d2 = desembolsoDe(mes2, gradeSerie.linhas, pagar2);
-  const d1 = desembolsoDe(mes1, gradeSerie.linhas, pagar1);
+  const d1 = desembolsoDe(mes1, gradePlano.linhas, pagar1);
   const dMes = aplicarRubricasConcluidas(
-    desembolsoDe(mesYm, gradeAtual.linhas, pagarMes),
+    desembolsoDe(mesYm, gradePlano.linhas, pagarMes),
     rubricasConcluidas,
   );
 
@@ -1270,7 +1276,11 @@ export async function carregarDashboardKpiDetalhe(
     kpi === "nao-planejado" ||
     kpi === "saldo-liberado"
   ) {
-    const grade = await carregarProjecaoDesembolso(projetoId, mesYm);
+    // Mês corrente/futuro: mesma grade da projeção (início = mês anterior).
+    const hojeYmKpi = mesIsoAmericaSp();
+    const mesInicioPlano =
+      mesYm >= hojeYmKpi ? mesAnteriorProjecao(mesYm) : mesYm;
+    const grade = await carregarProjecaoDesembolso(projetoId, mesInicioPlano);
     const pagar = await carregarParcelasBaseMes(projetoId, mesYm);
     const dBase = montarComparativoDesembolsoMes({
       mesYm,

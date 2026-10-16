@@ -903,11 +903,18 @@ export function montarProjecaoDesembolso(input: {
   for (const serie of Array.from(seriesMap.values())) {
     const linhaId = hashSerie(serie.key);
     const valor = serie.valorPago;
-    const autoAtivar = serie.essencial || serie.natureza === "recorrente";
     const herdado = pagosPrevioPorSerie.get(serie.key) ?? 0;
     const planoSalvo = planoSalvoDaLinha(linhaId, overrides);
+    const recorrenteOuEssencial =
+      serie.essencial || serie.natureza === "recorrente";
+    // Ao virar o mês, item novo (só no contexto recente) não entra sozinho
+    // no plano — só o que já vinha do mês anterior ou já estava gravado.
+    const tinhaPlanoAnterior = herdado > 0 || planoSalvo != null;
+    const autoAtivar =
+      recorrenteOuEssencial &&
+      (tinhaPlanoAnterior || (input.parcelasContextoAnterior?.length ?? 0) === 0);
     const planoRecorrente =
-      autoAtivar && (planoSalvo != null || herdado > 0)
+      recorrenteOuEssencial && (planoSalvo != null || herdado > 0)
         ? (planoSalvo ?? herdado)
         : valor;
 
