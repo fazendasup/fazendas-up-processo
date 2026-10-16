@@ -39,7 +39,7 @@ import { VISITOR_READONLY_MSG } from '@shared/const';
 import { hrefBpf } from '@shared/bpfDocumento';
 import { useDbIdResolver } from '@/hooks/useDbIdResolver';
 import PerfilFurosGrid from '@/components/PerfilFurosGrid';
-import { TransplantioDistribuidoModal } from '@/components/TransplantioDistribuidoModal';
+import { TransplantioVisualPanel } from '@/components/TransplantioVisualPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1585,8 +1585,8 @@ export default function TorreDetail() {
               </DialogContent>
             </Dialog>
 
-            {/* Andar selecionado — Painel UNIFICADO */}
-            {andarSelecionado && (
+            {/* Andar selecionado — Painel UNIFICADO (oculto no modo transplantio) */}
+            {andarSelecionado && !showTransplantioSmart && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-sm border overflow-hidden">
                 <div className="p-4 border-b flex items-center justify-between">
                   <div>
@@ -2348,7 +2348,7 @@ export default function TorreDetail() {
             </Dialog>
 
             {/* Histórico de colheitas do andar */}
-            {andarSelecionado && torreComModoColheita && registrosColheita && registrosColheita.length > 0 && (
+            {andarSelecionado && !showTransplantioSmart && torreComModoColheita && registrosColheita && registrosColheita.length > 0 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl shadow-sm border overflow-hidden">
                 <div className="p-3 border-b">
                   <h3 className="font-display font-semibold text-sm flex items-center gap-2">
@@ -2574,23 +2574,29 @@ export default function TorreDetail() {
               </DialogContent>
             </Dialog>
 
-            {/* Transplantio inteligente (distribuído) */}
-            <TransplantioDistribuidoModal
-              open={showTransplantioSmart}
-              onOpenChange={setShowTransplantioSmart}
-              origemAndar={andarSelecionado || null}
-              origemTorre={torre || null}
-              torres={data.torres}
-              andares={data.andares}
-              origemAndarDbId={andarSelecionado ? (resolver.andarFrontIdToDbId.get(andarSelecionado.id) ?? null) : null}
-              resolver={resolver as any}
-              projetoTipo={projetoTipo}
-              initialPerfilIndices={selectedPerfis.size > 0 ? getSelectedIndices() : undefined}
-              variedades={data.variedades}
-            />
+            {/* Transplantio visual (na página, sem popup) */}
+            {showTransplantioSmart && andarSelecionado && torre && (
+              <TransplantioVisualPanel
+                origemAndar={andarSelecionado}
+                origemTorre={torre}
+                torres={data.torres}
+                andares={data.andares}
+                origemAndarDbId={
+                  resolver.andarFrontIdToDbId.get(andarSelecionado.id) ?? null
+                }
+                resolver={resolver as { andarFrontIdToDbId: Map<string, number> }}
+                projetoTipo={projetoTipo}
+                initialPerfilIndices={
+                  selectedPerfis.size > 0 ? getSelectedIndices() : undefined
+                }
+                variedades={data.variedades}
+                onCancel={() => setShowTransplantioSmart(false)}
+                onDone={() => setShowTransplantioSmart(false)}
+              />
+            )}
 
             {/* No andar selected */}
-            {!andarSelecionado && (
+            {!andarSelecionado && !showTransplantioSmart && (
               <div className="bg-muted/30 rounded-xl border border-dashed p-6 text-center">
                 <Leaf className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground">Selecione um andar na lista à esquerda para ver detalhes e registrar dados.</p>
