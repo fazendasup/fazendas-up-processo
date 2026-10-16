@@ -22,6 +22,10 @@ import {
 } from "@/lib/utils-farm";
 import { torreReservadaGrelhaBabyLeaf } from "@/lib/planejamentoContinuo";
 import {
+  labelPosicaoProducao,
+  termoUnidadeProducao,
+} from "@/lib/microverdesPhases";
+import {
   resolverFaseDestinoTransplantio,
   type FaseDestinoTransplantioFv,
 } from "@shared/transplantioDestino";
@@ -514,7 +518,7 @@ export function TransplantioVisualPanel({
             <p className="text-[11px] text-muted-foreground">
               {passo === "torre"
                 ? "1. Escolha a torre de destino"
-                : "2. Quantas vão · andares de destino"}
+                : `2. ${termoUnidadeProducao(projetoTipo).plural} · quantidade · andares`}
             </p>
           </div>
         </div>
@@ -634,17 +638,144 @@ export function TransplantioVisualPanel({
               </span>
             </div>
 
+            {(() => {
+              const unid = termoUnidadeProducao(projetoTipo);
+              const tituloOrigem =
+                origemTorre.fase === "mudas"
+                  ? projetoTipo === "microverdes"
+                    ? "Bandejas que vão"
+                    : "Perfis que vão"
+                  : "Perfis que vão";
+              return (
+                <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold">{tituloOrigem}</p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                        disabled={perfisDisponiveisOrigem.length === 0}
+                        onClick={() => {
+                          setPerfisSelecionados([...perfisDisponiveisOrigem]);
+                          setDestinos([]);
+                        }}
+                      >
+                        Todos
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => {
+                          setPerfisSelecionados([]);
+                          setDestinos([]);
+                        }}
+                      >
+                        Limpar
+                      </Button>
+                    </div>
+                  </div>
+                  {perfisDisponiveisOrigem.length === 0 ? (
+                    <p className="text-xs text-amber-700">
+                      Nenhum {unid.singular} com plantas neste andar.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {perfisDisponiveisOrigem.map(idx => {
+                        const marcado = perfisSelecionados.includes(idx);
+                        const perfil = origemAndar.perfis?.find(
+                          p => p.perfilIndex === idx,
+                        );
+                        const varNome = perfil?.variedadeId
+                          ? variedades?.find(v => v.id === perfil.variedadeId)
+                              ?.nome
+                          : null;
+                        const qtdPerfil =
+                          origemTorre.fase === "mudas"
+                            ? projetoTipo === "microverdes"
+                              ? 1
+                              : quantidadePlantasPerfilMudas(
+                                  perfil,
+                                  plantasPorPerfilMudasUi,
+                                )
+                            : (origemAndar.furos || []).filter(
+                                f =>
+                                  f.perfilIndex === idx &&
+                                  f.status === "plantado",
+                              ).length;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setPerfisSelecionados(prev =>
+                                marcado
+                                  ? prev.filter(i => i !== idx)
+                                  : [...prev, idx].sort((a, b) => a - b),
+                              );
+                              setDestinos([]);
+                            }}
+                            className={`rounded-lg border-2 px-3 py-2.5 text-left transition ${
+                              marcado
+                                ? "border-emerald-600 bg-emerald-50 ring-1 ring-emerald-300 dark:bg-emerald-950/40"
+                                : "border-border bg-card text-muted-foreground hover:border-emerald-400"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-sm font-bold">
+                                {labelPosicaoProducao(projetoTipo, idx)}
+                              </span>
+                              {marcado && (
+                                <Check className="h-3.5 w-3.5 text-emerald-700" />
+                              )}
+                            </div>
+                            {varNome && (
+                              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                                {varNome}
+                              </p>
+                            )}
+                            <p className="mt-1 text-[11px] tabular-nums">
+                              {qtdPerfil}{" "}
+                              {projetoTipo === "microverdes"
+                                ? unid.singular
+                                : qtdPerfil === 1
+                                  ? "planta"
+                                  : "plantas"}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {perfisSelecionados.length} de{" "}
+                    {perfisDisponiveisOrigem.length} {unid.plural} · os não
+                    marcados ficam no andar
+                  </p>
+                </div>
+              );
+            })()}
+
             <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    No andar de origem
+                    Nos selecionados
                   </p>
                   <p className="text-3xl font-bold tabular-nums">{origemQtd}</p>
-                  <p className="text-xs text-muted-foreground">plantas</p>
+                  <p className="text-xs text-muted-foreground">
+                    {projetoTipo === "microverdes" ? "bandejas" : "plantas"}
+                  </p>
                 </div>
                 <Stepper
-                  label="Quantas vão"
+                  label={
+                    projetoTipo === "microverdes"
+                      ? "Quantas bandejas vão"
+                      : "Quantas plantas vão"
+                  }
                   value={quantidadeVao}
                   min={0}
                   max={origemQtd}
@@ -681,8 +812,8 @@ export function TransplantioVisualPanel({
                 </div>
               )}
               <p className="text-[11px] text-muted-foreground">
-                Use − / + em “Quantas vão”. O restante vira descarte
-                automaticamente.
+                Marque os {termoUnidadeProducao(projetoTipo).plural} acima.
+                Depois ajuste quantas vão — o restante vira descarte.
               </p>
             </div>
 
