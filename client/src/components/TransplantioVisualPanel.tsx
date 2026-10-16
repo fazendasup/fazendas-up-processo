@@ -14,6 +14,8 @@ import type { Andar, Torre, Fase, VariedadeConfig } from "@/lib/types";
 import {
   capacidadeAndar,
   contarVaziosAndar,
+  contarPlantasAndar,
+  andarOcupado,
   andarDentroDoModeloDaTorre,
   quantidadePlantasPerfilMudas,
   andaresDaTorreDeclarados,
@@ -42,11 +44,78 @@ function datetimeLocalValue(d: Date = new Date()): string {
     .slice(0, 16);
 }
 
+/** Mesmo encurtamento do TorreCard do dashboard. */
+function tituloTorreCompacto(nome: string): string {
+  return nome
+    .replace(/^Torre\s+Matura[cç][aã]o\s+/i, "Torre ")
+    .replace(/^Torre\s+Vegetativa\s+/i, "Torre ")
+    .replace(/^Torre\s+Mudas\s+/i, "Torre ");
+}
+
 function rotuloTorre(torre: Torre): string {
   const baby = torreReservadaGrelhaBabyLeaf(
     torre as Parameters<typeof torreReservadaGrelhaBabyLeaf>[0],
   );
-  return baby ? `${torre.nome} · baby leaf` : torre.nome;
+  const base = tituloTorreCompacto(torre.nome);
+  return baby ? `${base} · baby leaf` : base;
+}
+
+function faseCardClass(fase: Fase): string {
+  if (fase === "mudas") return "card-mudas";
+  if (fase === "vegetativa") return "card-vegetativa";
+  return "card-maturacao";
+}
+
+/** Coluna de andares empilhada — mesmo idioma visual do dashboard. */
+function TorreAndaresStack({
+  andares,
+  fase,
+  projetoTipo,
+  highlightIds,
+  size = "sm",
+}: {
+  andares: Andar[];
+  fase: Fase;
+  projetoTipo?: string | null;
+  highlightIds?: Set<string>;
+  size?: "sm" | "lg";
+}) {
+  const sorted = [...andares].sort((a, b) => b.numero - a.numero);
+  const seg =
+    size === "lg"
+      ? "h-8 w-14 text-xs"
+      : "h-5.5 w-10 text-[9px]";
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="select-none text-center text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+        Andares
+      </span>
+      <div className="flex flex-col gap-0.5 rounded-sm p-px ring-1 ring-border/45">
+        {sorted.map(andar => {
+          const ocupado = andarOcupado(andar, fase, projetoTipo);
+          const highlighted = highlightIds?.has(andar.id);
+          let bg = "bg-muted";
+          if (highlighted) bg = "bg-emerald-600 ring-2 ring-emerald-400";
+          else if (ocupado) bg = "bg-emerald-500";
+          const numClass =
+            highlighted || ocupado
+              ? "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]"
+              : "text-muted-foreground";
+          return (
+            <div
+              key={andar.id}
+              className={`flex shrink-0 items-center justify-center rounded-sm ${seg} ${bg} transition-colors`}
+              title={`Andar ${andar.numero}${ocupado ? " · ocupado" : " · vazio"}`}
+            >
+              <span className={`font-bold tabular-nums leading-none ${numClass}`}>
+                {andar.numero}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 type DestinoLinha = {
@@ -483,30 +552,63 @@ export function TransplantioVisualPanel({
         )}
 
         {passo === "torre" && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {torresDestino.length === 0 ? (
               <p className="col-span-full text-sm text-muted-foreground">
                 Nenhuma torre de destino com vaga nesta fase.
               </p>
             ) : (
-              torresDestino.map(({ torre, vagas }) => (
-                <button
-                  key={torre.id}
-                  type="button"
-                  onClick={() => escolherTorre(torre.id)}
-                  className="rounded-xl border-2 border-emerald-200 bg-emerald-50/50 p-4 text-left transition hover:border-emerald-500 hover:bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20"
-                >
-                  <p className="font-bold text-sm leading-tight">
-                    {rotuloTorre(torre)}
-                  </p>
-                  <p className="mt-2 text-2xl font-bold tabular-nums text-emerald-700">
-                    {vagas}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    vagas livres
-                  </p>
-                </button>
-              ))
+              torresDestino.map(({ torre, vagas, andares: andaresTorre }) => {
+                const fase = (faseDestino ?? torre.fase) as Fase;
+                const ocupados = andaresTorre.filter(a =>
+                  andarOcupado(a, fase, projetoTipo),
+                ).length;
+                const plantas = andaresTorre.reduce(
+                  (s, a) => s + contarPlantasAndar(a, fase, projetoTipo),
+                  0,
+                );
+                return (
+                  <button
+                    key={torre.id}
+                    type="button"
+                    onClick={() => escolherTorre(torre.id)}
+                    className={`group flex min-h-0 min-w-0 overflow-hidden rounded-lg surface-panel text-left transition-transform hover:-translate-y-0.5 ${faseCardClass(fase)}`}
+                  >
+                    <div className="flex shrink-0 flex-col items-center border-r border-border/60 bg-muted/15 px-2 py-2.5">
+                      <TorreAndaresStack
+                        andares={andaresTorre}
+                        fase={fase}
+                        projetoTipo={projetoTipo}
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-2 p-2.5">
+                      <h3 className="font-display text-sm font-semibold leading-snug">
+                        {rotuloTorre(torre)}
+                      </h3>
+                      <div className="flex flex-col gap-1 text-[10px] leading-snug">
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <Sprout className="h-2.5 w-2.5 shrink-0" />
+                          <strong className="tabular-nums">{vagas}</strong>
+                          <span className="text-muted-foreground">vagas livres</span>
+                        </span>
+                        <span className="text-muted-foreground">
+                          <strong className="text-card-foreground tabular-nums">
+                            {ocupados}
+                          </strong>
+                          /{andaresTorre.length} andares ·{" "}
+                          <strong className="text-card-foreground tabular-nums">
+                            {plantas}
+                          </strong>{" "}
+                          em processo
+                        </span>
+                      </div>
+                      <p className="mt-auto border-t border-border/40 pt-1.5 text-[10px] text-muted-foreground">
+                        Toque para escolher esta torre
+                      </p>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         )}
@@ -597,31 +699,89 @@ export function TransplantioVisualPanel({
                   </span>
                 ) : null}
               </p>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                {andaresDestinoUi.map(({ andar, disp }) => {
-                  const sel = destinos.find(d => d.andarIdFront === andar.id);
-                  const vazio = disp <= 0;
-                  return (
-                    <button
-                      key={andar.id}
-                      type="button"
-                      disabled={vazio && !sel}
-                      onClick={() => toggleDestinoAndar(andar, disp)}
-                      className={`rounded-lg border-2 p-2 text-center transition ${
-                        sel
-                          ? "border-emerald-600 bg-emerald-100 dark:bg-emerald-900/40"
-                          : vazio
-                            ? "border-muted bg-muted/40 opacity-40"
-                            : "border-muted hover:border-emerald-400"
-                      }`}
-                    >
-                      <p className="text-xs font-bold">A{andar.numero}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {sel ? `${sel.quantidade}/${disp}` : `${disp} livres`}
-                      </p>
-                    </button>
-                  );
-                })}
+              <div
+                className={`inline-flex overflow-hidden rounded-lg surface-panel ${faseCardClass(
+                  (faseDestino ?? torreDestino.torre.fase) as Fase,
+                )}`}
+              >
+                <div className="flex flex-col items-center gap-1 border-r border-border/60 bg-muted/15 px-3 py-3">
+                  <span className="select-none text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Andares
+                  </span>
+                  <div className="flex flex-col gap-1 rounded-sm p-px ring-1 ring-border/45">
+                    {andaresDestinoUi.map(({ andar, disp }) => {
+                      const sel = destinos.find(
+                        d => d.andarIdFront === andar.id,
+                      );
+                      const lotado = disp <= 0 && !sel;
+                      const ocupado = andarOcupado(
+                        andar,
+                        faseDestino ?? torreDestino.torre.fase,
+                        projetoTipo,
+                      );
+                      let bg = "bg-muted hover:bg-muted/80";
+                      if (sel) bg = "bg-emerald-600 ring-2 ring-emerald-300";
+                      else if (lotado) bg = "bg-muted opacity-40";
+                      else if (ocupado) bg = "bg-emerald-500/70 hover:bg-emerald-500";
+                      else bg = "bg-sky-100 hover:bg-sky-200 dark:bg-sky-950/50 dark:hover:bg-sky-900/60";
+                      const numClass =
+                        sel || (ocupado && !lotado)
+                          ? "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]"
+                          : lotado
+                            ? "text-muted-foreground"
+                            : "text-sky-900 dark:text-sky-100";
+                      return (
+                        <button
+                          key={andar.id}
+                          type="button"
+                          disabled={lotado}
+                          onClick={() => toggleDestinoAndar(andar, disp)}
+                          title={
+                            sel
+                              ? `Andar ${andar.numero}: ${sel.quantidade} plantas`
+                              : lotado
+                                ? `Andar ${andar.numero}: sem vaga`
+                                : `Andar ${andar.numero}: ${disp} livres`
+                          }
+                          className={`flex h-10 w-16 shrink-0 flex-col items-center justify-center rounded-sm ${bg} transition disabled:cursor-not-allowed`}
+                        >
+                          <span
+                            className={`text-sm font-bold tabular-nums leading-none ${numClass}`}
+                          >
+                            {andar.numero}
+                          </span>
+                          <span
+                            className={`mt-0.5 text-[9px] tabular-nums leading-none ${
+                              sel
+                                ? "text-emerald-100"
+                                : lotado
+                                  ? "text-muted-foreground"
+                                  : "text-muted-foreground"
+                            }`}
+                          >
+                            {sel ? sel.quantidade : disp}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 max-w-[4.5rem] text-center text-[9px] leading-tight text-muted-foreground">
+                    Verde = destino · número = livres ou qtd
+                  </p>
+                </div>
+                <div className="flex min-w-[10rem] flex-col justify-center gap-1.5 p-3 text-[11px]">
+                  <p className="font-display text-sm font-semibold">
+                    {rotuloTorre(torreDestino.torre)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Mesmo desenho do dashboard: topo = andar mais alto.
+                  </p>
+                  {destinos.length > 0 && (
+                    <p className="text-emerald-700 dark:text-emerald-400">
+                      {destinos.length} andar(es) selecionado(s)
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
