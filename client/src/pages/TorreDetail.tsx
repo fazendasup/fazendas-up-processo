@@ -1727,22 +1727,22 @@ export default function TorreDetail() {
                         <Button type="submit" className="h-10 text-sm px-4">Salvar Data</Button>
                       </div>
                     )}
-                    {usandoVariedadeIndividual && !(isMudas && !isMicroverdes) && (
-                      <p className="text-xs text-amber-700">
+                    {usandoVariedadeIndividual && (
+                      <p className="text-xs text-muted-foreground">
                         {isMicroverdes
-                          ? 'Há variedade por bandeja — defina a data em cada posição abaixo.'
-                          : 'Há variedade por perfil — defina a data em cada perfil abaixo.'}
+                          ? 'Variedade distinta por bandeja — ajuste data em cada posição no grid abaixo.'
+                          : 'Variedade distinta por perfil — ajuste data em cada posição no grid abaixo.'}
                       </p>
                     )}
 
-                    {/* Resumo compacto + datas por perfil só fora de mudas FV (lá o grid já edita) */}
+                    {/* Só resumo; edição de data/qtd fica no grid único (todas as fases) */}
                     {(() => {
                       const perfisAtivos = (andarSelecionado.perfis || []).filter((p) => p.ativo);
                       if (perfisAtivos.length === 0) return null;
 
                       const perfilStatuses = perfisAtivos.map((p) => {
                         const dateStr = p.dataEntrada || andarSelecionado.dataEntrada;
-                        if (!dateStr) return { perfilIndex: p.perfilIndex, rest: null, varId: p.variedadeId, dateStr: null };
+                        if (!dateStr) return { rest: null as number | null };
                         const rest = diasRestantes(
                           dateStr,
                           torre.fase,
@@ -1750,7 +1750,7 @@ export default function TorreDetail() {
                           data.variedades,
                           cicloPrazoOptsFromFazenda(data),
                         );
-                        return { perfilIndex: p.perfilIndex, rest, varId: p.variedadeId, dateStr };
+                        return { rest };
                       });
 
                       const prontos = perfilStatuses.filter((s) => s.rest !== null && s.rest <= 0).length;
@@ -1758,98 +1758,32 @@ export default function TorreDetail() {
                       const emProcesso = perfilStatuses.filter((s) => s.rest !== null && s.rest > 3).length;
                       const semData = perfilStatuses.filter((s) => s.rest === null).length;
                       const total = perfilStatuses.length;
-                      const mudasFvUnificado = isMudas && !isMicroverdes;
+                      if (prontos + quaseProntos + emProcesso + semData === 0) return null;
 
                       return (
-                        <div className="mt-1 space-y-3">
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {prontos > 0 && (
-                              <div className="p-1.5 rounded bg-red-50 border border-red-200 text-center">
-                                <p className="text-[10px] text-red-600 font-medium">{labelPrevisao(torre.fase, projetoTipo)}</p>
-                                <p className="font-display font-bold text-base text-red-700">{prontos}/{total}</p>
-                              </div>
-                            )}
-                            {quaseProntos > 0 && (
-                              <div className="p-1.5 rounded bg-amber-50 border border-amber-200 text-center">
-                                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Quase Prontos</p>
-                                <p className="font-display font-bold text-base text-amber-700">{quaseProntos}/{total}</p>
-                              </div>
-                            )}
-                            {emProcesso > 0 && (
-                              <div className="p-1.5 rounded bg-emerald-50 border border-emerald-200 text-center">
-                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Em Processo</p>
-                                <p className="font-display font-bold text-base text-emerald-700 dark:text-emerald-300">{emProcesso}/{total}</p>
-                              </div>
-                            )}
-                            {semData > 0 && (
-                              <div className="p-1.5 rounded bg-background text-center">
-                                <p className="text-[10px] text-muted-foreground">Sem Data</p>
-                                <p className="font-display font-bold text-base text-muted-foreground">{semData}/{total}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {!mudasFvUnificado && perfilStatuses.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="text-xs font-semibold text-muted-foreground">
-                                {isMicroverdes ? 'Datas por bandeja:' : 'Datas por Perfil:'}
-                              </p>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {perfilStatuses.map((ps) => {
-                                  const perfil = (andarSelecionado.perfis || []).find((p) => p.perfilIndex === ps.perfilIndex);
-                                  const variedade = ps.varId ? data.variedades.find((v) => v.id === ps.varId) : undefined;
-                                  const perfilDate = perfil?.dataEntrada || andarSelecionado.dataEntrada || '';
-                                  const dateValue = valorCampoDataPlantio(
-                                    modoFuros === 'transplantio' ? modoDataPlantio : 'plantio',
-                                    perfilDate || null,
-                                    torre.fase,
-                                    ps.varId ?? undefined,
-                                    data.variedades,
-                                    cicloOpts,
-                                  );
-                                  return (
-                                    <div key={ps.perfilIndex} className={`p-2 rounded-lg border-2 ${
-                                      ps.rest !== null && ps.rest <= 0 ? 'border-red-400 bg-red-50 ring-1 ring-red-200 dark:border-red-700 dark:bg-red-950/35 dark:ring-red-900/60' :
-                                      ps.rest !== null && ps.rest <= 3 ? 'border-amber-400 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/35' :
-                                      ps.rest !== null ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-700/70 dark:bg-emerald-950/40' :
-                                      'border-border bg-muted/30'
-                                    }`}>
-                                      <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-1">
-                                          <span className={`font-bold text-xs ${
-                                            ps.rest !== null && ps.rest <= 0 ? 'text-red-700 dark:text-red-300' :
-                                            ps.rest !== null && ps.rest <= 3 ? 'text-amber-700 dark:text-amber-300' : ''
-                                          }`}>{labelPosicaoProducao(isMicroverdes ? 'microverdes' : projetoTipo, ps.perfilIndex)}</span>
-                                          {variedade && (
-                                            <span className="text-[10px] text-muted-foreground truncate max-w-[60px]">{variedade.nome}</span>
-                                          )}
-                                        </div>
-                                        {ps.rest !== null && (
-                                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                            ps.rest <= 0 ? 'bg-red-200 text-red-800 animate-pulse' :
-                                            ps.rest <= 3 ? 'bg-amber-200 text-amber-800' : 'bg-emerald-200 text-emerald-800 dark:text-emerald-200'
-                                          }`}>
-                                            {ps.rest <= 0 ? `${labelPrevisao(torre.fase, projetoTipo)}!` : `${ps.rest}d`}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <Input
-                                        type="date"
-                                        className="h-7 text-[11px]"
-                                        defaultValue={dateValue}
-                                        key={`${andarSelecionado.id}-p${ps.perfilIndex}-date-${modoDataPlantio}-${dateValue}`}
-                                        onChange={(e) => handleUpdatePerfilData(ps.perfilIndex, e.target.value)}
-                                        onBlur={(e) => {
-                                          const newVal = e.target.value;
-                                          if (newVal && newVal !== dateValue) {
-                                            handleUpdatePerfilData(ps.perfilIndex, newVal);
-                                          }
-                                        }}
-                                      />
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {prontos > 0 && (
+                            <div className="p-1.5 rounded bg-red-50 border border-red-200 text-center">
+                              <p className="text-[10px] text-red-600 font-medium">{labelPrevisao(torre.fase, projetoTipo)}</p>
+                              <p className="font-display font-bold text-base text-red-700">{prontos}/{total}</p>
+                            </div>
+                          )}
+                          {quaseProntos > 0 && (
+                            <div className="p-1.5 rounded bg-amber-50 border border-amber-200 text-center">
+                              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Quase Prontos</p>
+                              <p className="font-display font-bold text-base text-amber-700">{quaseProntos}/{total}</p>
+                            </div>
+                          )}
+                          {emProcesso > 0 && (
+                            <div className="p-1.5 rounded bg-emerald-50 border border-emerald-200 text-center">
+                              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Em Processo</p>
+                              <p className="font-display font-bold text-base text-emerald-700 dark:text-emerald-300">{emProcesso}/{total}</p>
+                            </div>
+                          )}
+                          {semData > 0 && (
+                            <div className="p-1.5 rounded bg-background text-center">
+                              <p className="text-[10px] text-muted-foreground">Sem Data</p>
+                              <p className="font-display font-bold text-base text-muted-foreground">{semData}/{total}</p>
                             </div>
                           )}
                         </div>
