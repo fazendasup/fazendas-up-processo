@@ -314,17 +314,17 @@ export async function carregarProjecaoDesembolso(
   }
 
   const mesContextoYm = mesAnteriorProjecao(mesInicioYm);
+  const mesPrevioContextoYm = mesAnteriorProjecao(mesContextoYm);
+  const forceCa = opts?.forceRefreshCa === true;
 
-  const [colunasDb, linhasDb, celulasDb, parcelasContexto] = await Promise.all([
-    listProjecaoColunas(projetoId),
-    listProjecaoLinhasManuais(projetoId),
-    listProjecaoCelulaOverrides(projetoId),
-    carregarParcelasBaseMes(
-      projetoId,
-      mesContextoYm,
-      opts?.forceRefreshCa === true,
-    ),
-  ]);
+  const [colunasDb, linhasDb, celulasDb, parcelasContexto, parcelasPrevio] =
+    await Promise.all([
+      listProjecaoColunas(projetoId),
+      listProjecaoLinhasManuais(projetoId),
+      listProjecaoCelulaOverrides(projetoId),
+      carregarParcelasBaseMes(projetoId, mesContextoYm, forceCa),
+      carregarParcelasBaseMes(projetoId, mesPrevioContextoYm, forceCa),
+    ]);
 
   const colunasExtraYm = colunasDb.map(c => c.mesYm);
 
@@ -332,6 +332,7 @@ export async function carregarProjecaoDesembolso(
     mesInicioYm,
     colunasExtraYm,
     parcelas: parcelasContexto,
+    parcelasContextoAnterior: parcelasPrevio,
     historico: [],
     linhasManuais: linhasDb.map(l => ({
       id: l.id,
@@ -348,6 +349,21 @@ export async function carregarProjecaoDesembolso(
       ativo: c.ativo,
     })),
   });
+
+  // Congela o plano recorrente no banco para o próximo mês não
+  // trocar energia/aluguel pelo pago recente do Conta Azul.
+  if (grade.celulasParaFixar.length > 0) {
+    await Promise.all(
+      grade.celulasParaFixar.map(c =>
+        upsertProjecaoCelula(projetoId, {
+          linhaId: c.linhaId,
+          mesYm: c.mesYm,
+          valorOverride: c.valorOverride,
+          ativo: c.ativo,
+        }).catch(() => null),
+      ),
+    );
+  }
 
   // Média dos 3 meses anteriores ao mês de referência da projeção
   // (ex.: set → jun/jul/ago), não o mês contexto nem o mês atual.

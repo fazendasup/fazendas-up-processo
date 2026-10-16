@@ -184,6 +184,49 @@ describe("financeiroProjecaoDesembolso", () => {
     expect(grade.totalGeral).toBe(55800);
   });
 
+  it("ao virar o mês, energia recorrente mantém o plano de dois meses atrás", () => {
+    const parcela = (
+      id: string,
+      mesPag: string,
+      valor: number,
+    ) => ({
+      id,
+      descricao: "Pagamento via Pix copia e cola para AMAZONAS ENERGIA S.A",
+      fornecedor: "AMAZONAS ENERGIA S.A",
+      rubrica: "Energia Elétrica",
+      valor,
+      valorPago: valor,
+      valorEmAberto: 0,
+      status: "RECEBIDO",
+      dataVencimento: `${mesPag}-10`,
+      dataPagamento: `${mesPag}-18`,
+    });
+
+    const grade = montarProjecaoDesembolso({
+      mesInicioYm: "2026-10",
+      parcelas: [parcela("set", "2026-09", 20_069.85)],
+      parcelasContextoAnterior: [parcela("ago", "2026-08", 34_995.3)],
+    });
+
+    const lin = grade.linhas[0]!;
+    expect(lin.celulas.find(c => c.mesYm === "2026-09")?.valorEfetivo).toBe(
+      20_069.85,
+    );
+    expect(lin.celulas.find(c => c.mesYm === "2026-10")?.valorEfetivo).toBe(
+      34_995.3,
+    );
+    expect(lin.celulas.find(c => c.mesYm === "2026-11")?.valorEfetivo).toBe(
+      34_995.3,
+    );
+    expect(lin.celulas.find(c => c.mesYm === "2026-12")?.valorEfetivo).toBe(
+      34_995.3,
+    );
+    expect(grade.celulasParaFixar.length).toBeGreaterThan(0);
+    expect(
+      grade.celulasParaFixar.every(c => c.valorOverride === 34_995.3),
+    ).toBe(true);
+  });
+
   it("sugere valor ao ativar a partir da base da linha", () => {
     expect(
       sugerirValorAoAtivarProjecao(

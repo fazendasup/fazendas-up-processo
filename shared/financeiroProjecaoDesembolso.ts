@@ -718,13 +718,52 @@ function aplicarOverride(
   const valorEfetivo =
     ov.valorOverride != null && Number.isFinite(ov.valorOverride)
       ? round2(ov.valorOverride)
-      : base.valorBase;
+      : base.valorEfetivo > 0
+        ? base.valorEfetivo
+        : base.valorBase;
   const ativo = ov.ativo == null ? base.ativo : !!ov.ativo;
   return {
     ...base,
     valorEfetivo,
     ativo,
   };
+}
+
+/** Plano já gravado em qualquer mês da mesma linha (o mais recente). */
+function planoSalvoDaLinha(
+  linhaId: string,
+  overrides: OverrideCelulaProjecao[],
+): number | null {
+  let melhor: { mesYm: string; valor: number } | null = null;
+  for (const ov of overrides) {
+    if (ov.linhaId !== linhaId) continue;
+    if (ov.valorOverride == null || !Number.isFinite(ov.valorOverride)) continue;
+    if (ov.valorOverride <= 0) continue;
+    if (ov.ativo === false) continue;
+    if (!melhor || ov.mesYm > melhor.mesYm) {
+      melhor = { mesYm: ov.mesYm, valor: round2(ov.valorOverride) };
+    }
+  }
+  return melhor?.valor ?? null;
+}
+
+function somarPagosPorSerieNoMes(
+  parcelas: ParcelaBaseProjecao[],
+  mesYm: string,
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const p of parcelas) {
+    if (!statusExecutado(p)) continue;
+    if (ehCreditoOuDescontoObtido(p.descricao, p.rubrica)) continue;
+    if (ehTransferenciaEntreContas(p.descricao, p.rubrica)) continue;
+    const dp = (p.dataPagamento ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dp) || dp.slice(0, 7) !== mesYm) continue;
+    const pago = valorPagoParcela(p);
+    if (pago <= 0) continue;
+    const key = chaveSerie(p);
+    map.set(key, round2((map.get(key) ?? 0) + pago));
+  }
+  return map;
 }
 
 type SeriePago = {
@@ -742,12 +781,19 @@ type SeriePago = {
  * Monta a grade a partir do que foi PAGO no mês anterior.
  * - Coluna contexto (mês ant.): só executado, travada.
  * - 3 meses à frente: projeção; essenciais já ativos; demais sugeridos inativos.
+ * - Recorrentes mantêm o plano já gravado (ou o pago de dois meses atrás)
+ *   quando o mês vira — o pago recente do contexto não apaga o projetado.
  * - Não inclui previsão/títulos abertos do Conta Azul.
  */
 export function montarProjecaoDesembolso(input: {
   mesInicioYm: string;
   colunasExtraYm?: string[];
   parcelas: ParcelaBaseProjecao[];
+  /**
+   * Baixas do mês anterior ao contexto (ex.: ago quando o contexto é set).
+   * Mantém o projetado recorrente ao virar o mês.
+   */
+  parcelasContextoAnterior?: ParcelaBaseProjecao[];
   /** Histórico opcional (reforça natureza recorrente). */
   historico?: ParcelaBaseProjecao[];
   linhasManuais?: LinhaManualProjecao[];
@@ -757,6 +803,13 @@ export function montarProjecaoDesembolso(input: {
   linhas: LinhaProjecao[];
   totaisPorMes: Array<{ mesYm: string; total: number }>;
   totalGeral: number;
+  /** Células recorrentes ativas sem override — gravação sticky no banco. */
+  celulasParaFixar: Array<{
+    linhaId: string;
+    mesYm: string;
+    valorOverride: number;
+    ativo: boolean;
+  }>;
 } {
   const colunas = montarColunasProjecao(
     input.mesInicioYm,
@@ -766,6 +819,8 @@ export function montarProjecaoDesembolso(input: {
     colunas.filter(c => c.contaNoTotal).map(c => c.mesYm),
   );
   const mesContextoYm = mesAnteriorProjecao(input.mesInicioYm);
+  const mesPrevioContextoYm = mesAnteriorProjecao(mesContextoYm);
+  const overrides = input.overrides ?? [];
   const somaAtivaNoTotal = (celulas: CelulaProjecao[]) =>
     round2(
       celulas
@@ -773,12 +828,20 @@ export function montarProjecaoDesembolso(input: {
         .reduce((s, c) => s + c.valorEfetivo, 0),
     );
   const ovMap = new Map(
-    (input.overrides ?? []).map(o => [overrideKey(o.linhaId, o.mesYm), o]),
+    overrides.map(o => [overrideKey(o.linhaId, o.mesYm), o]),
+  );
+  const pagosPrevioPorSerie = somarPagosPorSerieNoMes(
+    input.parcelasContextoAnterior ?? [],
+    mesPrevioContextoYm,
   );
 
   const historico = input.historico ?? [];
   const ocorrenciasPorSerie = new Map<string, Set<string>>();
-  for (const p of [...historico, ...input.parcelas]) {
+  for (const p of [
+    ...historico,
+    ...input.parcelas,
+    ...(input.parcelasContextoAnterior ?? []),
+  ]) {
     if (!statusExecutado(p)) continue;
     const mes = mesPagamentoParcela(p);
     if (!mes) continue;
@@ -830,11 +893,23 @@ export function montarProjecaoDesembolso(input: {
   }
 
   const linhas: LinhaProjecao[] = [];
+  const celulasParaFixar: Array<{
+    linhaId: string;
+    mesYm: string;
+    valorOverride: number;
+    ativo: boolean;
+  }> = [];
 
   for (const serie of Array.from(seriesMap.values())) {
     const linhaId = hashSerie(serie.key);
     const valor = serie.valorPago;
     const autoAtivar = serie.essencial || serie.natureza === "recorrente";
+    const herdado = pagosPrevioPorSerie.get(serie.key) ?? 0;
+    const planoSalvo = planoSalvoDaLinha(linhaId, overrides);
+    const planoRecorrente =
+      autoAtivar && (planoSalvo != null || herdado > 0)
+        ? (planoSalvo ?? herdado)
+        : valor;
 
     const celulas: CelulaProjecao[] = colunas.map(col => {
       if (col.mesYm === mesContextoYm) {
@@ -848,16 +923,31 @@ export function montarProjecaoDesembolso(input: {
           parcelaId: serie.parcelaIds[0] ?? null,
         };
       }
+      const ov = ovMap.get(overrideKey(linhaId, col.mesYm));
       const base: CelulaProjecao = {
         mesYm: col.mesYm,
         valorBase: valor,
-        valorEfetivo: valor,
+        valorEfetivo: autoAtivar ? planoRecorrente : valor,
         ativo: autoAtivar,
         editavel: true,
         origem: "projetado",
         parcelaId: null,
       };
-      return aplicarOverride(base, ovMap.get(overrideKey(linhaId, col.mesYm)));
+      const aplicada = aplicarOverride(base, ov);
+      if (
+        autoAtivar &&
+        aplicada.ativo &&
+        aplicada.valorEfetivo > 0 &&
+        (ov?.valorOverride == null || !Number.isFinite(ov.valorOverride))
+      ) {
+        celulasParaFixar.push({
+          linhaId,
+          mesYm: col.mesYm,
+          valorOverride: aplicada.valorEfetivo,
+          ativo: true,
+        });
+      }
+      return aplicada;
     });
 
     linhas.push({
@@ -922,5 +1012,6 @@ export function montarProjecaoDesembolso(input: {
         .filter(t => mesesNoTotal.has(t.mesYm))
         .reduce((s, t) => s + t.total, 0),
     ),
+    celulasParaFixar,
   };
 }
