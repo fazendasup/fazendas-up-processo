@@ -25,7 +25,6 @@ import {
   andarPrecisaLavagem, variedadePrincipalAndar, andaresDaTorreDeclarados,
   TIPOS_APLICACAO_CAIXA, TIPOS_APLICACAO_ANDAR,
   cultivoBandejaEfetivo,
-  quantidadePlantasPerfilMudas,
   resolverDataPlantioCampo,
   valorCampoDataPlantio,
   type ModoDataPlantio,
@@ -1697,49 +1696,50 @@ export default function TorreDetail() {
                         projetoTipo={projetoTipo}
                       />
                     )}
-                    <div className="flex items-end gap-3">
-                      <div className="flex-1">
-                        <Label className="text-xs">
-                          {modoFuros === 'transplantio'
-                            ? `${labelCampoDataPlantio(modoDataPlantio, torre.fase, projetoTipo)}${
-                                isMicroverdes ? ' (todas as bandejas)' : ' (todos os perfis)'
-                              }`
-                            : isMicroverdes
-                              ? 'Data de entrada (todas as bandejas)'
-                              : 'Data de Entrada (todos os perfis)'}
-                        </Label>
-                        <Input
-                          name="dataEntrada"
-                          type="date"
-                          defaultValue={valorCampoDataPlantio(
-                            modoFuros === 'transplantio' ? modoDataPlantio : 'plantio',
-                            andarSelecionado.dataEntrada,
-                            torre.fase,
-                            variedadePrincipalAndar(andarSelecionado) ?? undefined,
-                            data.variedades,
-                            cicloOpts,
-                          )}
-                          className="h-10 text-sm"
-                          key={`${andarSelecionado.id}-date-${modoDataPlantio}-${andarSelecionado.dataEntrada || 'empty'}`}
-                          disabled={usandoVariedadeIndividual}
-                        />
+                    {/* Data em massa só quando faz sentido; em mudas FV a edição fica no grid único abaixo */}
+                    {!usandoVariedadeIndividual && (
+                      <div className="flex items-end gap-3">
+                        <div className="flex-1">
+                          <Label className="text-xs">
+                            {modoFuros === 'transplantio'
+                              ? `${labelCampoDataPlantio(modoDataPlantio, torre.fase, projetoTipo)}${
+                                  isMicroverdes ? ' (todas as bandejas)' : ' (todos os perfis)'
+                                }`
+                              : isMicroverdes
+                                ? 'Data de entrada (todas as bandejas)'
+                                : 'Data de Entrada (todos os perfis)'}
+                          </Label>
+                          <Input
+                            name="dataEntrada"
+                            type="date"
+                            defaultValue={valorCampoDataPlantio(
+                              modoFuros === 'transplantio' ? modoDataPlantio : 'plantio',
+                              andarSelecionado.dataEntrada,
+                              torre.fase,
+                              variedadePrincipalAndar(andarSelecionado) ?? undefined,
+                              data.variedades,
+                              cicloOpts,
+                            )}
+                            className="h-10 text-sm"
+                            key={`${andarSelecionado.id}-date-${modoDataPlantio}-${andarSelecionado.dataEntrada || 'empty'}`}
+                          />
+                        </div>
+                        <Button type="submit" className="h-10 text-sm px-4">Salvar Data</Button>
                       </div>
-                      <Button type="submit" className="h-10 text-sm px-4" disabled={usandoVariedadeIndividual}>Salvar Data</Button>
-                    </div>
-                    {usandoVariedadeIndividual && (
-                      <p className="text-xs text-amber-700 mt-2">
+                    )}
+                    {usandoVariedadeIndividual && !(isMudas && !isMicroverdes) && (
+                      <p className="text-xs text-amber-700">
                         {isMicroverdes
-                          ? 'Data “para todos” desabilitada: há variedade por bandeja. Defina a data em cada posição (B1…B4).'
-                          : 'Data para todos desabilitada: este andar está com variedade individual por perfil. Defina a data em cada perfil.'}
+                          ? 'Há variedade por bandeja — defina a data em cada posição abaixo.'
+                          : 'Há variedade por perfil — defina a data em cada perfil abaixo.'}
                       </p>
                     )}
 
-                    {/* Resumo por perfil: mostra status de cada perfil com data */}
+                    {/* Resumo compacto + datas por perfil só fora de mudas FV (lá o grid já edita) */}
                     {(() => {
                       const perfisAtivos = (andarSelecionado.perfis || []).filter((p) => p.ativo);
                       if (perfisAtivos.length === 0) return null;
 
-                      // Calcular status por perfil
                       const perfilStatuses = perfisAtivos.map((p) => {
                         const dateStr = p.dataEntrada || andarSelecionado.dataEntrada;
                         if (!dateStr) return { perfilIndex: p.perfilIndex, rest: null, varId: p.variedadeId, dateStr: null };
@@ -1758,10 +1758,10 @@ export default function TorreDetail() {
                       const emProcesso = perfilStatuses.filter((s) => s.rest !== null && s.rest > 3).length;
                       const semData = perfilStatuses.filter((s) => s.rest === null).length;
                       const total = perfilStatuses.length;
+                      const mudasFvUnificado = isMudas && !isMicroverdes;
 
                       return (
-                        <div className="mt-3 space-y-3">
-                          {/* Barra de resumo */}
+                        <div className="mt-1 space-y-3">
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {prontos > 0 && (
                               <div className="p-1.5 rounded bg-red-50 border border-red-200 text-center">
@@ -1789,8 +1789,7 @@ export default function TorreDetail() {
                             )}
                           </div>
 
-                          {/* Datas individuais por perfil — sempre visível */}
-                          {perfilStatuses.length > 0 && (
+                          {!mudasFvUnificado && perfilStatuses.length > 0 && (
                             <div className="space-y-1">
                               <p className="text-xs font-semibold text-muted-foreground">
                                 {isMicroverdes ? 'Datas por bandeja:' : 'Datas por Perfil:'}
@@ -1847,19 +1846,6 @@ export default function TorreDetail() {
                                           }
                                         }}
                                       />
-                                      {isMudas && !isMicroverdes && (
-                                        <div className="mt-1">
-                                          <Label className="text-[10px] text-muted-foreground">Células</Label>
-                                          <Input
-                                            type="number"
-                                            min={0}
-                                            className="mt-0.5 h-7 text-[11px]"
-                                            defaultValue={quantidadePlantasPerfilMudas(perfil, CELULAS_PADRAO_BANDEJA_MUDAS)}
-                                            key={`${andarSelecionado.id}-p${ps.perfilIndex}-qtd-${perfil?.quantidadePlantas ?? 'legacy'}`}
-                                            onBlur={(e) => handleUpdatePerfilQuantidadeMudas(ps.perfilIndex, e.target.value)}
-                                          />
-                                        </div>
-                                      )}
                                     </div>
                                   );
                                 })}
@@ -2156,6 +2142,11 @@ export default function TorreDetail() {
                     onPerfilInspect={(perfilIndex) => setPerfilHistoricoIndex(perfilIndex)}
                     onPerfilVariedadeChange={handlePerfilVariedadeChange}
                     onPerfilDataChange={handleUpdatePerfilData}
+                    onPerfilQuantidadeChange={
+                      isMudas && !isMicroverdes
+                        ? handleUpdatePerfilQuantidadeMudas
+                        : undefined
+                    }
                     onPerfilSetPreenchidos={handlePerfilSetPreenchidos}
                     onAndarTodo={handleAndarTodo}
                     onAndarVariedadeTodos={handleAndarVariedadeTodos}

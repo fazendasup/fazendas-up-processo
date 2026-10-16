@@ -6,7 +6,13 @@
 
 import type { Furo, PerfilData, VariedadeConfig, Fase } from '@/lib/types';
 import { estruturaFaseParaProjeto, type TorreEstruturaOverride } from '@shared/types';
-import { diasRestantes, labelPrevisao, valorCampoDataPlantio, type ModoDataPlantio } from '@/lib/utils-farm';
+import {
+  diasRestantes,
+  labelPrevisao,
+  quantidadePlantasPerfilMudas,
+  valorCampoDataPlantio,
+  type ModoDataPlantio,
+} from '@/lib/utils-farm';
 import type { CicloPrazoOpts } from '@/lib/utils-farm';
 import { labelCampoDataPlantio } from '@/components/PlantioModoDataSelector';
 import {
@@ -16,8 +22,11 @@ import {
 } from '@/lib/microverdesPhases';
 import type { CultivoBandejaStatus } from '@/lib/utils-farm';
 import { cultivoBandejaEfetivo } from '@/lib/utils-farm';
+import { CELULAS_PADRAO_BANDEJA_MUDAS } from '@shared/mudasBandejas';
 import { Sprout, Scissors, Clock, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -49,6 +58,8 @@ interface Props {
   onPerfilInspect?: (perfilIndex: number) => void;
   onPerfilVariedadeChange?: (perfilIndex: number, variedadeId: string) => void;
   onPerfilDataChange?: (perfilIndex: number, dataEntrada: string) => void;
+  /** Quantidade de células/plantas no perfil (mudas FV). */
+  onPerfilQuantidadeChange?: (perfilIndex: number, quantidadeRaw: string) => void;
   /** Corrige quantos furos ficam plantados no perfil (vegetativa/maturação). */
   onPerfilSetPreenchidos?: (perfilIndex: number, preenchidos: number) => void;
   onAndarTodo?: () => void;
@@ -112,7 +123,7 @@ export default function PerfilFurosGrid({
   readOnly = false,
   selectionMode, selectedPerfis, onSelectPerfil,
   onFuroToggle, onPerfilToggle, onPerfilInspect, onPerfilVariedadeChange,
-  onPerfilDataChange, onPerfilSetPreenchidos,
+  onPerfilDataChange, onPerfilQuantidadeChange, onPerfilSetPreenchidos,
   onAndarTodo, onAndarVariedadeTodos,
   modoDataPlantio = 'plantio',
 }: Props) {
@@ -183,20 +194,106 @@ export default function PerfilFurosGrid({
           </Select>
         )}
 
-        {/* Microverdes: bandejas pequenas (só referência); FV: grid mais largo */}
-        <div className={mv ? "grid grid-cols-4 gap-1.5" : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2"}>
-          {Array.from({ length: numPerfis }, (_, i) => {
-            const perfil = perfis.find((p) => p.perfilIndex === i);
-            const isAtivo = perfil?.ativo || false;
-            const isSelected = !!selectedPerfis?.has(i) && effectiveSelectionMode;
-            const variedade = perfil?.variedadeId
-              ? variedades.find((v) => v.id === perfil.variedadeId)
-              : undefined;
-            const ps = perfilStatus(perfil, andarDataEntrada, fase, variedades, projetoTipo, undefined, cicloOpts);
+        {/* Microverdes: tiles compactos. FV: um card por perfil (data + células) — sem duplicar em cima. */}
+        {mv ? (
+          <div className="grid grid-cols-4 gap-1.5">
+            {Array.from({ length: numPerfis }, (_, i) => {
+              const perfil = perfis.find((p) => p.perfilIndex === i);
+              const isAtivo = perfil?.ativo || false;
+              const isSelected = !!selectedPerfis?.has(i) && effectiveSelectionMode;
+              const variedade = perfil?.variedadeId
+                ? variedades.find((v) => v.id === perfil.variedadeId)
+                : undefined;
+              const ps = perfilStatus(perfil, andarDataEntrada, fase, variedades, projetoTipo, undefined, cicloOpts);
 
-            return (
-              <Tooltip key={i}>
-                <TooltipTrigger asChild>
+              return (
+                <Tooltip key={i}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={!isInteractive && !effectiveSelectionMode && !onPerfilInspect}
+                      onClick={(e) => {
+                        if (effectiveSelectionMode) {
+                          onSelectPerfil?.(i, e);
+                          return;
+                        }
+                        if (!isInteractive) {
+                          onPerfilInspect?.(i);
+                          return;
+                        }
+                        onPerfilToggle?.(i, perfil?.variedadeId);
+                      }}
+                      className={`relative flex flex-col items-center justify-center border-2 transition-all rounded-md min-h-0 h-8 w-full max-w-[2.25rem] mx-auto py-0.5 px-0.5 ${
+                        ps.rest !== null && ps.rest <= 0
+                          ? 'bg-red-50 border-red-400 shadow-md ring-2 ring-red-200'
+                          : ps.rest !== null && ps.rest <= 3
+                          ? 'bg-amber-50 border-amber-400 shadow-sm'
+                          : isAtivo
+                          ? 'bg-emerald-50 border-emerald-400 shadow-sm'
+                          : 'bg-gray-50 border-gray-200'
+                      } ${
+                        effectiveSelectionMode
+                          ? `cursor-pointer hover:shadow-md ${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : ''}`
+                          : isInteractive || onPerfilInspect
+                            ? 'hover:shadow-md active:scale-95 cursor-pointer'
+                            : ''
+                      }`}
+                    >
+                      <span className={`text-[10px] font-bold ${
+                        ps.rest !== null && ps.rest <= 0 ? 'text-red-700' :
+                        ps.rest !== null && ps.rest <= 3 ? 'text-amber-700' :
+                        isAtivo ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-400'
+                      }`}>
+                        {labelPosicaoProducao(projetoTipo, i)}
+                      </span>
+                      {isAtivo && ps.rest !== null && (
+                        <span className={`text-[9px] mt-0.5 font-bold ${ps.color}`}>
+                          {ps.rest <= 0 ? 'T' : `${ps.rest}d`}
+                        </span>
+                      )}
+                      {effectiveSelectionMode && (
+                        <span className="absolute top-0.5 right-0.5 text-[8px] font-bold text-blue-700">
+                          {isSelected ? '✓' : ''}
+                        </span>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <p className="font-semibold">
+                      Bandeja {i + 1} — {isAtivo ? 'Ativa' : 'Vazia'}
+                    </p>
+                    {variedade && <p className="text-muted-foreground">{variedade.nome}</p>}
+                    {ps.rest !== null && <p className={ps.color}>{ps.label}</p>}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {Array.from({ length: numPerfis }, (_, i) => {
+              const perfil = perfis.find((p) => p.perfilIndex === i);
+              const isAtivo = perfil?.ativo || false;
+              const isSelected = !!selectedPerfis?.has(i) && effectiveSelectionMode;
+              const variedade = perfil?.variedadeId
+                ? variedades.find((v) => v.id === perfil.variedadeId)
+                : undefined;
+              const ps = perfilStatus(perfil, andarDataEntrada, fase, variedades, projetoTipo, undefined, cicloOpts);
+              const dateValue = valorDateInputPerfil(perfil);
+
+              return (
+                <div
+                  key={i}
+                  className={`relative rounded-lg border-2 p-2 space-y-1.5 transition ${
+                    ps.rest !== null && ps.rest <= 0
+                      ? 'border-red-400 bg-red-50 ring-1 ring-red-200 dark:border-red-700 dark:bg-red-950/35'
+                      : ps.rest !== null && ps.rest <= 3
+                        ? 'border-amber-400 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/35'
+                        : isAtivo
+                          ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-700/70 dark:bg-emerald-950/40'
+                          : 'border-border bg-muted/30'
+                  } ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
+                >
                   <button
                     type="button"
                     disabled={!isInteractive && !effectiveSelectionMode && !onPerfilInspect}
@@ -211,43 +308,32 @@ export default function PerfilFurosGrid({
                       }
                       onPerfilToggle?.(i, perfil?.variedadeId);
                     }}
-                    className={`relative flex flex-col items-center justify-center border-2 transition-all ${
-                      mv
-                        ? 'rounded-md min-h-0 h-8 w-full max-w-[2.25rem] mx-auto py-0.5 px-0.5'
-                        : 'rounded-lg min-h-[64px] py-2 px-1'
-                    } ${
-                      ps.rest !== null && ps.rest <= 0
-                        ? 'bg-red-50 border-red-400 shadow-md ring-2 ring-red-200'
-                        : ps.rest !== null && ps.rest <= 3
-                        ? 'bg-amber-50 border-amber-400 shadow-sm'
-                        : isAtivo
-                        ? 'bg-emerald-50 border-emerald-400 shadow-sm'
-                        : 'bg-gray-50 border-gray-200'
-                    } ${
-                      effectiveSelectionMode
-                        ? `cursor-pointer hover:shadow-md ${isSelected ? 'ring-2 ring-blue-400 border-blue-400' : ''}`
-                        : isInteractive || onPerfilInspect
-                          ? 'hover:shadow-md active:scale-95 cursor-pointer'
-                          : ''
-                    }`}
+                    className="flex w-full items-center justify-between gap-1 text-left"
                   >
-                    <span className={`${mv ? 'text-[10px]' : 'text-sm'} font-bold ${
-                      ps.rest !== null && ps.rest <= 0 ? 'text-red-700' :
-                      ps.rest !== null && ps.rest <= 3 ? 'text-amber-700' :
-                      isAtivo ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-400'
-                    }`}>
-                      {labelPosicaoProducao(projetoTipo, i)}
-                    </span>
-                    {!mv && variedade && (
-                      <span className="text-[10px] text-muted-foreground truncate w-full text-center leading-tight mt-0.5">
-                        {variedade.nome.length > 8 ? variedade.nome.slice(0, 7) + '…' : variedade.nome}
+                    <div className="flex min-w-0 items-center gap-1">
+                      <span className={`font-bold text-xs ${
+                        ps.rest !== null && ps.rest <= 0 ? 'text-red-700 dark:text-red-300' :
+                        ps.rest !== null && ps.rest <= 3 ? 'text-amber-700 dark:text-amber-300' :
+                        isAtivo ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground'
+                      }`}>
+                        {labelPosicaoProducao(projetoTipo, i)}
                       </span>
-                    )}
-                    {/* Badge de status */}
+                      {variedade && (
+                        <span className="truncate text-[10px] text-muted-foreground max-w-[5.5rem]">
+                          {variedade.nome}
+                        </span>
+                      )}
+                      {!isAtivo && isInteractive && (
+                        <span className="text-[9px] font-semibold text-emerald-600">Ativar</span>
+                      )}
+                    </div>
                     {isAtivo && ps.rest !== null && (
-                      <span className={`text-[9px] mt-0.5 font-bold ${ps.color}`}>
+                      <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        ps.rest <= 0 ? 'bg-red-200 text-red-800 animate-pulse' :
+                        ps.rest <= 3 ? 'bg-amber-200 text-amber-800' : 'bg-emerald-200 text-emerald-800 dark:text-emerald-200'
+                      }`}>
                         {ps.rest <= 0 ? (
-                          <span className="flex items-center gap-0.5">
+                          <span className="inline-flex items-center gap-0.5">
                             <CheckCircle2 className="w-3 h-3" />
                             TRANSPL.
                           </span>
@@ -256,29 +342,48 @@ export default function PerfilFurosGrid({
                         )}
                       </span>
                     )}
-                    {isInteractive && !isAtivo && (
-                      <span className="text-[9px] mt-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                        Ativar
-                      </span>
-                    )}
-                    {effectiveSelectionMode && (
-                      <span className="absolute top-1 right-1 text-[9px] font-bold text-blue-700">
-                        {isSelected ? '✓' : ''}
-                      </span>
-                    )}
                   </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  <p className="font-semibold">
-                    {mv ? `Bandeja ${i + 1}` : `Perfil ${i + 1}`} — {isAtivo ? (mv ? 'Ativa' : 'Ativo') : (mv ? 'Vazia' : 'Vazio')}
-                  </p>
-                  {variedade && <p className="text-muted-foreground">{variedade.nome}</p>}
-                  {ps.rest !== null && <p className={ps.color}>{ps.label}</p>}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
+
+                  {!readOnly && isAtivo && (
+                    <>
+                      <Input
+                        type="date"
+                        className="h-7 text-[11px]"
+                        defaultValue={dateValue}
+                        key={`mudas-p${i}-date-${modoDataPlantio}-${dateValue}`}
+                        onChange={(e) => onPerfilDataChange?.(i, e.target.value)}
+                        onBlur={(e) => {
+                          const newVal = e.target.value;
+                          if (newVal && newVal !== dateValue) {
+                            onPerfilDataChange?.(i, newVal);
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {onPerfilQuantidadeChange && (
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Células</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="mt-0.5 h-7 text-[11px]"
+                            defaultValue={quantidadePlantasPerfilMudas(
+                              perfil,
+                              CELULAS_PADRAO_BANDEJA_MUDAS,
+                            )}
+                            key={`mudas-p${i}-qtd-${perfil?.quantidadePlantas ?? 'legacy'}`}
+                            onBlur={(e) => onPerfilQuantidadeChange(i, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Seletores de variedade por perfil (colapsável) */}
         {isInteractive && (
