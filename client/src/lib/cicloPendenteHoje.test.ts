@@ -119,4 +119,19 @@ describe("cicloTemPendencia", () => {
     });
     expect(cicloTemPendencia(ciclo, hoje)).toBe(false);
   });
+
+  it("sai de pendente se o ciclo foi marcado feito hoje mesmo com caixa atrasada", () => {
+    const hoje = new Date(2026, 8, 12, 14, 0, 0);
+    const ciclo = base({
+      frequencia: "personalizada",
+      intervaloDias: 2,
+      dataInicio: "2026-09-06",
+      ultimaExecucao: "2026-09-12T12:00:00.000Z",
+      caixaIds: ["caixa-a", "caixa-b"],
+      execucoesCaixa: [
+        { caixaId: "caixa-a", ultimaExecucao: "2026-09-12T10:00:00" },
+      ],
+    });
+    expect(cicloTemPendencia(ciclo, hoje)).toBe(false);
+  });
 });

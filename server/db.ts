@@ -3828,37 +3828,55 @@ export async function marcarCicloExecutado(input: {
   if (caixaIds.length > 0) {
     await ensureCiclosCaixaIdsColumn();
     await ensureCicloCaixaExecucoesTable();
+    const caixasValidas = await db
+      .select({ id: caixasAgua.id })
+      .from(caixasAgua)
+      .where(
+        and(
+          eq(caixasAgua.projetoId, input.projetoId),
+          inArray(caixasAgua.id, caixaIds),
+        ),
+      );
+    const idsValidos = new Set(caixasValidas.map((c) => c.id));
     for (const caixaAguaId of caixaIds) {
-      const existente = await db
-        .select()
-        .from(cicloCaixaExecucoes)
-        .where(
-          and(
-            eq(cicloCaixaExecucoes.cicloId, input.cicloId),
-            eq(cicloCaixaExecucoes.caixaAguaId, caixaAguaId),
-          ),
-        )
-        .limit(1);
-      if (existente[0]) {
-        await db
-          .update(cicloCaixaExecucoes)
-          .set({
+      if (!idsValidos.has(caixaAguaId)) continue;
+      try {
+        const existente = await db
+          .select()
+          .from(cicloCaixaExecucoes)
+          .where(
+            and(
+              eq(cicloCaixaExecucoes.cicloId, input.cicloId),
+              eq(cicloCaixaExecucoes.caixaAguaId, caixaAguaId),
+            ),
+          )
+          .limit(1);
+        if (existente[0]) {
+          await db
+            .update(cicloCaixaExecucoes)
+            .set({
+              ultimaExecucao: input.ultimaExecucao,
+              dataAgenda: null,
+              executorId: input.executorId,
+              executorNome: input.executorNome,
+            })
+            .where(eq(cicloCaixaExecucoes.id, existente[0].id));
+        } else {
+          await db.insert(cicloCaixaExecucoes).values({
+            projetoId: input.projetoId,
+            cicloId: input.cicloId,
+            caixaAguaId,
             ultimaExecucao: input.ultimaExecucao,
             dataAgenda: null,
             executorId: input.executorId,
             executorNome: input.executorNome,
-          })
-          .where(eq(cicloCaixaExecucoes.id, existente[0].id));
-      } else {
-        await db.insert(cicloCaixaExecucoes).values({
-          projetoId: input.projetoId,
-          cicloId: input.cicloId,
-          caixaAguaId,
-          ultimaExecucao: input.ultimaExecucao,
-          dataAgenda: null,
-          executorId: input.executorId,
-          executorNome: input.executorNome,
-        });
+          });
+        }
+      } catch (err) {
+        console.error(
+          `[marcarCicloExecutado] falha na caixa ${caixaAguaId} do ciclo ${input.cicloId}:`,
+          err,
+        );
       }
     }
   }

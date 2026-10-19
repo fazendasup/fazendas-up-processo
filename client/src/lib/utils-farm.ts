@@ -511,6 +511,13 @@ export function cicloPendenteNoProtocolo(
 /** Pendência do ciclo: no alvo caixa, basta uma das caixas cadastradas estar no dia. */
 export function cicloTemPendencia(ciclo: CicloAplicacao, dataReferencia?: Date): boolean {
   if (!ciclo.ativo) return false;
+  // "Feito" na lista grava `ciclos.ultimaExecucao`. Sem este atalho, ciclos com
+  // várias caixas continuavam em Pendentes Hoje enquanto alguma caixa atrasava.
+  const ref = dataReferencia ? new Date(dataReferencia) : new Date();
+  const hojeYmd = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, "0")}-${String(ref.getDate()).padStart(2, "0")}`;
+  const ultimaCicloYmd = ymdLocalDe(ciclo.ultimaExecucao);
+  if (ultimaCicloYmd && ultimaCicloYmd === hojeYmd) return false;
+
   if (ciclo.alvo === "andar") return cicloPendenteHoje(ciclo, dataReferencia);
   const caixas = ciclo.caixaIds ?? [];
   if (caixas.length === 0) return cicloPendenteHoje(ciclo, dataReferencia);

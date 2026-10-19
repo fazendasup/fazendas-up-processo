@@ -141,9 +141,6 @@ export default function CiclosPage() {
   const [initialUltimaExecucaoYmd, setInitialUltimaExecucaoYmd] = useState('');
   const [dataInicioTouched, setDataInicioTouched] = useState(false);
   const [ultimaExecucaoTouched, setUltimaExecucaoTouched] = useState(false);
-  const [executarDialogOpen, setExecutarDialogOpen] = useState(false);
-  const [executarCicloId, setExecutarCicloId] = useState<string | null>(null);
-  const [dataExecucaoFeito, setDataExecucaoFeito] = useState(hojeYmdLocal());
 
   const toggleDia = (dia: number) => {
     setDiasSelecionados((prev) =>
@@ -472,20 +469,15 @@ export default function CiclosPage() {
     mutations.updateCiclo.mutate({ id: dbId, ativo: !ciclo.ativo });
   };
 
-  const abrirDialogExecutar = (id: string) => {
-    setExecutarCicloId(id);
-    setDataExecucaoFeito(hojeYmdLocal());
-    setExecutarDialogOpen(true);
-  };
-
-  const confirmarExecucaoFeita = () => {
-    if (!executarCicloId) return;
-    const dbId = resolver.cicloFrontIdToDbId.get(executarCicloId);
+  /** Um clique: marca feito no dia de hoje (calendário da fazenda). */
+  const marcarFeitoHoje = (id: string) => {
+    const dbId = resolver.cicloFrontIdToDbId.get(id);
     if (!dbId) {
       toast.error('Ciclo não encontrado');
       return;
     }
-    const ultimaExecucao = dateAtLocalNoonFromYmd(dataExecucaoFeito);
+    const ymd = hojeYmdSaoPaulo() || hojeYmdLocal();
+    const ultimaExecucao = dateAtLocalNoonFromYmd(ymd);
     if (Number.isNaN(ultimaExecucao.getTime())) {
       toast.error('Data inválida');
       return;
@@ -499,10 +491,9 @@ export default function CiclosPage() {
               ? 'Aplicação registrada. A outra calda mudou de data.'
               : 'Aplicação registrada!',
           );
-          setExecutarDialogOpen(false);
-          setExecutarCicloId(null);
         },
-      }
+        onError: (e) => toast.error(e.message || 'Não foi possível marcar como feito'),
+      },
     );
   };
 
@@ -974,7 +965,7 @@ export default function CiclosPage() {
                     .join(', ')}
                   onDelete={handleDelete}
                   onToggle={handleToggle}
-                  onExecutar={abrirDialogExecutar}
+                  onExecutar={marcarFeitoHoje}
                   onEdit={handleEditCiclo}
                   onDuplicate={handleDuplicateCiclo}
                 />
@@ -982,34 +973,6 @@ export default function CiclosPage() {
             </div>
           </motion.section>
         )}
-
-        <Dialog open={executarDialogOpen} onOpenChange={(open) => { setExecutarDialogOpen(open); if (!open) setExecutarCicloId(null); }}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="font-display text-base">Registrar aplicação</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              Em qual dia a aplicação foi feita? Se foi depois do dia previsto, a outra calda muda de data para manter o intervalo.
-            </p>
-            <div>
-              <Label className="text-xs">Data da aplicação</Label>
-              <Input
-                type="date"
-                value={dataExecucaoFeito}
-                onChange={(e) => setDataExecucaoFeito(e.target.value)}
-                className="h-9 text-sm mt-1"
-              />
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" size="sm" onClick={() => setExecutarDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" size="sm" onClick={confirmarExecucaoFeita}>
-                Confirmar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {/* Todos os ciclos */}
         <section>
@@ -1035,7 +998,7 @@ export default function CiclosPage() {
                     .join(', ')}
                   onDelete={handleDelete}
                   onToggle={handleToggle}
-                  onExecutar={abrirDialogExecutar}
+                  onExecutar={marcarFeitoHoje}
                   onEdit={handleEditCiclo}
                   onDuplicate={handleDuplicateCiclo}
                 />
