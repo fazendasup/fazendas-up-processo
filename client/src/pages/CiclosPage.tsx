@@ -10,6 +10,7 @@ type FrequenciaCiclo = "diaria" | "semanal" | "quinzenal" | "mensal" | "personal
 type AlvoCiclo = "ambos" | "caixa" | "andar";
 
 import { cicloPendenteNoProtocolo, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
+import { hojeYmdSaoPaulo } from '@shared/cicloSequencia';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
@@ -80,6 +81,12 @@ function dateAtLocalNoonFromYmd(ymd: string): Date {
   if (Number.isNaN(d.getTime())) return new Date(NaN);
   d.setHours(12, 0, 0, 0);
   return d;
+}
+
+/** Calendário da fazenda (SP), alinhado à agenda de caixas. */
+function referenciaHojeFazenda(): Date {
+  const [ano, mes, dia] = hojeYmdSaoPaulo().split('-').map(Number);
+  return new Date(ano, (mes || 1) - 1, dia || 1, 12, 0, 0);
 }
 
 function caixasNaSequencia<T extends { id: string; nome: string; fase: Fase }>(
@@ -531,7 +538,10 @@ export default function CiclosPage() {
     });
   };
 
-  const ciclosPendentes = data.ciclos.filter((c) => cicloPendenteNoProtocolo(c, data.ciclos));
+  const referenciaHoje = referenciaHojeFazenda();
+  const ciclosPendentes = data.ciclos.filter((c) =>
+    cicloPendenteNoProtocolo(c, data.ciclos, referenciaHoje),
+  );
 
 
   return (
@@ -1018,7 +1028,7 @@ export default function CiclosPage() {
                 <CicloItem
                   key={ciclo.id}
                   ciclo={ciclo}
-                  pendente={cicloPendenteNoProtocolo(ciclo, data.ciclos)}
+                  pendente={cicloPendenteNoProtocolo(ciclo, data.ciclos, referenciaHoje)}
                   caixasLabel={(ciclo.caixaIds ?? [])
                     .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
                     .filter(Boolean)
@@ -1134,7 +1144,7 @@ function CicloItem({
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        {pendente && ciclo.ativo && (ciclo.caixaIds?.length ?? 0) === 0 && (
+        {pendente && ciclo.ativo && (
           <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-emerald-600 dark:text-emerald-400 border-emerald-300 hover:bg-emerald-50 dark:border-emerald-700 dark:hover:bg-emerald-950/50" onClick={() => onExecutar(ciclo.id)}>
             <CheckCircle2 className="w-3 h-3" />
             Feito

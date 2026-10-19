@@ -3822,6 +3822,47 @@ export async function marcarCicloExecutado(input: {
     ultimoExecutorNome: input.executorNome,
   });
 
+  // Pendência por caixa olha `ciclo_caixa_execucoes`, não só `ciclos.ultimaExecucao`.
+  // Sem isso, "Feito" na lista de Pendentes Hoje não tirava Thyper/Infinito/Cercobin da fila.
+  const caixaIds = parseCaixaIdsJson(atual.caixaIds);
+  if (caixaIds.length > 0) {
+    await ensureCiclosCaixaIdsColumn();
+    await ensureCicloCaixaExecucoesTable();
+    for (const caixaAguaId of caixaIds) {
+      const existente = await db
+        .select()
+        .from(cicloCaixaExecucoes)
+        .where(
+          and(
+            eq(cicloCaixaExecucoes.cicloId, input.cicloId),
+            eq(cicloCaixaExecucoes.caixaAguaId, caixaAguaId),
+          ),
+        )
+        .limit(1);
+      if (existente[0]) {
+        await db
+          .update(cicloCaixaExecucoes)
+          .set({
+            ultimaExecucao: input.ultimaExecucao,
+            dataAgenda: null,
+            executorId: input.executorId,
+            executorNome: input.executorNome,
+          })
+          .where(eq(cicloCaixaExecucoes.id, existente[0].id));
+      } else {
+        await db.insert(cicloCaixaExecucoes).values({
+          projetoId: input.projetoId,
+          cicloId: input.cicloId,
+          caixaAguaId,
+          ultimaExecucao: input.ultimaExecucao,
+          dataAgenda: null,
+          executorId: input.executorId,
+          executorNome: input.executorNome,
+        });
+      }
+    }
+  }
+
   if (!dataYmd) return 0;
   const ajustes = reagendarCaldasAposAplicar(
     todos.map((ciclo) => ({
