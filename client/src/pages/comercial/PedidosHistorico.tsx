@@ -11,16 +11,9 @@ import { SearchSelect } from "@/components/ui/search-select";
 import { hojeIsoLocal } from "@/lib/comercial/periodo";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { exportTableDocument } from "@/lib/exportTableDocument";
-import {
-  labelProdutoComPeso,
-  partesProdutoComPeso,
-} from "@shared/produtoPeso";
+import { partesProdutoComPeso } from "@shared/produtoPeso";
 
 const STATUS = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
-
-function rotuloProduto(nome: string | null | undefined): string {
-  return labelProdutoComPeso(nome?.trim() || "Produto sem nome");
-}
 
 function NomeProdutoComPeso({
   nome,
