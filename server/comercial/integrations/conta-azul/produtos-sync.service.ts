@@ -1,4 +1,8 @@
 import { Prisma, type PrismaClient } from "../../generated/prisma/index.js";
+import {
+  enriquecerNomeComPesoKg,
+  pesoDoProduto,
+} from "@shared/produtoPeso";
 import type { Env } from "../../env";
 import { logger } from "../../lib/logger";
 import { contaAzulGet, createContaAzulHttp } from "./conta-azul.client";
@@ -163,14 +167,76 @@ async function fetchProdutosCatalogoCompleto(
   return { itens: Array.from(porId.values()), avisos };
 }
 
+/**
+ * A listagem omite `pesos_dimensoes`. Busca o detalhe só quando o nome ainda
+ * não traz gramas/kg e o peso (bruto/líquido) não veio no payload.
+ */
+async function enriquecerPesosViaDetalhe(
+  http: AxiosInstance,
+  itens: ContaAzulProdutoResumo[],
+  avisos: string[],
+): Promise<ContaAzulProdutoResumo[]> {
+  const precisa = itens
+    .map((item, index) => ({ item, index }))
+    .filter(
+      ({ item }) =>
+        item.pesoLiquidoKg == null && !pesoDoProduto(item.nome),
+    );
+  if (precisa.length === 0) return itens;
+
+  const out = [...itens];
+  const concurrency = 4;
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < precisa.length) {
+      const atual = precisa[cursor++]!;
+      const { item, index } = atual;
+      try {
+        const raw = await contaAzulGet<unknown>(
+          http,
+          `/v1/produtos/${encodeURIComponent(item.id)}`,
+        );
+        const mapped = mapProdutoContaAzulItem(
+          raw,
+          item.status === "INATIVO" ? "INATIVO" : "ATIVO",
+        );
+        if (mapped) {
+          out[index] = {
+            ...item,
+            nome: mapped.nome || item.nome,
+            codigo: mapped.codigo ?? item.codigo,
+            valorVenda: mapped.valorVenda ?? item.valorVenda,
+            status: mapped.status ?? item.status,
+            pesoLiquidoKg: mapped.pesoLiquidoKg ?? item.pesoLiquidoKg,
+          };
+        }
+      } catch (e) {
+        avisos.push(
+          `Peso detalhe ${item.nome}: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, precisa.length) }, () =>
+      worker(),
+    ),
+  );
+  return out;
+}
+
 export async function fetchTodosProdutosContaAzul(
   http: AxiosInstance,
   opts?: FetchOpts,
 ): Promise<{ itens: ContaAzulProdutoResumo[]; avisos: string[] }> {
-  if (opts?.busca || opts?.sku) {
-    return fetchProdutosPontual(http, opts);
-  }
-  return fetchProdutosCatalogoCompleto(http);
+  const base =
+    opts?.busca || opts?.sku
+      ? await fetchProdutosPontual(http, opts)
+      : await fetchProdutosCatalogoCompleto(http);
+  const itens = await enriquecerPesosViaDetalhe(http, base.itens, base.avisos);
+  return { itens, avisos: base.avisos };
 }
 
 async function nomeDisponivelOuAlternativo(
@@ -207,6 +273,41 @@ async function nomeDisponivelOuAlternativo(
   );
 }
 
+/** Libera o nome desejado movendo quem o ocupa (evita sync ficar sem peso no nome). */
+async function liberarNomeParaDono(
+  prisma: PrismaClient,
+  nomeDesejado: string,
+  donoId: string,
+): Promise<void> {
+  const ocupante = await prisma.produtoComercial.findFirst({
+    where: { nome: nomeDesejado, id: { not: donoId } },
+    select: {
+      id: true,
+      nome: true,
+      sku: true,
+      contaAzulProdutoId: true,
+    },
+  });
+  if (!ocupante) return;
+  const alt = await nomeDisponivelOuAlternativo(prisma, ocupante.nome, {
+    excluirId: ocupante.id,
+    codigo: ocupante.sku,
+    idCa: ocupante.contaAzulProdutoId ?? undefined,
+  });
+  const finalNome =
+    alt === ocupante.nome
+      ? `${ocupante.nome.slice(0, 160)} · ${ocupante.id.slice(0, 8)}`.slice(0, 191)
+      : alt;
+  await prisma.produtoComercial.update({
+    where: { id: ocupante.id },
+    data: { nome: finalNome },
+  });
+}
+
+function nomeLocalDoItemCa(item: ContaAzulProdutoResumo): string {
+  return enriquecerNomeComPesoKg(item.nome, item.pesoLiquidoKg);
+}
+
 async function upsertProdutoCatalogo(
   prisma: PrismaClient,
   item: ContaAzulProdutoResumo,
@@ -215,12 +316,14 @@ async function upsertProdutoCatalogo(
   const status = (item.status ?? "").toUpperCase();
   const inativoNoCa =
     status.length > 0 && status !== "ATIVO" && status !== "ACTIVE";
+  const nomeComPeso = nomeLocalDoItemCa(item);
 
   const existenteCa = await prisma.produtoComercial.findUnique({
     where: { contaAzulProdutoId: item.id },
   });
   if (existenteCa) {
-    const nome = await nomeDisponivelOuAlternativo(prisma, item.nome, {
+    await liberarNomeParaDono(prisma, nomeComPeso, existenteCa.id);
+    const nome = await nomeDisponivelOuAlternativo(prisma, nomeComPeso, {
       excluirId: existenteCa.id,
       codigo: item.codigo,
       idCa: item.id,
@@ -246,10 +349,11 @@ async function upsertProdutoCatalogo(
         e instanceof Prisma.PrismaClientKnownRequestError &&
         e.code === "P2002"
       ) {
-        // Último recurso: atualiza sem mexer no nome.
+        await liberarNomeParaDono(prisma, nomeComPeso, existenteCa.id);
         await prisma.produtoComercial.update({
           where: { id: existenteCa.id },
           data: {
+            nome: nomeComPeso.slice(0, 191),
             sku: item.codigo,
             statusContaAzul: item.status,
             precoBase:
@@ -271,12 +375,14 @@ async function upsertProdutoCatalogo(
       contaAzulProdutoId: null,
       OR: [
         { nome: item.nome },
+        { nome: nomeComPeso },
         ...(item.codigo ? [{ sku: item.codigo }] : []),
       ],
     },
   });
   if (legado) {
-    const nome = await nomeDisponivelOuAlternativo(prisma, item.nome, {
+    await liberarNomeParaDono(prisma, nomeComPeso, legado.id);
+    const nome = await nomeDisponivelOuAlternativo(prisma, nomeComPeso, {
       excluirId: legado.id,
       codigo: item.codigo,
       idCa: item.id,
@@ -305,7 +411,7 @@ async function upsertProdutoCatalogo(
         e.code === "P2002"
       ) {
         logger.warn(
-          { produtoId: item.id, nome: item.nome, legadoId: legado.id },
+          { produtoId: item.id, nome: nomeComPeso, legadoId: legado.id },
           "Conflito ao vincular produto legado Conta Azul",
         );
         return "ignorado";
@@ -314,7 +420,7 @@ async function upsertProdutoCatalogo(
     }
   }
 
-  const nomeCreate = await nomeDisponivelOuAlternativo(prisma, item.nome, {
+  const nomeCreate = await nomeDisponivelOuAlternativo(prisma, nomeComPeso, {
     codigo: item.codigo,
     idCa: item.id,
   });

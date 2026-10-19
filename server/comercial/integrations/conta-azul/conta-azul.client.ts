@@ -48,6 +48,8 @@ function contaAzulPathPrecisaThrottle(path: string): boolean {
   if (p.includes("/v1/orcamento")) return true;
   if (p.includes("/v1/conta-financeira")) return true;
   if (p.includes("/v1/financeiro")) return true;
+  // Detalhe de produto (peso líquido) — rate limit comum.
+  if (/^\/v1\/produtos\/[^/?]+$/i.test(p)) return true;
   return false;
 }
 

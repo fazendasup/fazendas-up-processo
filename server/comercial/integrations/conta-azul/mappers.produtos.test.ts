@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapProdutoContaAzulItem } from "./mappers";
+import { extrairPesoLiquidoKgContaAzul, mapProdutoContaAzulItem } from "./mappers";
 
 describe("mapProdutoContaAzulItem", () => {
   it("aceita PRODUTO, VARIACAO_PRODUTO, KIT_PRODUTO e outros tipos com id+nome", () => {
@@ -11,6 +11,22 @@ describe("mapProdutoContaAzulItem", () => {
     expect(mapProdutoContaAzulItem({ ...base, tipo: "SERVICO" })?.nome).toBe(
       "Mix Clássico 500g",
     );
+  });
+
+  it("prioriza peso_bruto em pesos_dimensoes", () => {
+    const mapped = mapProdutoContaAzulItem({
+      id: "ca-peso",
+      nome: "Alface Americana",
+      tipo: "PRODUTO",
+      pesos_dimensoes: { peso_bruto: 0.1, peso_liquido: 0.08 },
+    });
+    expect(mapped?.pesoLiquidoKg).toBe(0.1);
+    expect(extrairPesoLiquidoKgContaAzul({ peso_bruto: 0.24 })).toBe(0.24);
+    expect(
+      extrairPesoLiquidoKgContaAzul({
+        pesos_dimensoes: { peso_liquido: 0.15 },
+      }),
+    ).toBe(0.15);
   });
 
   it("lê sku quando codigo ausente", () => {

@@ -8,6 +8,11 @@ import {
   pesoDoProdutoComCatalogo,
 } from "./produtoPeso";
 
+import {
+  enriquecerNomeComPesoKg,
+  rotuloPesoLiquidoKg,
+} from "./produtoPeso";
+
 describe("pesoDoProduto", () => {
   it("lê gramas e quilos no nome", () => {
     expect(pesoDoProduto("Alface Americana 100g")).toBe("100 g");
@@ -16,6 +21,18 @@ describe("pesoDoProduto", () => {
 
   it("marca venda por quilo", () => {
     expect(pesoDoProduto("Baby Leaf -Manjericão", "KG")).toBe("por kg");
+  });
+});
+
+describe("enriquecerNomeComPesoKg", () => {
+  it("anexa gramas a partir do peso bruto Conta Azul", () => {
+    expect(rotuloPesoLiquidoKg(0.1)).toBe("100 g");
+    expect(enriquecerNomeComPesoKg("Alface Americana", 0.1)).toBe(
+      "Alface Americana 100g",
+    );
+    expect(enriquecerNomeComPesoKg("Alface Americana 100g", 0.15)).toBe(
+      "Alface Americana 100g",
+    );
   });
 });
 

@@ -478,7 +478,48 @@ export type ContaAzulProdutoResumo = {
   valorVenda: number | null;
   status: string | null;
   tipo: string | null;
+  /**
+   * Peso em kg vindo do Conta Azul (`pesos_dimensoes.peso_bruto`, com fallback
+   * para `peso_liquido`). Usado para enriquecer o nome local com gramas/kg.
+   */
+  pesoLiquidoKg: number | null;
 };
+
+function numOuNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value.replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Extrai peso (kg) do payload Conta Azul (lista ou detalhe).
+ * Prioriza peso bruto — é o campo que o time costuma preencher no CA.
+ */
+export function extrairPesoLiquidoKgContaAzul(raw: unknown): number | null {
+  const item = asRecord(raw);
+  if (!item) return null;
+  const direto =
+    numOuNull(item.peso_bruto) ??
+    numOuNull(item.pesoBruto) ??
+    numOuNull(item.peso_liquido) ??
+    numOuNull(item.pesoLiquido) ??
+    numOuNull(item.peso);
+  if (direto != null && direto > 0) return direto;
+  const dims =
+    asRecord(item.pesos_dimensoes) ??
+    asRecord(item.pesosDimensoes) ??
+    asRecord(item.dimensoes);
+  if (!dims) return null;
+  const nested =
+    numOuNull(dims.peso_bruto) ??
+    numOuNull(dims.pesoBruto) ??
+    numOuNull(dims.peso_liquido) ??
+    numOuNull(dims.pesoLiquido);
+  return nested != null && nested > 0 ? nested : null;
+}
 
 /**
  * Item de GET /v1/produtos (OpenAPI Conta Azul — inventário).
@@ -503,7 +544,8 @@ export function mapProdutoContaAzulItem(
   const tipo = typeof item.tipo === "string" ? item.tipo.toUpperCase().trim() : "PRODUTO";
   // Catálogo: aceita qualquer tipo com id+nome (PRODUTO, KIT, VARIACAO, etc.).
   // Filtrar por tipo fazia produtos válidos sumirem do sync.
-  const codigoRaw = item.codigo ?? item.sku ?? item.ean;
+  const codigoRaw =
+    item.codigo ?? item.sku ?? item.ean ?? item.codigo_sku ?? item.codigoSku;
   const codigo =
     typeof codigoRaw === "string" && codigoRaw.trim()
       ? codigoRaw.trim()
@@ -533,5 +575,6 @@ export function mapProdutoContaAzulItem(
     valorVenda: valorVenda != null && Number.isFinite(valorVenda) ? valorVenda : null,
     status,
     tipo,
+    pesoLiquidoKg: extrairPesoLiquidoKgContaAzul(item),
   };
 }

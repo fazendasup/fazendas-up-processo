@@ -27,6 +27,31 @@ function formatarPeso(valor: number, unidade: "g" | "kg"): string {
   return `${texto} ${unidade}`;
 }
 
+/** Conta Azul envia peso (bruto/líquido) em kg (ex.: 0.1 → 100 g; 1.5 → 1,5 kg). */
+export function rotuloPesoLiquidoKg(kg: number): string | null {
+  if (!Number.isFinite(kg) || kg <= 0) return null;
+  if (kg >= 1) return formatarPeso(kg, "kg");
+  const gramas = Math.round(kg * 1000);
+  if (gramas <= 0) return null;
+  return formatarPeso(gramas, "g");
+}
+
+/**
+ * Se o nome ainda não traz gramas/kg, anexa o peso do Conta Azul (kg).
+ * Ex.: "Alface Americana" + 0.1 kg → "Alface Americana 100g"
+ */
+export function enriquecerNomeComPesoKg(
+  nome: string,
+  pesoLiquidoKg: number | null | undefined,
+): string {
+  const base = nome.trim();
+  if (!base) return base;
+  if (pesoDoProduto(base)) return base;
+  const rotulo = pesoLiquidoKg != null ? rotuloPesoLiquidoKg(pesoLiquidoKg) : null;
+  if (!rotulo) return base;
+  return `${base} ${rotulo.replace(/\s+/g, "")}`;
+}
+
 /**
  * Remove código Conta Azul colado no nome, ex.: "Alface (ALFAC16)" → "Alface".
  * Não remove parênteses com texto legível (ex.: "Mix (salada)").
