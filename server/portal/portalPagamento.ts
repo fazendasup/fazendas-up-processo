@@ -384,9 +384,18 @@ export async function cancelarPedidoCliente(input: {
   prisma: PrismaClient;
   pedidoId: string;
   clienteId: string;
+  contaAzulCustomerId?: string | null;
 }): Promise<{ ok: true }> {
   const pedido = await input.prisma.pedidoOperacional.findFirst({
-    where: { id: input.pedidoId, clienteId: input.clienteId },
+    where: {
+      id: input.pedidoId,
+      OR: [
+        { clienteId: input.clienteId },
+        ...(input.contaAzulCustomerId
+          ? [{ contaAzulCustomerId: input.contaAzulCustomerId }]
+          : []),
+      ],
+    },
     include: { itens: true },
   });
   if (!pedido) throw new LojaErro(404, "Pedido não encontrado.");
@@ -415,37 +424,37 @@ export async function cancelarPedidoCliente(input: {
   await cancelarCobrancaCa(input.prisma, pagamento?.pixCobrancaId);
   await cancelarCobrancaCa(input.prisma, pagamento?.cartaoCobrancaId);
 
-  await input.prisma.$transaction(async (tx) => {
-    for (const item of pedido.itens) {
-      if (!item.produtoId) continue;
-      const produto = await tx.produtoComercial.findUnique({
-        where: { id: item.produtoId },
-        select: { estoqueLoja: true },
-      });
-      if (produto?.estoqueLoja == null) continue;
-      await tx.produtoComercial.update({
-        where: { id: item.produtoId },
+  // Sem interactive transaction: o proxy MySQL (Railway) costuma derrubar tx longas.
+  for (const item of pedido.itens) {
+    if (!item.produtoId) continue;
+    try {
+      await input.prisma.produtoComercial.updateMany({
+        where: { id: item.produtoId, estoqueLoja: { not: null } },
         data: { estoqueLoja: { increment: Number(item.quantidade) } },
       });
+    } catch (error) {
+      console.warn("[portal] restaurar estoque no cancelamento", item.produtoId, error);
     }
-    await tx.pedidoOperacional.update({
-      where: { id: pedido.id },
+  }
+
+  await input.prisma.pedidoOperacional.update({
+    where: { id: pedido.id },
+    data: {
+      status: "CANCELADO",
+      observacoes: `${obs}\nCancelado pelo cliente no site.`.trim(),
+    },
+  });
+
+  if (pagamento) {
+    await input.prisma.portalPedidoPagamento.update({
+      where: { pedidoId: pedido.id },
       data: {
         status: "CANCELADO",
-        observacoes: `${obs}\nCancelado pelo cliente no site.`.trim(),
+        pixUrl: null,
+        cartaoUrl: null,
       },
     });
-    if (pagamento) {
-      await tx.portalPedidoPagamento.update({
-        where: { pedidoId: pedido.id },
-        data: {
-          status: "CANCELADO",
-          pixUrl: null,
-          cartaoUrl: null,
-        },
-      });
-    }
-  });
+  }
 
   return { ok: true };
 }
@@ -467,7 +476,10 @@ export async function alterarFormaPagamentoPedido(input: {
   formaPagamento: FormaPagamentoPessoa;
 }> {
   const pedido = await input.prisma.pedidoOperacional.findFirst({
-    where: { id: input.pedidoId, clienteId: input.clienteId },
+    where: {
+      id: input.pedidoId,
+      OR: [{ clienteId: input.clienteId }, { contaAzulCustomerId: input.contaAzulCustomerId }],
+    },
   });
   if (!pedido) throw new LojaErro(404, "Pedido não encontrado.");
   if (pedido.status === "CANCELADO") throw new LojaErro(409, "Pedido cancelado.");
@@ -497,6 +509,8 @@ export async function alterarFormaPagamentoPedido(input: {
 
   await cancelarCobrancaCa(input.prisma, pagamento.pixCobrancaId);
   await cancelarCobrancaCa(input.prisma, pagamento.cartaoCobrancaId);
+  // A API demora a liberar a parcela após o cancelamento da cobrança.
+  await esperar(1500);
 
   // Nova conta a receber: a parcela antiga já teve cobrança e a API não permite segunda na mesma.
   const dataEntrega = new Intl.DateTimeFormat("en-CA", {

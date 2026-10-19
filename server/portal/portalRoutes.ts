@@ -1129,6 +1129,7 @@ export function registerPortalRoutes(app: Express): void {
         prisma: getComercialPrisma(),
         pedidoId: String(req.params.id),
         clienteId: acesso.clienteId,
+        contaAzulCustomerId: acesso.cliente.externalId?.trim() || null,
       }));
     } catch (error) {
       if (error instanceof LojaErro) {
