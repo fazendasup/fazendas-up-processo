@@ -273,7 +273,12 @@ async function nomeDisponivelOuAlternativo(
   );
 }
 
-/** Libera o nome desejado movendo quem o ocupa (evita sync ficar sem peso no nome). */
+/**
+ * Libera o nome desejado movendo quem o ocupa.
+ * Importante: não pode “alternar” para o próprio nomeDesejado (excluir o ocupante
+ * fazia nomeDisponivelOuAlternativo achar o nome livre e o update estourava P2002
+ * noutro sufixo já existente — abortando a sync inteira sem gravar o peso).
+ */
 async function liberarNomeParaDono(
   prisma: PrismaClient,
   nomeDesejado: string,
@@ -289,19 +294,59 @@ async function liberarNomeParaDono(
     },
   });
   if (!ocupante) return;
-  const alt = await nomeDisponivelOuAlternativo(prisma, ocupante.nome, {
-    excluirId: ocupante.id,
-    codigo: ocupante.sku,
-    idCa: ocupante.contaAzulProdutoId ?? undefined,
-  });
-  const finalNome =
-    alt === ocupante.nome
-      ? `${ocupante.nome.slice(0, 160)} · ${ocupante.id.slice(0, 8)}`.slice(0, 191)
-      : alt;
-  await prisma.produtoComercial.update({
-    where: { id: ocupante.id },
-    data: { nome: finalNome },
-  });
+
+  const candidatos: string[] = [];
+  if (ocupante.sku?.trim()) {
+    candidatos.push(`${ocupante.nome} (${ocupante.sku.trim()})`.slice(0, 191));
+  }
+  if (ocupante.contaAzulProdutoId) {
+    candidatos.push(
+      `${ocupante.nome.slice(0, 160)} · ${ocupante.contaAzulProdutoId.slice(0, 8)}`.slice(
+        0,
+        191,
+      ),
+    );
+  }
+  candidatos.push(
+    `${ocupante.nome.slice(0, 160)} · ${ocupante.id.slice(0, 8)}`.slice(0, 191),
+  );
+  candidatos.push(`${ocupante.nome.slice(0, 140)} · ${ocupante.id}`.slice(0, 191));
+  candidatos.push(
+    `${ocupante.nome.slice(0, 120)} · ${ocupante.id.slice(0, 8)}-${Date.now().toString(36)}`.slice(
+      0,
+      191,
+    ),
+  );
+
+  for (const candidato of candidatos) {
+    if (!candidato || candidato === nomeDesejado || candidato === ocupante.nome) {
+      continue;
+    }
+    const conflito = await prisma.produtoComercial.findFirst({
+      where: { nome: candidato, id: { not: ocupante.id } },
+      select: { id: true },
+    });
+    if (conflito) continue;
+    try {
+      await prisma.produtoComercial.update({
+        where: { id: ocupante.id },
+        data: { nome: candidato },
+      });
+      return;
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  throw new Error(
+    `Não foi possível liberar o nome "${nomeDesejado}" (ocupante ${ocupante.id}).`,
+  );
 }
 
 function nomeLocalDoItemCa(item: ContaAzulProdutoResumo): string {
@@ -496,10 +541,20 @@ export async function sincronizarCatalogoProdutosContaAzul(
   let ignorados = 0;
 
   for (const item of itens) {
-    const resultado = await upsertProdutoCatalogo(prisma, item, agora);
-    if (resultado === "novo") novos++;
-    else if (resultado === "atualizado") atualizados++;
-    else ignorados++;
+    try {
+      const resultado = await upsertProdutoCatalogo(prisma, item, agora);
+      if (resultado === "novo") novos++;
+      else if (resultado === "atualizado") atualizados++;
+      else ignorados++;
+    } catch (e) {
+      ignorados++;
+      const msg = e instanceof Error ? e.message : String(e);
+      avisos.push(`Upsert ${item.nome}: ${msg}`);
+      logger.warn(
+        { err: e, produtoId: item.id, nome: item.nome, pesoLiquidoKg: item.pesoLiquidoKg },
+        "Falha ao upsert produto Conta Azul (seguindo os demais)",
+      );
+    }
   }
 
   return {
@@ -507,8 +562,10 @@ export async function sincronizarCatalogoProdutosContaAzul(
     novos,
     atualizados,
     ignorados,
-    amostraNomes: itens.slice(0, 12).map(i => i.nome),
-    avisos: avisos.slice(0, 8),
+    amostraNomes: itens
+      .slice(0, 12)
+      .map(i => nomeLocalDoItemCa(i)),
+    avisos: avisos.slice(0, 12),
   };
 }
 
