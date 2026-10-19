@@ -177,3 +177,26 @@ export async function contaAzulPost<T>(
     throw contaAzulErroAmigavel(e);
   }
 }
+
+/** DELETE (ex.: cancelar cobrança antes do pagamento). */
+export async function contaAzulDelete(client: AxiosInstance, path: string): Promise<void> {
+  try {
+    await withRetry(
+      async () => {
+        await contaAzulThrottle();
+        await client.delete(path, {
+          validateStatus: (status) => status >= 200 && status < 300,
+        });
+      },
+      {
+        tentativas: 3,
+        delayMs: 800,
+        fator: 2,
+        isRetryable: isContaAzulRetryable,
+        delayForError: delayForContaAzulRetry,
+      },
+    );
+  } catch (e) {
+    throw contaAzulErroAmigavel(e);
+  }
+}

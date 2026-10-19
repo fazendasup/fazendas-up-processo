@@ -1,6 +1,7 @@
 import type { PrismaClient } from "../comercial/generated/prisma/index.js";
 import { getComercialEnv } from "../comercial/env";
 import {
+  contaAzulDelete,
   contaAzulGet,
   contaAzulPost,
   createContaAzulHttp,
@@ -285,6 +286,7 @@ export async function lerPagamentoPedido(prisma: PrismaClient, pedidoId: string,
       cartaoUrl: null as string | null,
       total: null as number | null,
       pago: false,
+      formaPagamento: null as FormaPagamentoPessoa | null,
     };
   }
 
@@ -315,6 +317,7 @@ export async function lerPagamentoPedido(prisma: PrismaClient, pedidoId: string,
     cartaoUrl: pagamento.cartaoUrl,
     total: Number(pagamento.total),
     pago: status === "PAGO",
+    formaPagamento: formaPagamentoDoRegistro(pagamento),
   };
 }
 
@@ -340,4 +343,176 @@ async function cobrancaPaga(
     }
   }
   return false;
+}
+
+async function httpContaAzul(prisma: PrismaClient) {
+  const env = getComercialEnv();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) return null;
+  return createContaAzulHttp(env, cred.accessToken);
+}
+
+async function cancelarCobrancaCa(prisma: PrismaClient, cobrancaId: string | null | undefined) {
+  if (!cobrancaId) return;
+  const http = await httpContaAzul(prisma);
+  if (!http) return;
+  try {
+    await contaAzulDelete(
+      http,
+      `/v1/financeiro/eventos-financeiros/contas-a-receber/cobranca/${encodeURIComponent(cobrancaId)}`,
+    );
+  } catch (error) {
+    console.warn("[portal] cancelar cobrança Conta Azul", cobrancaId, error);
+  }
+}
+
+export function formaPagamentoDoRegistro(pagamento: {
+  pixUrl?: string | null;
+  cartaoUrl?: string | null;
+  pixCobrancaId?: string | null;
+  cartaoCobrancaId?: string | null;
+}): FormaPagamentoPessoa | null {
+  if (pagamento.pixUrl || pagamento.pixCobrancaId) return "pix";
+  if (pagamento.cartaoUrl || pagamento.cartaoCobrancaId) return "cartao";
+  return null;
+}
+
+/**
+ * Cancela pedido do site ainda sem pagamento (restaura estoque e invalida cobrança).
+ */
+export async function cancelarPedidoCliente(input: {
+  prisma: PrismaClient;
+  pedidoId: string;
+  clienteId: string;
+}): Promise<{ ok: true }> {
+  const pedido = await input.prisma.pedidoOperacional.findFirst({
+    where: { id: input.pedidoId, clienteId: input.clienteId },
+    include: { itens: true },
+  });
+  if (!pedido) throw new LojaErro(404, "Pedido não encontrado.");
+  if (pedido.status === "CANCELADO") throw new LojaErro(409, "Este pedido já foi cancelado.");
+  if (pedido.status === "ENTREGUE" || pedido.status === "PRONTO") {
+    throw new LojaErro(409, "Este pedido já entrou em separação. Fale com a fazenda.");
+  }
+
+  const obs = pedido.observacoes ?? "";
+  const doSite = obs.includes("Pedido pelo site");
+  const pessoa = obs.includes("(pessoa)");
+  const pagamento = await input.prisma.portalPedidoPagamento.findUnique({ where: { pedidoId: pedido.id } });
+
+  if (pagamento?.status === "PAGO") {
+    throw new LojaErro(409, "Este pedido já foi pago. Fale com a fazenda para qualquer alteração.");
+  }
+
+  if (pessoa) {
+    if (!pagamento || pagamento.status !== "AGUARDANDO") {
+      throw new LojaErro(409, "Só é possível cancelar enquanto o pagamento estiver em aberto.");
+    }
+  } else if (!(doSite && pedido.status === "PENDENTE")) {
+    throw new LojaErro(409, "Só é possível cancelar pedidos do site ainda aguardando aprovação.");
+  }
+
+  await cancelarCobrancaCa(input.prisma, pagamento?.pixCobrancaId);
+  await cancelarCobrancaCa(input.prisma, pagamento?.cartaoCobrancaId);
+
+  await input.prisma.$transaction(async (tx) => {
+    for (const item of pedido.itens) {
+      if (!item.produtoId) continue;
+      const produto = await tx.produtoComercial.findUnique({
+        where: { id: item.produtoId },
+        select: { estoqueLoja: true },
+      });
+      if (produto?.estoqueLoja == null) continue;
+      await tx.produtoComercial.update({
+        where: { id: item.produtoId },
+        data: { estoqueLoja: { increment: Number(item.quantidade) } },
+      });
+    }
+    await tx.pedidoOperacional.update({
+      where: { id: pedido.id },
+      data: {
+        status: "CANCELADO",
+        observacoes: `${obs}\nCancelado pelo cliente no site.`.trim(),
+      },
+    });
+    if (pagamento) {
+      await tx.portalPedidoPagamento.update({
+        where: { pedidoId: pedido.id },
+        data: {
+          status: "CANCELADO",
+          pixUrl: null,
+          cartaoUrl: null,
+        },
+      });
+    }
+  });
+
+  return { ok: true };
+}
+
+/**
+ * Troca Pix ↔ cartão: cancela a cobrança atual e emite a nova.
+ */
+export async function alterarFormaPagamentoPedido(input: {
+  prisma: PrismaClient;
+  pedidoId: string;
+  clienteId: string;
+  contaAzulCustomerId: string;
+  formaPagamento: FormaPagamentoPessoa;
+}): Promise<{
+  status: string;
+  pixUrl: string | null;
+  cartaoUrl: string | null;
+  total: number;
+  formaPagamento: FormaPagamentoPessoa;
+}> {
+  const pedido = await input.prisma.pedidoOperacional.findFirst({
+    where: { id: input.pedidoId, clienteId: input.clienteId },
+  });
+  if (!pedido) throw new LojaErro(404, "Pedido não encontrado.");
+  if (pedido.status === "CANCELADO") throw new LojaErro(409, "Pedido cancelado.");
+  const obs = pedido.observacoes ?? "";
+  if (!obs.includes("(pessoa)")) {
+    throw new LojaErro(400, "Só pedidos de pessoa física têm Pix/cartão no site.");
+  }
+
+  const pagamento = await input.prisma.portalPedidoPagamento.findUnique({ where: { pedidoId: pedido.id } });
+  if (!pagamento || pagamento.status !== "AGUARDANDO") {
+    throw new LojaErro(409, "Só é possível trocar o pagamento enquanto estiver em aberto.");
+  }
+
+  const atual = formaPagamentoDoRegistro(pagamento);
+  if (atual === input.formaPagamento) {
+    return {
+      status: pagamento.status,
+      pixUrl: pagamento.pixUrl,
+      cartaoUrl: pagamento.cartaoUrl,
+      total: Number(pagamento.total),
+      formaPagamento: input.formaPagamento,
+    };
+  }
+
+  const pago = await cobrancaPaga(input.prisma, pagamento.pixCobrancaId, pagamento.cartaoCobrancaId);
+  if (pago) throw new LojaErro(409, "O pagamento já foi confirmado.");
+
+  await cancelarCobrancaCa(input.prisma, pagamento.pixCobrancaId);
+  await cancelarCobrancaCa(input.prisma, pagamento.cartaoCobrancaId);
+
+  // Nova conta a receber: a parcela antiga já teve cobrança e a API não permite segunda na mesma.
+  const dataEntrega = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Manaus",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(pedido.dataEntrega);
+
+  return criarCobrancasPessoa({
+    prisma: input.prisma,
+    pedidoId: pedido.id,
+    contaAzulCustomerId: input.contaAzulCustomerId,
+    total: Number(pagamento.total),
+    descricao: `Pedido Fazendas Up ${dataEntrega}`,
+    vencimentoYmd: dataEntrega,
+    formaPagamento: input.formaPagamento,
+  });
 }

@@ -20,7 +20,13 @@ import { fichaDoProduto } from "./vitrineCopy";
 import { pesoDoProduto } from "./produtoPeso";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
-import { criarCobrancasPessoa, lerPagamentoPedido } from "./portalPagamento";
+import {
+  alterarFormaPagamentoPedido,
+  cancelarPedidoCliente,
+  criarCobrancasPessoa,
+  formaPagamentoDoRegistro,
+  lerPagamentoPedido,
+} from "./portalPagamento";
 import {
   lerEnderecoEntrega,
   rotuloPeriodo,
@@ -826,6 +832,7 @@ export function registerPortalRoutes(app: Express): void {
                   pixUrl: pagamento.pixUrl,
                   cartaoUrl: pagamento.cartaoUrl,
                   total: dinheiro(pagamento.total),
+                  formaPagamento: formaPagamentoDoRegistro(pagamento),
                 }
               : null,
             itens: pedido.itens.map((item) => ({
@@ -1108,6 +1115,69 @@ export function registerPortalRoutes(app: Express): void {
       }
       console.error("[portal] pagamento", error);
       falha(res, 503, "Não foi possível consultar o pagamento.");
+    }
+  });
+
+  app.post("/api/portal/pedidos/:id/cancelar", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para cancelar o pedido.");
+      return;
+    }
+    try {
+      res.json(await cancelarPedidoCliente({
+        prisma: getComercialPrisma(),
+        pedidoId: String(req.params.id),
+        clienteId: acesso.clienteId,
+      }));
+    } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] cancelar pedido", error);
+      falha(res, 503, "Não foi possível cancelar o pedido agora.");
+    }
+  });
+
+  app.post("/api/portal/pedidos/:id/forma-pagamento", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para alterar o pagamento.");
+      return;
+    }
+    const parsed = z.object({ formaPagamento: z.enum(["pix", "cartao"]) }).safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Escolha Pix ou cartão.");
+      return;
+    }
+    const contaAzulId = acesso.cliente.externalId?.trim();
+    if (!contaAzulId) {
+      falha(res, 400, "Esta conta ainda não pode alterar o pagamento.");
+      return;
+    }
+    try {
+      const cobranca = await alterarFormaPagamentoPedido({
+        prisma: getComercialPrisma(),
+        pedidoId: String(req.params.id),
+        clienteId: acesso.clienteId,
+        contaAzulCustomerId: contaAzulId,
+        formaPagamento: parsed.data.formaPagamento,
+      });
+      res.json({
+        ...cobranca,
+        mensagem:
+          parsed.data.formaPagamento === "pix"
+            ? "Pagamento alterado para Pix."
+            : "Pagamento alterado para cartão.",
+      });
+    } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] forma pagamento", error);
+      falha(res, 503, "Não foi possível alterar o pagamento agora.");
     }
   });
 
