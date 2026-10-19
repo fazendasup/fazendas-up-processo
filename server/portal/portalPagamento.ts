@@ -61,11 +61,12 @@ async function aguardarUrl(
   http: ReturnType<typeof createContaAzulHttp>,
   id: string,
   inicial: CobrancaResposta,
+  tentativas = 12,
 ): Promise<{ id: string; url: string | null; status: string | null }> {
   let url = (inicial.url ?? inicial.URL ?? null) ? String(inicial.url ?? inicial.URL) : null;
   let status = inicial.status ? String(inicial.status) : null;
   if (url) return { id, url, status };
-  for (let i = 1; i <= 6; i += 1) {
+  for (let i = 1; i <= tentativas; i += 1) {
     try {
       const c = await contaAzulGet<CobrancaResposta>(
         http,
@@ -74,11 +75,13 @@ async function aguardarUrl(
       url = c.url ?? c.URL ? String(c.url ?? c.URL) : null;
       status = c.status ? String(c.status) : status;
       if (url) return { id, url, status };
-      if (status && /FALHA_EMISSAO|INVALIDO/i.test(status)) return { id, url: null, status };
+      if (status && /FALHA_EMISSAO|INVALIDO|CANCELADO|FALHA_CANCELAR/i.test(status)) {
+        return { id, url: null, status };
+      }
     } catch {
       /* tenta de novo */
     }
-    if (i < 6) await esperar(700 * i);
+    if (i < tentativas) await esperar(Math.min(2500, 500 + i * 400));
   }
   return { id, url, status };
 }
@@ -139,6 +142,7 @@ export async function criarCobrancasPessoa(input: {
   cartaoUrl: string | null;
   total: number;
   formaPagamento: FormaPagamentoPessoa;
+  linkPendente?: boolean;
 }> {
   const env = getComercialEnv();
   const cred = await ensureValidAccessToken(input.prisma, env);
@@ -226,11 +230,10 @@ export async function criarCobrancasPessoa(input: {
     throw new LojaErro(503, texto.includes("Conta Azul") ? texto : "Não foi possível gerar o pagamento agora.");
   }
 
-  if (!cobranca.url) {
-    throw new LojaErro(
-      503,
-      "O Conta Azul ainda não liberou o link de pagamento. Tente de novo em instantes.",
-    );
+  // O Conta Azul costuma devolver a cobrança sem URL (AGUARDANDO_CONFIRMACAO).
+  // Guardamos o id e o cliente busca o link depois — não desfaz o pedido.
+  if (cobranca.status && /FALHA_EMISSAO|INVALIDO/i.test(cobranca.status)) {
+    throw new LojaErro(503, "A cobrança foi recusada pelo Conta Azul. Tente outra forma de pagamento.");
   }
 
   const pixUrl = input.formaPagamento === "pix" ? cobranca.url : null;
@@ -268,16 +271,29 @@ export async function criarCobrancasPessoa(input: {
     cartaoUrl,
     total,
     formaPagamento: input.formaPagamento,
+    linkPendente: !cobranca.url,
   };
 }
 
-export async function lerPagamentoPedido(prisma: PrismaClient, pedidoId: string, clienteId: string) {
+export async function lerPagamentoPedido(
+  prisma: PrismaClient,
+  pedidoId: string,
+  clienteId: string,
+  contaAzulCustomerId?: string | null,
+) {
   const pedido = await prisma.pedidoOperacional.findFirst({
-    where: { id: pedidoId, clienteId },
+    where: {
+      id: pedidoId,
+      OR: [
+        { clienteId },
+        ...(contaAzulCustomerId ? [{ contaAzulCustomerId }] : []),
+      ],
+    },
     select: { id: true, observacoes: true, status: true },
   });
   if (!pedido) throw new LojaErro(404, "Pedido não encontrado.");
-  const pagamento = await prisma.portalPedidoPagamento.findUnique({ where: { pedidoId } });
+
+  let pagamento = await prisma.portalPedidoPagamento.findUnique({ where: { pedidoId } });
   if (!pagamento) {
     return {
       pedidoId,
@@ -287,25 +303,59 @@ export async function lerPagamentoPedido(prisma: PrismaClient, pedidoId: string,
       total: null as number | null,
       pago: false,
       formaPagamento: null as FormaPagamentoPessoa | null,
+      linkPendente: false,
     };
   }
 
   let status = pagamento.status;
+  let pixUrl = pagamento.pixUrl;
+  let cartaoUrl = pagamento.cartaoUrl;
+
   if (status === "AGUARDANDO" && (pagamento.pixCobrancaId || pagamento.cartaoCobrancaId)) {
-    const pago = await cobrancaPaga(prisma, pagamento.pixCobrancaId, pagamento.cartaoCobrancaId);
-    if (pago) {
-      status = "PAGO";
-      await prisma.portalPedidoPagamento.update({
-        where: { pedidoId },
-        data: { status: "PAGO", pagoEm: new Date() },
-      });
-      if (!(pedido.observacoes ?? "").includes("Pago via site")) {
-        await prisma.pedidoOperacional.update({
-          where: { id: pedidoId },
+    const http = await httpContaAzul(prisma);
+    if (http) {
+      for (const [campo, cobrancaId] of [
+        ["pix", pagamento.pixCobrancaId],
+        ["cartao", pagamento.cartaoCobrancaId],
+      ] as const) {
+        if (!cobrancaId) continue;
+        try {
+          const c = await contaAzulGet<CobrancaResposta>(
+            http,
+            `/v1/financeiro/eventos-financeiros/contas-a-receber/cobranca/${encodeURIComponent(cobrancaId)}`,
+          );
+          const url = c.url ?? c.URL ? String(c.url ?? c.URL) : null;
+          if (url) {
+            if (campo === "pix") pixUrl = url;
+            else cartaoUrl = url;
+          }
+          if (c.status && /^(PAGO|QUITADO)$/i.test(String(c.status).trim())) {
+            status = "PAGO";
+          }
+        } catch {
+          /* ignora */
+        }
+      }
+      if (pixUrl !== pagamento.pixUrl || cartaoUrl !== pagamento.cartaoUrl || status !== pagamento.status) {
+        pagamento = await prisma.portalPedidoPagamento.update({
+          where: { pedidoId },
           data: {
-            observacoes: `${pedido.observacoes ?? "Pedido pelo site (pessoa)."}\nPago via site. Liberado para produção.`.trim(),
+            pixUrl,
+            cartaoUrl,
+            ...(status === "PAGO" ? { status: "PAGO", pagoEm: new Date() } : {}),
           },
         });
+        pixUrl = pagamento.pixUrl;
+        cartaoUrl = pagamento.cartaoUrl;
+        status = pagamento.status;
+        if (status === "PAGO" && !(pedido.observacoes ?? "").includes("Pago via site")) {
+          await prisma.pedidoOperacional.update({
+            where: { id: pedidoId },
+            data: {
+              observacoes: `${pedido.observacoes ?? "Pedido pelo site (pessoa)."}\nPago via site. Liberado para produção.`.trim(),
+            },
+          });
+        }
       }
     }
   }
@@ -313,11 +363,12 @@ export async function lerPagamentoPedido(prisma: PrismaClient, pedidoId: string,
   return {
     pedidoId,
     status,
-    pixUrl: pagamento.pixUrl,
-    cartaoUrl: pagamento.cartaoUrl,
+    pixUrl,
+    cartaoUrl,
     total: Number(pagamento.total),
     pago: status === "PAGO",
-    formaPagamento: formaPagamentoDoRegistro(pagamento),
+    formaPagamento: formaPagamentoDoRegistro({ pixUrl, cartaoUrl, pixCobrancaId: pagamento.pixCobrancaId, cartaoCobrancaId: pagamento.cartaoCobrancaId }),
+    linkPendente: status === "AGUARDANDO" && !pixUrl && !cartaoUrl,
   };
 }
 

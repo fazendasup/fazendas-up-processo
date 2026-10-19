@@ -1072,21 +1072,26 @@ export function registerPortalRoutes(app: Express): void {
           total: totalReais,
           perfil: "pessoa",
           pagamento: cobranca,
-          mensagem:
-            formaPagamento === "pix"
+          mensagem: cobranca.linkPendente
+            ? "Pedido criado. O link de pagamento está sendo liberado — abra em Meus pedidos em instantes."
+            : formaPagamento === "pix"
               ? "Pedido criado. Conclua o Pix para liberar a entrega."
               : "Pedido criado. Conclua o pagamento no cartão para liberar a entrega.",
         });
       } catch (error) {
-        await prisma.pedidoOperacional.delete({ where: { id: pedido.id } }).catch(() => null);
-        for (const linha of linhas) {
-          if (linha!.produto.estoqueLoja == null) continue;
-          await prisma.produtoComercial
-            .update({
-              where: { id: linha!.produto.id },
-              data: { estoqueLoja: { increment: linha!.quantidade } },
-            })
-            .catch(() => null);
+        // Só desfaz o pedido se a cobrança nem chegou a ser criada.
+        const pagamento = await prisma.portalPedidoPagamento.findUnique({ where: { pedidoId: pedido.id } });
+        if (!pagamento) {
+          await prisma.pedidoOperacional.delete({ where: { id: pedido.id } }).catch(() => null);
+          for (const linha of linhas) {
+            if (linha!.produto.estoqueLoja == null) continue;
+            await prisma.produtoComercial
+              .update({
+                where: { id: linha!.produto.id },
+                data: { estoqueLoja: { increment: linha!.quantidade } },
+              })
+              .catch(() => null);
+          }
         }
         throw error;
       }
@@ -1107,7 +1112,14 @@ export function registerPortalRoutes(app: Express): void {
       return;
     }
     try {
-      res.json(await lerPagamentoPedido(getComercialPrisma(), String(req.params.id), acesso.clienteId));
+      res.json(
+        await lerPagamentoPedido(
+          getComercialPrisma(),
+          String(req.params.id),
+          acesso.clienteId,
+          acesso.cliente.externalId?.trim() || null,
+        ),
+      );
     } catch (error) {
       if (error instanceof LojaErro) {
         falha(res, error.status, error.message);
