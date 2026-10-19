@@ -275,7 +275,7 @@ async function garantirAcesso(prisma: PrismaClient, clienteId: string, emailInfo
   let email = emailInformado.includes("@") ? emailInformado.toLowerCase() : `${cnpj}@cnpj.fazendasup.com.br`;
   const ocupado = await prisma.portalAcesso.findUnique({ where: { email } });
   if (ocupado) email = `${cnpj}@cnpj.fazendasup.com.br`;
-  return prisma.portalAcesso.create({ data: { clienteId, email, ativo: true } });
+  return prisma.portalAcesso.create({ data: { clienteId, email, ativo: true, perfil: "EMPRESA" } });
 }
 
 /** Grava a empresa, envia ao Conta Azul e abre o acesso com a senha inicial. */

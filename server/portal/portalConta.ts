@@ -11,6 +11,7 @@ import {
   minimoPorAceite,
   sincronizarContratoPendente,
 } from "./contratoRecorrencia";
+import { MIN_ORDER_PESSOA_REAIS } from "./portalCalendario";
 
 export type CadastroConta = {
   nome: string;
@@ -274,5 +275,7 @@ export async function aceitarContrato(
 
 export async function minimoDaConta(prisma: PrismaClient, clienteId: string | null): Promise<number> {
   if (!clienteId) return minimoPorAceite(false);
+  const acesso = await prisma.portalAcesso.findUnique({ where: { clienteId }, select: { perfil: true } });
+  if (acesso?.perfil === "PESSOA") return MIN_ORDER_PESSOA_REAIS;
   return minimoPorAceite(await clienteAceitouRecorrencia(prisma, clienteId));
 }

@@ -2,6 +2,8 @@
 
 export const MIN_ORDER_REAIS = 300;
 export const MIN_ORDER_RECORRENTE_REAIS = 150;
+/** Pessoa física: mínimo menor para reduzir atrito no checkout. */
+export const MIN_ORDER_PESSOA_REAIS = 100;
 export const LEAD_BUSINESS_DAYS = 2;
 const TIMEZONE = "America/Manaus";
 

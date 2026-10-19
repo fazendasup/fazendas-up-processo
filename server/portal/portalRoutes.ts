@@ -19,6 +19,8 @@ import { lerProgramacao, salvarProgramacao } from "./portalProgramacao";
 import { fichaDoProduto } from "./vitrineCopy";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
+import { criarCobrancasPessoa, lerPagamentoPedido } from "./portalPagamento";
+import { ehPerfilPessoa, registrarPessoa } from "./portalPessoa";
 import {
   emitirSessaoCliente,
   emitirSessaoEquipe,
@@ -148,7 +150,7 @@ async function criarAcessoPortal(
   const ocupado = await prisma.portalAcesso.findUnique({ where: { email } });
   if (ocupado && ocupado.clienteId !== cliente.id) email = `${cnpj}@cnpj.fazendasup.com.br`;
   return prisma.portalAcesso.create({
-    data: { clienteId: cliente.id, email, ativo: true },
+    data: { clienteId: cliente.id, email, ativo: true, perfil: "EMPRESA" },
   });
 }
 
@@ -175,14 +177,21 @@ async function equipeDaSessao(req: Request) {
 
 async function dadosCliente(acesso: {
   email: string;
+  perfil?: string | null;
   cliente: { id: string; nome: string; cnpjCpf: string | null; externalId: string | null };
 }) {
+  const perfil = ehPerfilPessoa(acesso.perfil, acesso.cliente.cnpjCpf) ? "pessoa" : "empresa";
   return {
     nome: acesso.cliente.nome,
     email: acesso.email,
     cnpj: acesso.cliente.cnpjCpf,
+    documento: acesso.cliente.cnpjCpf,
+    perfil: perfil as "pessoa" | "empresa",
     vinculado: Boolean(acesso.cliente.externalId),
-    recorrente: await clienteAceitouRecorrencia(getComercialPrisma(), acesso.cliente.id),
+    recorrente:
+      perfil === "pessoa"
+        ? false
+        : await clienteAceitouRecorrencia(getComercialPrisma(), acesso.cliente.id),
   };
 }
 
@@ -294,6 +303,60 @@ export function registerPortalRoutes(app: Express): void {
     } catch (error) {
       console.error("[portal] vitrine", error);
       falha(res, 503, "Não foi possível carregar os produtos.");
+    }
+  });
+
+  app.post("/api/portal/cadastro/pessoa", cadastroLimit, async (req, res) => {
+    if (!portalConfigurado()) {
+      falha(res, 503, "O portal ainda não tem segredo de sessão configurado.");
+      return;
+    }
+    const parsed = z
+      .object({
+        nome: z.string().trim().min(3).max(160),
+        cpf: z.string().trim().min(11).max(14),
+        email: emailSchema,
+        telefone: z.string().trim().min(10).max(20),
+        senha: z.string().min(8).max(72),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Informe nome, CPF, e-mail, telefone e uma senha com pelo menos 8 caracteres.");
+      return;
+    }
+    try {
+      const criado = await registrarPessoa({
+        nome: parsed.data.nome,
+        cpf: parsed.data.cpf,
+        email: parsed.data.email,
+        telefone: parsed.data.telefone,
+        senha: parsed.data.senha,
+      });
+      await emitirSessaoCliente(req, res, criado.acessoId, criado.clienteId);
+      const prisma = getComercialPrisma();
+      const acesso = await prisma.portalAcesso.findUnique({
+        where: { id: criado.acessoId },
+        include: { cliente: true },
+      });
+      res.status(201).json({
+        cliente: acesso ? await dadosCliente(acesso) : {
+          nome: criado.nome,
+          email: criado.email,
+          cnpj: criado.cpf,
+          documento: criado.cpf,
+          perfil: "pessoa" as const,
+          vinculado: true,
+          recorrente: false,
+        },
+        mensagem: "Conta criada. Você já pode pedir.",
+      });
+    } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] cadastro pessoa", error);
+      falha(res, 503, "Não foi possível criar a conta agora.");
     }
   });
 
@@ -434,33 +497,54 @@ export function registerPortalRoutes(app: Express): void {
     }
     const parsed = z
       .object({
-        cnpj: z.string().trim().min(14).max(20),
+        cnpj: z.string().trim().min(11).max(20).optional(),
+        cpf: z.string().trim().min(11).max(14).optional(),
+        documento: z.string().trim().min(11).max(20).optional(),
         senha: z.string().min(1).max(72),
       })
       .safeParse(req.body);
     if (!parsed.success) {
-      falha(res, 401, "CNPJ ou senha não conferem.");
+      falha(res, 401, "Documento ou senha não conferem.");
       return;
     }
-    const cnpj = somenteDigitos(parsed.data.cnpj);
-    if (cnpj.length !== 14) {
-      falha(res, 401, "CNPJ ou senha não conferem.");
+    const documento = somenteDigitos(parsed.data.documento || parsed.data.cpf || parsed.data.cnpj || "");
+    if (documento.length !== 11 && documento.length !== 14) {
+      falha(res, 401, "Documento ou senha não conferem.");
       return;
     }
+    const rotuloErro = documento.length === 11 ? "CPF ou senha não conferem." : "CNPJ ou senha não conferem.";
     try {
       const prisma = getComercialPrisma();
-      const cliente = await buscarClientePorCnpj(prisma, cnpj);
+      const cliente = await buscarClientePorCnpj(prisma, documento);
       if (!cliente) {
-        falha(res, 401, "CNPJ ou senha não conferem.");
+        falha(res, 401, rotuloErro);
         return;
       }
       const acessoExistente = cliente.portalAcesso;
-      const confere = await senhaDoPortalConfere(acessoExistente?.senhaHash ?? null, cnpj, parsed.data.senha);
-      if (!confere || acessoExistente?.ativo === false) {
-        falha(res, 401, "CNPJ ou senha não conferem.");
+      if (documento.length === 11) {
+        if (!acessoExistente?.senhaHash || acessoExistente.ativo === false) {
+          falha(res, 401, rotuloErro);
+          return;
+        }
+        const ok = await verifyPassword(parsed.data.senha, acessoExistente.senhaHash);
+        if (!ok) {
+          falha(res, 401, rotuloErro);
+          return;
+        }
+        await emitirSessaoCliente(req, res, acessoExistente.id, acessoExistente.clienteId);
+        const completo = await prisma.portalAcesso.findUnique({
+          where: { id: acessoExistente.id },
+          include: { cliente: true },
+        });
+        res.json({ cliente: completo ? await dadosCliente(completo) : null, senhaInicial: false });
         return;
       }
-      const acesso = acessoExistente ?? (await criarAcessoPortal(prisma, cliente, cnpj));
+      const confere = await senhaDoPortalConfere(acessoExistente?.senhaHash ?? null, documento, parsed.data.senha);
+      if (!confere || acessoExistente?.ativo === false) {
+        falha(res, 401, rotuloErro);
+        return;
+      }
+      const acesso = acessoExistente ?? (await criarAcessoPortal(prisma, cliente, documento));
       const completo = await prisma.portalAcesso.findUnique({
         where: { id: acesso.id },
         include: { cliente: true },
@@ -486,6 +570,10 @@ export function registerPortalRoutes(app: Express): void {
     const acesso = await clienteDaSessao(req);
     if (!acesso) {
       falha(res, 401, "Entre para ver a conta.");
+      return;
+    }
+    if (ehPerfilPessoa(acesso.perfil, acesso.cliente.cnpjCpf)) {
+      falha(res, 400, "Conta de pessoa física não usa o cadastro empresarial.");
       return;
     }
     try {
@@ -683,6 +771,10 @@ export function registerPortalRoutes(app: Express): void {
         take: 80,
         include: { itens: true },
       });
+      const pagamentos = await prisma.portalPedidoPagamento.findMany({
+        where: { pedidoId: { in: pedidos.map((pedido) => pedido.id) } },
+      });
+      const pagamentoPorPedido = new Map(pagamentos.map((item) => [item.pedidoId, item]));
       res.json({
         pedidos: pedidos.map((pedido) => {
           const dataEntrega = new Intl.DateTimeFormat("en-CA", {
@@ -691,12 +783,23 @@ export function registerPortalRoutes(app: Express): void {
             month: "2-digit",
             day: "2-digit",
           }).format(pedido.dataEntrega);
+          const pagamento = pagamentoPorPedido.get(pedido.id);
+          const obs = pedido.observacoes ?? "";
           return {
             id: pedido.id,
             dataEntrega,
             status: pedido.status,
             programado: dataEntrega >= hoje && pedido.status !== "CANCELADO",
-            doSite: (pedido.observacoes ?? "").includes("Pedido pelo site"),
+            doSite: obs.includes("Pedido pelo site"),
+            pessoa: obs.includes("(pessoa)"),
+            pagamento: pagamento
+              ? {
+                  status: pagamento.status,
+                  pixUrl: pagamento.pixUrl,
+                  cartaoUrl: pagamento.cartaoUrl,
+                  total: dinheiro(pagamento.total),
+                }
+              : null,
             itens: pedido.itens.map((item) => ({
               nome: item.produtoNome,
               quantidade: Number(item.quantidade),
@@ -750,15 +853,18 @@ export function registerPortalRoutes(app: Express): void {
       falha(res, 400, "Esta conta ainda não pode receber pedidos. Fale com a fazenda.");
       return;
     }
+    const pessoa = ehPerfilPessoa(acesso.perfil, acesso.cliente.cnpjCpf);
     try {
-      const atraso = await detalheInadimplenciaCliente(contaAzulId);
-      if (atraso.inadimplente) {
-        falha(
-          res,
-          409,
-          "Há um pagamento em atraso nesta conta. Regularize para enviar um novo pedido.",
-        );
-        return;
+      if (!pessoa) {
+        const atraso = await detalheInadimplenciaCliente(contaAzulId);
+        if (atraso.inadimplente) {
+          falha(
+            res,
+            409,
+            "Há um pagamento em atraso nesta conta. Regularize para enviar um novo pedido.",
+          );
+          return;
+        }
       }
       const prisma = getComercialPrisma();
       const produtos = await prisma.produtoComercial.findMany({
@@ -814,6 +920,13 @@ export function registerPortalRoutes(app: Express): void {
       }
       const nota = parsed.data.observacoes?.trim();
       const dataEntrega = new Date(`${parsed.data.dataEntrega}T12:00:00`);
+      const observacoes = pessoa
+        ? nota
+          ? `Pedido pelo site (pessoa). Aguardando Pix ou cartão. ${nota}`
+          : "Pedido pelo site (pessoa). Aguardando Pix ou cartão."
+        : nota
+          ? `Pedido pelo site. ${nota}`
+          : "Pedido pelo site.";
       const pedido = await prisma.$transaction(async (tx) => {
         for (const linha of linhas) {
           if (linha!.produto.estoqueLoja == null) continue;
@@ -826,32 +939,69 @@ export function registerPortalRoutes(app: Express): void {
           }
         }
         return tx.pedidoOperacional.create({
-        data: {
-          clienteId: acesso.clienteId,
-          contaAzulCustomerId: contaAzulId,
-          dataEntrega,
-          diaSemana: dataEntrega.getDay(),
-          tipoVenda: regra?.tipoVendaPadrao ?? "AVULSO",
-          observacoes: nota ? `Pedido pelo site. ${nota}` : "Pedido pelo site.",
-          itens: {
-            create: linhas.map((linha) => ({
-              produtoId: linha!.produto.id,
-              produtoNome: linha!.produto.nome,
-              categoria: linha!.produto.categoria,
-              quantidade: linha!.quantidade.toFixed(3),
-              precoUnit: linha!.preco.toFixed(2),
-              precoEspecial: linha!.especial,
-            })),
+          data: {
+            clienteId: acesso.clienteId,
+            contaAzulCustomerId: contaAzulId,
+            dataEntrega,
+            diaSemana: dataEntrega.getDay(),
+            tipoVenda: regra?.tipoVendaPadrao ?? "AVULSO",
+            observacoes,
+            itens: {
+              create: linhas.map((linha) => ({
+                produtoId: linha!.produto.id,
+                produtoNome: linha!.produto.nome,
+                categoria: linha!.produto.categoria,
+                quantidade: linha!.quantidade.toFixed(3),
+                precoUnit: linha!.preco.toFixed(2),
+                precoEspecial: linha!.especial,
+              })),
+            },
           },
-        },
-        include: { itens: true },
+          include: { itens: true },
+        });
       });
-      });
-      res.status(201).json({
-        id: pedido.id,
-        dataEntrega: parsed.data.dataEntrega,
-        total: totalReais,
-      });
+
+      if (!pessoa) {
+        res.status(201).json({
+          id: pedido.id,
+          dataEntrega: parsed.data.dataEntrega,
+          total: totalReais,
+          perfil: "empresa",
+          mensagem: "Pedido enviado para aprovação.",
+        });
+        return;
+      }
+
+      try {
+        const cobranca = await criarCobrancasPessoa({
+          prisma,
+          pedidoId: pedido.id,
+          contaAzulCustomerId: contaAzulId,
+          total: totalReais,
+          descricao: `Pedido Fazendas Up ${parsed.data.dataEntrega}`,
+          vencimentoYmd: parsed.data.dataEntrega,
+        });
+        res.status(201).json({
+          id: pedido.id,
+          dataEntrega: parsed.data.dataEntrega,
+          total: totalReais,
+          perfil: "pessoa",
+          pagamento: cobranca,
+          mensagem: "Pedido criado. Pague com Pix ou cartão para liberar.",
+        });
+      } catch (error) {
+        await prisma.pedidoOperacional.delete({ where: { id: pedido.id } }).catch(() => null);
+        for (const linha of linhas) {
+          if (linha!.produto.estoqueLoja == null) continue;
+          await prisma.produtoComercial
+            .update({
+              where: { id: linha!.produto.id },
+              data: { estoqueLoja: { increment: linha!.quantidade } },
+            })
+            .catch(() => null);
+        }
+        throw error;
+      }
     } catch (error) {
       if (error instanceof LojaErro) {
         falha(res, error.status, error.message);
@@ -859,6 +1009,24 @@ export function registerPortalRoutes(app: Express): void {
       }
       console.error("[portal] criar pedido", error);
       falha(res, 503, "Não foi possível enviar o pedido agora.");
+    }
+  });
+
+  app.get("/api/portal/pedidos/:id/pagamento", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para ver o pagamento.");
+      return;
+    }
+    try {
+      res.json(await lerPagamentoPedido(getComercialPrisma(), String(req.params.id), acesso.clienteId));
+    } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] pagamento", error);
+      falha(res, 503, "Não foi possível consultar o pagamento.");
     }
   });
 
