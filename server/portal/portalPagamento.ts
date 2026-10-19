@@ -13,6 +13,8 @@ import {
 import { todayYmd } from "./portalCalendario";
 import { LojaErro } from "./portalLoja";
 
+export type FormaPagamentoPessoa = "pix" | "cartao";
+
 type CobrancaResposta = {
   id?: string;
   url?: string | null;
@@ -20,8 +22,38 @@ type CobrancaResposta = {
   status?: string | null;
 };
 
+type CategoriaCa = { id?: string; nome?: string; tipo?: string };
+
+let cacheCategoriaReceitaId: string | null = null;
+
 function esperar(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function idCategoriaReceitaVendas(
+  http: ReturnType<typeof createContaAzulHttp>,
+): Promise<string> {
+  if (cacheCategoriaReceitaId) return cacheCategoriaReceitaId;
+  const receitas: CategoriaCa[] = [];
+  for (let pagina = 1; pagina <= 8; pagina += 1) {
+    const resposta = await contaAzulGet<{ itens?: CategoriaCa[]; items?: CategoriaCa[] }>(
+      http,
+      `/v1/categorias?tamanho_pagina=100&pagina=${pagina}`,
+    );
+    const itens = resposta.itens ?? resposta.items ?? [];
+    if (itens.length === 0) break;
+    for (const item of itens) {
+      if (String(item.tipo ?? "").toUpperCase() === "RECEITA") receitas.push(item);
+    }
+  }
+  const escolhida =
+    receitas.find((item) => /receitas?\s+de\s+vendas?/i.test(item.nome ?? "")) ??
+    receitas.find((item) => /venda/i.test(item.nome ?? "")) ??
+    receitas[0];
+  const id = String(escolhida?.id ?? "").trim();
+  if (!id) throw new LojaErro(503, "Não há categoria de receita configurada no Conta Azul.");
+  cacheCategoriaReceitaId = id;
+  return id;
 }
 
 async function aguardarUrl(
@@ -32,7 +64,7 @@ async function aguardarUrl(
   let url = (inicial.url ?? inicial.URL ?? null) ? String(inicial.url ?? inicial.URL) : null;
   let status = inicial.status ? String(inicial.status) : null;
   if (url) return { id, url, status };
-  for (let i = 1; i <= 4; i += 1) {
+  for (let i = 1; i <= 6; i += 1) {
     try {
       const c = await contaAzulGet<CobrancaResposta>(
         http,
@@ -45,7 +77,7 @@ async function aguardarUrl(
     } catch {
       /* tenta de novo */
     }
-    if (i < 4) await esperar(600 * i);
+    if (i < 6) await esperar(700 * i);
   }
   return { id, url, status };
 }
@@ -90,7 +122,7 @@ function idParcelaDaConta(conta: Record<string, unknown>): string | null {
 }
 
 /**
- * Cria conta a receber no Conta Azul e emite Pix + link de cartão para o pedido PF.
+ * Cria conta a receber no Conta Azul e emite Pix OU link de cartão (uma cobrança por parcela).
  */
 export async function criarCobrancasPessoa(input: {
   prisma: PrismaClient;
@@ -99,11 +131,13 @@ export async function criarCobrancasPessoa(input: {
   total: number;
   descricao: string;
   vencimentoYmd?: string;
+  formaPagamento: FormaPagamentoPessoa;
 }): Promise<{
   status: string;
   pixUrl: string | null;
   cartaoUrl: string | null;
   total: number;
+  formaPagamento: FormaPagamentoPessoa;
 }> {
   const env = getComercialEnv();
   const cred = await ensureValidAccessToken(input.prisma, env);
@@ -120,26 +154,35 @@ export async function criarCobrancasPessoa(input: {
   const vencimento = input.vencimentoYmd || todayYmd();
   const total = Math.round(input.total * 100) / 100;
   const descricao = input.descricao.slice(0, 180) || "Pedido Fazendas Up";
+  const categoriaId = await idCategoriaReceitaVendas(http);
 
-  const conta = await contaAzulPost<Record<string, unknown>>(http, "/v1/financeiro/contas-a-receber", {
-    data_competencia: vencimento,
-    valor: total,
-    observacao: `Pedido site ${input.pedidoId}`,
-    descricao,
-    contato: input.contaAzulCustomerId,
-    conta_financeira: contaId,
-    condicao_pagamento: {
-      parcelas: [
-        {
-          descricao: "Parcela 1",
-          data_vencimento: vencimento,
-          nota: "Pagamento pelo site",
-          conta_financeira: contaId,
-          detalhe_valor: { valor_bruto: total },
-        },
-      ],
-    },
-  });
+  let conta: Record<string, unknown>;
+  try {
+    conta = await contaAzulPost<Record<string, unknown>>(http, "/v1/financeiro/contas-a-receber", {
+      data_competencia: vencimento,
+      valor: total,
+      observacao: `Pedido site ${input.pedidoId}`,
+      descricao,
+      id_cliente: input.contaAzulCustomerId,
+      conta_financeira: contaId,
+      rateio: [{ id_categoria: categoriaId, valor: total }],
+      condicao_pagamento: {
+        parcelas: [
+          {
+            descricao: "Parcela 1",
+            data_vencimento: vencimento,
+            nota: "Pagamento pelo site",
+            conta_financeira: contaId,
+            detalhe_valor: { valor_bruto: total },
+          },
+        ],
+      },
+    });
+  } catch (error) {
+    const texto = error instanceof Error ? error.message : String(error);
+    console.error("[portal] contas-a-receber", error);
+    throw new LojaErro(503, texto.includes("Conta Azul") ? texto : "Não foi possível abrir a cobrança agora.");
+  }
 
   const receberId = String(conta.id ?? "").trim();
   let parcelaId = idParcelaDaConta(conta);
@@ -166,34 +209,31 @@ export async function criarCobrancasPessoa(input: {
     throw new LojaErro(503, "A parcela de cobrança não ficou pronta. Tente de novo em instantes.");
   }
 
-  let pix: { id: string; url: string | null; status: string | null } | null = null;
-  let cartao: { id: string; url: string | null; status: string | null } | null = null;
+  const tipo = input.formaPagamento === "cartao" ? "LINK_PAGAMENTO" : "PIX_COBRANCA";
+  let cobranca: { id: string; url: string | null; status: string | null };
   try {
-    pix = await gerarCobranca(http, {
+    cobranca = await gerarCobranca(http, {
       contaBancaria: contaId,
       parcelaId,
       vencimento,
-      descricao: `${descricao} · Pix`,
-      tipo: "PIX_COBRANCA",
+      descricao: `${descricao} · ${input.formaPagamento === "cartao" ? "Cartão" : "Pix"}`,
+      tipo,
     });
   } catch (error) {
-    console.error("[portal] pix cobrança", error);
-  }
-  try {
-    cartao = await gerarCobranca(http, {
-      contaBancaria: contaId,
-      parcelaId,
-      vencimento,
-      descricao: `${descricao} · Cartão`,
-      tipo: "LINK_PAGAMENTO",
-    });
-  } catch (error) {
-    console.error("[portal] link cartão", error);
+    const texto = error instanceof Error ? error.message : String(error);
+    console.error("[portal] gerar cobrança", error);
+    throw new LojaErro(503, texto.includes("Conta Azul") ? texto : "Não foi possível gerar o pagamento agora.");
   }
 
-  if (!pix?.url && !cartao?.url) {
-    throw new LojaErro(503, "Não foi possível gerar Pix nem link de cartão agora.");
+  if (!cobranca.url) {
+    throw new LojaErro(
+      503,
+      "O Conta Azul ainda não liberou o link de pagamento. Tente de novo em instantes.",
+    );
   }
+
+  const pixUrl = input.formaPagamento === "pix" ? cobranca.url : null;
+  const cartaoUrl = input.formaPagamento === "cartao" ? cobranca.url : null;
 
   await input.prisma.portalPedidoPagamento.upsert({
     where: { pedidoId: input.pedidoId },
@@ -203,29 +243,30 @@ export async function criarCobrancasPessoa(input: {
       total,
       contaAzulReceberId: receberId || null,
       parcelaId,
-      pixCobrancaId: pix?.id ?? null,
-      pixUrl: pix?.url ?? null,
-      cartaoCobrancaId: cartao?.id ?? null,
-      cartaoUrl: cartao?.url ?? null,
+      pixCobrancaId: input.formaPagamento === "pix" ? cobranca.id : null,
+      pixUrl,
+      cartaoCobrancaId: input.formaPagamento === "cartao" ? cobranca.id : null,
+      cartaoUrl,
     },
     update: {
       status: "AGUARDANDO",
       total,
       contaAzulReceberId: receberId || null,
       parcelaId,
-      pixCobrancaId: pix?.id ?? null,
-      pixUrl: pix?.url ?? null,
-      cartaoCobrancaId: cartao?.id ?? null,
-      cartaoUrl: cartao?.url ?? null,
+      pixCobrancaId: input.formaPagamento === "pix" ? cobranca.id : null,
+      pixUrl,
+      cartaoCobrancaId: input.formaPagamento === "cartao" ? cobranca.id : null,
+      cartaoUrl,
       pagoEm: null,
     },
   });
 
   return {
     status: "AGUARDANDO",
-    pixUrl: pix?.url ?? null,
-    cartaoUrl: cartao?.url ?? null,
+    pixUrl,
+    cartaoUrl,
     total,
+    formaPagamento: input.formaPagamento,
   };
 }
 
@@ -260,7 +301,7 @@ export async function lerPagamentoPedido(prisma: PrismaClient, pedidoId: string,
         await prisma.pedidoOperacional.update({
           where: { id: pedidoId },
           data: {
-            observacoes: "Pedido pelo site (pessoa). Pago via site. Liberado para produção.",
+            observacoes: `${pedido.observacoes ?? "Pedido pelo site (pessoa)."}\nPago via site. Liberado para produção.`.trim(),
           },
         });
       }

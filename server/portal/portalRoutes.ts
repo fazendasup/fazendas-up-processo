@@ -21,6 +21,14 @@ import { pesoDoProduto } from "./produtoPeso";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import { criarCobrancasPessoa, lerPagamentoPedido } from "./portalPagamento";
+import {
+  lerEnderecoEntrega,
+  rotuloPeriodo,
+  salvarEnderecoEntrega,
+  sincronizarEnderecoContaAzul,
+  textoEndereco,
+  type PeriodoEntrega,
+} from "./portalEndereco";
 import { ehPerfilPessoa, registrarPessoa } from "./portalPessoa";
 import {
   emitirSessaoCliente,
@@ -585,6 +593,23 @@ export function registerPortalRoutes(app: Express): void {
     }
   });
 
+  app.get("/api/portal/endereco", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para ver o endereço.");
+      return;
+    }
+    try {
+      res.json({
+        endereco: await lerEnderecoEntrega(getComercialPrisma(), acesso.clienteId),
+        telefone: acesso.cliente.telefoneWhatsapp ?? "",
+      });
+    } catch (error) {
+      console.error("[portal] endereco", error);
+      falha(res, 503, "Não foi possível carregar o endereço.");
+    }
+  });
+
   app.patch("/api/portal/conta", async (req, res) => {
     const acesso = await clienteDaSessao(req);
     if (!acesso) {
@@ -828,6 +853,19 @@ export function registerPortalRoutes(app: Express): void {
       .object({
         dataEntrega: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         observacoes: z.string().max(1500).optional(),
+        periodoEntrega: z.enum(["manha", "tarde"]).optional(),
+        formaPagamento: z.enum(["pix", "cartao"]).optional(),
+        endereco: z
+          .object({
+            cep: z.string().trim().min(8).max(16),
+            logradouro: z.string().trim().min(2).max(255),
+            numero: z.string().trim().min(1).max(32),
+            complemento: z.string().trim().max(255).optional().default(""),
+            bairro: z.string().trim().min(2).max(255),
+            cidade: z.string().trim().min(2).max(255),
+            estado: z.string().trim().min(2).max(2),
+          })
+          .optional(),
         itens: z
           .array(
             z.object({
@@ -922,12 +960,47 @@ export function registerPortalRoutes(app: Express): void {
         falha(res, 400, `O pedido mínimo para entrega é R$ ${minimo.toFixed(2).replace(".", ",")}.`);
         return;
       }
+
+      let enderecoSalvo: Awaited<ReturnType<typeof salvarEnderecoEntrega>> | null = null;
+      let periodo: PeriodoEntrega | null = null;
+      let formaPagamento: "pix" | "cartao" | null = null;
+      if (pessoa) {
+        if (!parsed.data.endereco) {
+          falha(res, 400, "Informe o endereço completo de entrega.");
+          return;
+        }
+        if (!parsed.data.periodoEntrega) {
+          falha(res, 400, "Escolha o período de entrega (manhã ou tarde).");
+          return;
+        }
+        if (!parsed.data.formaPagamento) {
+          falha(res, 400, "Escolha Pix ou cartão para pagar.");
+          return;
+        }
+        periodo = parsed.data.periodoEntrega;
+        formaPagamento = parsed.data.formaPagamento;
+        enderecoSalvo = await salvarEnderecoEntrega(
+          prisma,
+          acesso.clienteId,
+          parsed.data.endereco,
+          acesso.cliente.telefoneWhatsapp,
+          acesso.cliente.nome,
+        );
+        await sincronizarEnderecoContaAzul(prisma, contaAzulId, enderecoSalvo);
+      }
+
       const nota = parsed.data.observacoes?.trim();
       const dataEntrega = new Date(`${parsed.data.dataEntrega}T12:00:00`);
       const observacoes = pessoa
-        ? nota
-          ? `Pedido pelo site (pessoa). Aguardando Pix ou cartão. ${nota}`
-          : "Pedido pelo site (pessoa). Aguardando Pix ou cartão."
+        ? [
+            "Pedido pelo site (pessoa). Aguardando pagamento.",
+            `Entrega: ${rotuloPeriodo(periodo!)}`,
+            `Endereço: ${textoEndereco(enderecoSalvo!)}`,
+            formaPagamento === "pix" ? "Pagamento: Pix" : "Pagamento: cartão",
+            nota ? `Obs.: ${nota}` : null,
+          ]
+            .filter(Boolean)
+            .join("\n")
         : nota
           ? `Pedido pelo site. ${nota}`
           : "Pedido pelo site.";
@@ -984,6 +1057,7 @@ export function registerPortalRoutes(app: Express): void {
           total: totalReais,
           descricao: `Pedido Fazendas Up ${parsed.data.dataEntrega}`,
           vencimentoYmd: parsed.data.dataEntrega,
+          formaPagamento: formaPagamento!,
         });
         res.status(201).json({
           id: pedido.id,
@@ -991,7 +1065,10 @@ export function registerPortalRoutes(app: Express): void {
           total: totalReais,
           perfil: "pessoa",
           pagamento: cobranca,
-          mensagem: "Pedido criado. Pague com Pix ou cartão para liberar.",
+          mensagem:
+            formaPagamento === "pix"
+              ? "Pedido criado. Conclua o Pix para liberar a entrega."
+              : "Pedido criado. Conclua o pagamento no cartão para liberar a entrega.",
         });
       } catch (error) {
         await prisma.pedidoOperacional.delete({ where: { id: pedido.id } }).catch(() => null);
