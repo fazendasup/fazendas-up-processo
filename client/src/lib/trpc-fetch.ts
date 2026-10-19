@@ -9,6 +9,9 @@ const LONG_TRPC_PATHS = new Set([
   "comercial.integracoes.sincronizarContaAzul",
   "comercial.integracoes.aplicarInteligenciaComercial",
   "comercial.pedidos.copiarSemanaAnterior",
+  /** Catálogo completo Conta Azul — várias páginas, facilmente > 25s. */
+  "comercial.pedidos.sincronizarCatalogoContaAzul",
+  "comercial.pedidos.repararProdutosInativosContaAzul",
   "comercial.relatorios.resumo",
   "financeiroCfo.analise",
   "financeiroCfo.dashboard",

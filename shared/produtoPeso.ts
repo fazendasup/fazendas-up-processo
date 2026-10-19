@@ -27,14 +27,20 @@ function formatarPeso(valor: number, unidade: "g" | "kg"): string {
   return `${texto} ${unidade}`;
 }
 
-function pesoJaVisivelNoNome(nome: string, peso: string): boolean {
-  if (peso === "por kg") return /\bkg\b/i.test(nome);
-  const compactPeso = peso.replace(/\s+/g, "").toLowerCase().replace(",", ".");
-  const compactNome = nome.replace(/\s+/g, "").toLowerCase().replace(",", ".");
-  return compactNome.includes(compactPeso);
+/** Remove o trecho de peso do nome para evitar "100 g · Alface 100g". */
+export function nomeProdutoSemPeso(nome: string): string {
+  return nome
+    .replace(/(\d+(?:[.,]\d+)?)\s*(kg|g|gr|gramas?)\b/gi, " ")
+    .replace(/\bpor\s*kg\b/gi, " ")
+    .replace(/[-–—·|,]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
-/** Rótulo para listas/selects: garante que o peso apareça mesmo quando o nome não deixa claro. */
+/**
+ * Rótulo com peso no início (sobrevive a truncate em cards/listas).
+ * Ex.: "100 g · Alface Americana" | "por kg · Baby Leaf Manjericão"
+ */
 export function labelProdutoComPeso(
   nome: string,
   modoCompra?: string | null,
@@ -42,6 +48,20 @@ export function labelProdutoComPeso(
   const base = nome.trim() || "Produto sem nome";
   const peso = pesoDoProduto(base, modoCompra);
   if (!peso) return base;
-  if (pesoJaVisivelNoNome(base, peso)) return base;
-  return `${base} · ${peso}`;
+  const limpo = nomeProdutoSemPeso(base) || base;
+  return `${peso} · ${limpo}`;
+}
+
+export function partesProdutoComPeso(
+  nome: string,
+  modoCompra?: string | null,
+): { nome: string; peso: string | null; label: string } {
+  const base = nome.trim() || "Produto sem nome";
+  const peso = pesoDoProduto(base, modoCompra);
+  const limpo = peso ? nomeProdutoSemPeso(base) || base : base;
+  return {
+    nome: limpo,
+    peso,
+    label: peso ? `${peso} · ${limpo}` : base,
+  };
 }

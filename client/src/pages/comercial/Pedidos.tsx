@@ -4010,7 +4010,7 @@ function ProdutosArea({
                 }
               >
                 {sincronizar.isPending
-                  ? "Sincronizando…"
+                  ? "Sincronizando catálogo (pode levar alguns minutos)…"
                   : "Sincronizar catálogo"}
               </Button>
               <Button

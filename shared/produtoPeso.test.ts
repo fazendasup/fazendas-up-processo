@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { labelProdutoComPeso, pesoDoProduto } from "./produtoPeso";
+import {
+  labelProdutoComPeso,
+  nomeProdutoSemPeso,
+  pesoDoProduto,
+} from "./produtoPeso";
 
 describe("pesoDoProduto", () => {
   it("lê gramas e quilos no nome", () => {
@@ -22,13 +26,16 @@ describe("pesoDoProduto", () => {
 });
 
 describe("labelProdutoComPeso", () => {
-  it("não duplica peso já presente no nome", () => {
-    expect(labelProdutoComPeso("Alface Americana 100g")).toBe("Alface Americana 100g");
+  it("coloca o peso no início para não sumir no truncate", () => {
+    expect(labelProdutoComPeso("Alface Americana 100g")).toBe(
+      "100 g · Alface Americana",
+    );
+    expect(labelProdutoComPeso("Mix Clássico 1,5kg")).toBe("1,5 kg · Mix Clássico");
   });
 
   it("anexa por kg quando só o modo indica", () => {
     expect(labelProdutoComPeso("Baby Leaf -Manjericão", "KG")).toBe(
-      "Baby Leaf -Manjericão · por kg",
+      "por kg · Baby Leaf Manjericão",
     );
   });
 
@@ -36,5 +43,11 @@ describe("labelProdutoComPeso", () => {
     expect(labelProdutoComPeso("Mix Clássico- Salada Completa", "UNIDADE")).toBe(
       "Mix Clássico- Salada Completa",
     );
+  });
+});
+
+describe("nomeProdutoSemPeso", () => {
+  it("remove gramas do final", () => {
+    expect(nomeProdutoSemPeso("Alface Americana 100g")).toBe("Alface Americana");
   });
 });
