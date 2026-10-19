@@ -27,7 +27,7 @@ function formatarPeso(valor: number, unidade: "g" | "kg"): string {
   return `${texto} ${unidade}`;
 }
 
-/** Remove o trecho de peso do nome para evitar "100 g · Alface 100g". */
+/** Remove o trecho de peso do nome para exibir nome + badge separados. */
 export function nomeProdutoSemPeso(nome: string): string {
   return nome
     .replace(/(\d+(?:[.,]\d+)?)\s*(kg|g|gr|gramas?)\b/gi, " ")
@@ -38,8 +38,8 @@ export function nomeProdutoSemPeso(nome: string): string {
 }
 
 /**
- * Rótulo com peso no início (sobrevive a truncate em cards/listas).
- * Ex.: "100 g · Alface Americana" | "por kg · Baby Leaf Manjericão"
+ * Texto plano: nome + peso depois (útil em selects/`<option>`).
+ * Ex.: "Alface Americana · 100 g"
  */
 export function labelProdutoComPeso(
   nome: string,
@@ -49,7 +49,7 @@ export function labelProdutoComPeso(
   const peso = pesoDoProduto(base, modoCompra);
   if (!peso) return base;
   const limpo = nomeProdutoSemPeso(base) || base;
-  return `${peso} · ${limpo}`;
+  return `${limpo} · ${peso}`;
 }
 
 export function partesProdutoComPeso(
@@ -62,6 +62,6 @@ export function partesProdutoComPeso(
   return {
     nome: limpo,
     peso,
-    label: peso ? `${peso} · ${limpo}` : base,
+    label: peso ? `${limpo} · ${peso}` : base,
   };
 }

@@ -54,6 +54,7 @@ import {
 } from "@shared/clientesAcumuloPedidos";
 import {
   labelProdutoComPeso,
+  partesProdutoComPeso,
   pesoDoProduto,
 } from "@shared/produtoPeso";
 
@@ -70,6 +71,53 @@ function rotuloProdutoCadastro(p: {
   modoCompra?: string | null;
 }): string {
   return rotuloProduto(p.nome, p.modoCompra);
+}
+
+/** Badge de peso — mesmo destaque visual do preço. */
+function BadgePesoProduto({
+  nome,
+  modoCompra,
+  className = "",
+}: {
+  nome: string | null | undefined;
+  modoCompra?: string | null;
+  className?: string;
+}) {
+  const { peso } = partesProdutoComPeso(
+    nome?.trim() || "",
+    modoCompra,
+  );
+  if (!peso) return null;
+  return (
+    <span
+      className={`shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100 dark:bg-slate-950/70 dark:text-emerald-200 dark:ring-emerald-900 ${className}`}
+    >
+      {peso}
+    </span>
+  );
+}
+
+function NomeProdutoComPeso({
+  nome,
+  modoCompra,
+  className = "",
+  title,
+}: {
+  nome: string | null | undefined;
+  modoCompra?: string | null;
+  className?: string;
+  title?: string;
+}) {
+  const partes = partesProdutoComPeso(
+    nome?.trim() || "Produto sem nome",
+    modoCompra,
+  );
+  return (
+    <span className={`inline-flex min-w-0 max-w-full items-center gap-1.5 ${className}`} title={title ?? partes.label}>
+      <span className="truncate font-extrabold leading-tight">{partes.nome}</span>
+      {partes.peso ? <BadgePesoProduto nome={nome} modoCompra={modoCompra} /> : null}
+    </span>
+  );
 }
 
 const DIAS = [
@@ -1049,14 +1097,13 @@ export function Pedidos({
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p
-                      className={`truncate text-base font-extrabold leading-tight text-slate-950 dark:text-slate-50 ${
+                    <div
+                      className={`text-base text-slate-950 dark:text-slate-50 ${
                         linhaPronta ? "line-through opacity-70" : ""
                       }`}
-                      title={rotuloProduto(item.produtoNome)}
                     >
-                      {rotuloProduto(item.produtoNome)}
-                    </p>
+                      <NomeProdutoComPeso nome={item.produtoNome} />
+                    </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {item.categoria ? (
                         <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground ring-1 ring-sky-100 dark:bg-slate-950/70 dark:ring-sky-900">
@@ -3141,12 +3188,15 @@ function PedidosKpiDashboard({
                         <div className="cursor-default">
                           <div className="mb-1 flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p
-                                className="truncate text-xs font-semibold"
-                                title={rotuloProduto(produto.nome)}
-                              >
-                                {index + 1}. {rotuloProduto(produto.nome)}
-                              </p>
+                              <div className="flex min-w-0 items-center gap-1 text-xs">
+                                <span className="shrink-0 font-semibold">
+                                  {index + 1}.
+                                </span>
+                                <NomeProdutoComPeso
+                                  nome={produto.nome}
+                                  className="text-xs [&_span:first-child]:font-semibold"
+                                />
+                              </div>
                               <p className="truncate text-[10px] text-muted-foreground">
                                 {produto.categoria} · {produto.clientes} cliente(s)
                               </p>
@@ -3179,9 +3229,9 @@ function PedidosKpiDashboard({
                         side="top"
                         className="max-h-64 max-w-xs overflow-y-auto text-left"
                       >
-                        <p className="mb-1 font-semibold">
-                          {rotuloProduto(produto.nome)}
-                        </p>
+                        <div className="mb-1">
+                          <NomeProdutoComPeso nome={produto.nome} />
+                        </div>
                         {destinos.length === 0 ? (
                           <p>Nenhum cliente neste produto.</p>
                         ) : (
