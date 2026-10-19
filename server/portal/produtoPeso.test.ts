@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { pesoDoProduto } from "./produtoPeso";
 
-describe("pesoDoProduto", () => {
+describe("pesoDoProduto (portal reexport)", () => {
   it("lê gramas e quilos no nome", () => {
     expect(pesoDoProduto("Alface Americana 100g")).toBe("100 g");
     expect(pesoDoProduto("Cebola Branca Higienizada e Descascada- 200G")).toBe("200 g");

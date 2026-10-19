@@ -52,6 +52,25 @@ import {
   CLIENTES_ACUMULO_ALLOWLIST_LABELS,
   clientePodeAcumularPedidos,
 } from "@shared/clientesAcumuloPedidos";
+import {
+  labelProdutoComPeso,
+  pesoDoProduto,
+} from "@shared/produtoPeso";
+
+/** Nome do produto com peso visível (do cadastro ou modo KG). */
+function rotuloProduto(
+  nome: string | null | undefined,
+  modoCompra?: string | null,
+): string {
+  return labelProdutoComPeso(nome?.trim() || "Produto sem nome", modoCompra);
+}
+
+function rotuloProdutoCadastro(p: {
+  nome?: string | null;
+  modoCompra?: string | null;
+}): string {
+  return rotuloProduto(p.nome, p.modoCompra);
+}
 
 const DIAS = [
   "Domingo",
@@ -1034,8 +1053,9 @@ export function Pedidos({
                       className={`truncate text-base font-extrabold leading-tight text-slate-950 dark:text-slate-50 ${
                         linhaPronta ? "line-through opacity-70" : ""
                       }`}
+                      title={rotuloProduto(item.produtoNome)}
                     >
-                      {item.produtoNome}
+                      {rotuloProduto(item.produtoNome)}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {item.categoria ? (
@@ -1134,7 +1154,7 @@ export function Pedidos({
                     className="rounded-lg bg-background px-2 py-1 text-xs"
                   >
                     <span className="font-medium">
-                      {Number(a.quantidade)} × {a.produtoNome}
+                      {Number(a.quantidade)} × {rotuloProduto(a.produtoNome)}
                       {a.categoria ? ` · ${a.categoria}` : ""}
                     </span>
                     {a.observacoes ? (
@@ -1966,7 +1986,8 @@ export function Pedidos({
                               key={item.id}
                               className="rounded-full bg-muted px-2 py-1 text-[11px] line-through"
                             >
-                              {fmtQtd(item.quantidade)} × {item.produtoNome}
+                              {fmtQtd(item.quantidade)} ×{" "}
+                              {rotuloProduto(item.produtoNome)}
                             </span>
                           ))}
                         </div>
@@ -2140,7 +2161,7 @@ export function Pedidos({
                           .filter((p: any) => p.ativo)
                           .map((p: any) => (
                             <option key={p.id} value={p.id}>
-                              {p.nome}
+                              {rotuloProdutoCadastro(p)}
                               {p.categoria ? ` · ${p.categoria}` : ""}
                             </option>
                           ))}
@@ -2185,6 +2206,9 @@ export function Pedidos({
                       />
                       {produto && (
                         <p className="text-xs text-muted-foreground sm:col-span-3">
+                          {pesoDoProduto(produto.nome, produto.modoCompra)
+                            ? `Peso: ${pesoDoProduto(produto.nome, produto.modoCompra)} · `
+                            : ""}
                           Categoria: {produto.categoria || "sem categoria"}
                           {podeVerValores
                             ? ` · preço usado: ${fmtMoney(especial ?? produto.precoBase ?? 0)}`
@@ -2248,7 +2272,7 @@ export function Pedidos({
                           .filter((p: any) => p.ativo)
                           .map((p: any) => (
                             <option key={p.id} value={p.id}>
-                              {p.nome}
+                              {rotuloProdutoCadastro(p)}
                               {p.categoria ? ` · ${p.categoria}` : ""}
                             </option>
                           ))}
@@ -2414,7 +2438,8 @@ export function Pedidos({
                                   key={i.id}
                                   className="rounded-full bg-muted px-2 py-1 text-xs"
                                 >
-                                  {Number(i.quantidade)} × {i.produtoNome}
+                                  {Number(i.quantidade)} ×{" "}
+                                  {rotuloProduto(i.produtoNome)}
                                   {i.categoria ? ` · ${i.categoria}` : ""}
                                   {i.observacoes
                                     ? ` · ${i.observacoes}`
@@ -2446,7 +2471,8 @@ export function Pedidos({
                                       className="rounded-lg bg-background px-2 py-1 text-xs"
                                     >
                                       <span className="font-medium">
-                                        {Number(a.quantidade)} × {a.produtoNome}
+                                        {Number(a.quantidade)} ×{" "}
+                                        {rotuloProduto(a.produtoNome)}
                                         {a.categoria ? ` · ${a.categoria}` : ""}
                                       </span>
                                       {a.observacoes ? (
@@ -2627,7 +2653,8 @@ export function Pedidos({
                                 key={i.id}
                                 className="rounded-full bg-muted px-2 py-1 text-xs line-through"
                               >
-                                {Number(i.quantidade)} × {i.produtoNome}
+                                {Number(i.quantidade)} ×{" "}
+                                {rotuloProduto(i.produtoNome)}
                                 {i.categoria ? ` · ${i.categoria}` : ""}
                               </span>
                             ))}
@@ -2823,7 +2850,7 @@ function AvisoAvariasPedido({
               key={p.produtoId}
               className="rounded-full bg-background/70 px-2 py-1 text-xs"
             >
-              {p.produtoNome}: {fmtQtd(p.quantidade)} un
+              {rotuloProduto(p.produtoNome)}: {fmtQtd(p.quantidade)} un
             </span>
           ))}
         </div>
@@ -2833,7 +2860,7 @@ function AvisoAvariasPedido({
           {lancamentos.map((l: any) => (
             <p key={l.id}>
               {fmtDate(l.dataEntrega)}: {fmtQtd(l.quantidade)} un de{" "}
-              {l.produtoNome}
+              {rotuloProduto(l.produtoNome)}
               {l.observacoes ? ` - ${l.observacoes}` : ""}
             </p>
           ))}
@@ -2913,7 +2940,7 @@ function AlertaAvariasPedidoCopiado({
               className="rounded-full bg-background/70 px-2 py-1 text-xs"
             >
               {fmtDate(l.dataEntrega)} · {fmtQtd(l.quantidade)} un{" "}
-              {l.produtoNome}
+              {rotuloProduto(l.produtoNome)}
             </span>
           ))}
         </div>
@@ -3114,8 +3141,11 @@ function PedidosKpiDashboard({
                         <div className="cursor-default">
                           <div className="mb-1 flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="truncate text-xs font-semibold">
-                                {index + 1}. {produto.nome}
+                              <p
+                                className="truncate text-xs font-semibold"
+                                title={rotuloProduto(produto.nome)}
+                              >
+                                {index + 1}. {rotuloProduto(produto.nome)}
                               </p>
                               <p className="truncate text-[10px] text-muted-foreground">
                                 {produto.categoria} · {produto.clientes} cliente(s)
@@ -3149,7 +3179,9 @@ function PedidosKpiDashboard({
                         side="top"
                         className="max-h-64 max-w-xs overflow-y-auto text-left"
                       >
-                        <p className="mb-1 font-semibold">{produto.nome}</p>
+                        <p className="mb-1 font-semibold">
+                          {rotuloProduto(produto.nome)}
+                        </p>
                         {destinos.length === 0 ? (
                           <p>Nenhum cliente neste produto.</p>
                         ) : (
@@ -3575,7 +3607,8 @@ function PainelRegrasVenda({ regra, precos }: { regra: any; precos: any[] }) {
                 key={p.id}
                 className="rounded-full bg-background px-2 py-1 text-xs"
               >
-                {p.produto?.nome}: {fmtMoney(p.preco)}
+                {rotuloProdutoCadastro(p.produto ?? { nome: "?" })}:{" "}
+                {fmtMoney(p.preco)}
               </span>
             ))}
           </div>
@@ -3788,7 +3821,9 @@ function RegrasClienteArea({
                   .filter((p: any) => p.ativo)
                   .map((p: any) => (
                     <div key={p.id}>
-                      <Label className="text-xs">{p.nome}</Label>
+                      <Label className="text-xs">
+                        {rotuloProdutoCadastro(p)}
+                      </Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -4077,7 +4112,7 @@ function ProdutosArea({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">
-                        {prod.nome}
+                        {rotuloProdutoCadastro(prod)}
                         {prod.importadoOperacao && prod.ativo ? (
                           <span className="ml-1 text-xs font-normal text-emerald-700 dark:text-emerald-300">
                             (já na operação)
@@ -4119,7 +4154,14 @@ function ProdutosArea({
                 </p>
               ) : (
                 <>
-                  <p className="text-sm font-medium">{p.nome}</p>
+                  <p className="text-sm font-medium">
+                    {rotuloProdutoCadastro(p)}
+                  </p>
+                  {pesoDoProduto(p.nome, p.modoCompra) ? (
+                    <p className="text-xs text-muted-foreground">
+                      Peso: {pesoDoProduto(p.nome, p.modoCompra)}
+                    </p>
+                  ) : null}
                   {p.contaAzulProdutoId && (
                     <p className="text-xs text-muted-foreground">
                       Nome e preço vêm do Conta Azul na sincronização.
@@ -4195,7 +4237,7 @@ function ProdutosArea({
                 >
                   <div>
                     <p className="font-semibold">
-                      {prod.nome}
+                      {rotuloProdutoCadastro(prod)}
                       {!prod.ativo && (
                         <span className="text-xs text-muted-foreground">
                           {" "}
@@ -4204,8 +4246,11 @@ function ProdutosArea({
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {prod.categoria || "sem categoria"} ·{" "}
-                      {fmtMoney(prod.precoBase ?? 0)}
+                      {prod.categoria || "sem categoria"}
+                      {pesoDoProduto(prod.nome, prod.modoCompra)
+                        ? ` · ${pesoDoProduto(prod.nome, prod.modoCompra)}`
+                        : ""}{" "}
+                      · {fmtMoney(prod.precoBase ?? 0)}
                       {prod.sku ? ` · SKU ${prod.sku}` : ""}
                       {" · "}usado em {prod.usoPedidos ?? 0} item(ns)
                     </p>
@@ -4391,7 +4436,10 @@ function ComprasArea({
                         className={`border-b ${oculto ? "opacity-50" : ""}`}
                       >
                         <td className="px-3 py-2 font-medium">
-                          {row.nome}
+                          {rotuloProduto(
+                            row.nome,
+                            row.modoCompra === "kilo" ? "KG" : row.modoCompra,
+                          )}
                           {row.inMixFolha ? (
                             <span className="ml-1 rounded bg-lime-500/15 px-1 text-[10px] text-lime-800 dark:text-lime-200">
                               folha

@@ -11,8 +11,13 @@ import { SearchSelect } from "@/components/ui/search-select";
 import { hojeIsoLocal } from "@/lib/comercial/periodo";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { exportTableDocument } from "@/lib/exportTableDocument";
+import { labelProdutoComPeso } from "@shared/produtoPeso";
 
 const STATUS = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
+
+function rotuloProduto(nome: string | null | undefined): string {
+  return labelProdutoComPeso(nome?.trim() || "Produto sem nome");
+}
 
 function inicioMesIso() {
   const d = new Date();
@@ -285,7 +290,9 @@ export function PedidosHistorico() {
               <div className="space-y-2">
                 {(relatorioAvarias.data?.produtos ?? []).slice(0, 8).map((p: any) => (
                   <div key={p.nome} className="flex items-center justify-between gap-2 rounded-lg bg-muted/30 px-2 py-1.5 text-sm">
-                    <span className="truncate font-medium">{p.nome}</span>
+                    <span className="truncate font-medium" title={rotuloProduto(p.nome)}>
+                      {rotuloProduto(p.nome)}
+                    </span>
                     <span className="font-bold">{fmtQtd(p.quantidade)}</span>
                   </div>
                 ))}
@@ -307,7 +314,7 @@ export function PedidosHistorico() {
                     </span>
                   </div>
                   <p className="mt-2 text-sm">
-                    <strong>{avaria.produtoNome}</strong>
+                    <strong>{rotuloProduto(avaria.produtoNome)}</strong>
                     {avaria.categoria ? <span className="ml-1 text-xs text-muted-foreground">({avaria.categoria})</span> : null}
                   </p>
                   {avaria.observacoes ? <p className="mt-1 text-xs text-muted-foreground">Obs.: {avaria.observacoes}</p> : null}
@@ -429,7 +436,9 @@ export function PedidosHistorico() {
               <div key={p.nome} className="rounded-lg border bg-muted/20 p-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{p.nome}</p>
+                    <p className="truncate text-sm font-semibold" title={rotuloProduto(p.nome)}>
+                      {rotuloProduto(p.nome)}
+                    </p>
                     <p className="text-xs text-muted-foreground">{p.categoria || "Sem categoria"} · {p.pedidos} linha(s)</p>
                   </div>
                   <span className="rounded-full bg-background px-2 py-1 text-xs font-bold">{fmtQtd(p.quantidade)}</span>
@@ -468,7 +477,9 @@ export function PedidosHistorico() {
               <div className="mt-2 grid gap-2 md:grid-cols-2">
                 {pedido.itens.map((item: any) => (
                   <div key={item.id} className="rounded-lg bg-muted/30 px-2 py-1.5 text-sm">
-                    <strong>{fmtQtd(item.quantidade)} × {item.produtoNome}</strong>
+                    <strong>
+                      {fmtQtd(item.quantidade)} × {rotuloProduto(item.produtoNome)}
+                    </strong>
                     {item.categoria ? <span className="ml-1 text-xs text-muted-foreground">({item.categoria})</span> : null}
                     {podeVerValores && item.precoUnit ? <span className="ml-2 text-xs text-muted-foreground">{fmtMoney(item.precoUnit)}</span> : null}
                   </div>
@@ -480,7 +491,9 @@ export function PedidosHistorico() {
                   <div className="grid gap-2 md:grid-cols-2">
                     {pedido.avarias.map((avaria: any) => (
                       <div key={avaria.id} className="rounded-lg bg-background/70 px-2 py-1.5 text-sm">
-                        <strong>{fmtQtd(avaria.quantidade)} × {avaria.produtoNome}</strong>
+                        <strong>
+                          {fmtQtd(avaria.quantidade)} × {rotuloProduto(avaria.produtoNome)}
+                        </strong>
                         {avaria.categoria ? <span className="ml-1 text-xs text-muted-foreground">({avaria.categoria})</span> : null}
                         {avaria.observacoes ? <p className="text-xs text-muted-foreground">Obs.: {avaria.observacoes}</p> : null}
                       </div>
