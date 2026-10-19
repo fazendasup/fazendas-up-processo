@@ -1,6 +1,7 @@
 import type { PrismaClient } from "../comercial/generated/prisma/index.js";
 import { MIN_ORDER_RECORRENTE_REAIS, entregaPermitida } from "./portalCalendario";
 import { LojaErro, produtoVisivelNaLoja } from "./portalLoja";
+import { pesoDoProduto } from "./produtoPeso";
 import {
   diaDaData,
   ocorrenciasDaProgramacao,
@@ -15,6 +16,7 @@ export type ItemProgramacao = {
   nome: string;
   quantidade: number;
   preco: number | null;
+  peso: string | null;
 };
 
 export type ProgramacaoCliente = {
@@ -80,6 +82,7 @@ export async function lerProgramacao(
       nome: item.produto.nome,
       quantidade: Number(item.quantidade),
       preco: especiais.get(item.produtoId) ?? dinheiro(item.produto.precoBase),
+      peso: pesoDoProduto(item.produto.nome, item.produto.modoCompra),
     })),
   }));
   const proximas = ocorrenciasDaProgramacao(

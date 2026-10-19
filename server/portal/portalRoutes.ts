@@ -17,6 +17,7 @@ import { clienteAceitouRecorrencia } from "./contratoRecorrencia";
 import { aceitarContrato, lerConta, minimoDaConta, salvarConta } from "./portalConta";
 import { lerProgramacao, salvarProgramacao } from "./portalProgramacao";
 import { fichaDoProduto } from "./vitrineCopy";
+import { pesoDoProduto } from "./produtoPeso";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import { criarCobrancasPessoa, lerPagamentoPedido } from "./portalPagamento";
@@ -295,6 +296,7 @@ export function registerPortalRoutes(app: Express): void {
               precoEspecial: logado && especial != null,
               imagemUrl: produto.imagemUrl || ficha.foto,
               unidade: produto.modoCompra === "KG" ? "kg" : "un",
+              peso: pesoDoProduto(produto.nome, produto.modoCompra),
               estoque: estoqueNumero(produto.estoqueLoja),
             },
           ];
@@ -739,6 +741,7 @@ export function registerPortalRoutes(app: Express): void {
             precoEspecial: especial != null,
             imagemUrl: produto.imagemUrl,
             unidade: produto.modoCompra === "KG" ? "kg" : "un",
+            peso: pesoDoProduto(produto.nome, produto.modoCompra),
           },
         ];
       });
@@ -804,6 +807,7 @@ export function registerPortalRoutes(app: Express): void {
               nome: item.produtoNome,
               quantidade: Number(item.quantidade),
               preco: dinheiro(item.precoUnit),
+              peso: pesoDoProduto(item.produtoNome),
             })),
           };
         }),
@@ -1256,6 +1260,7 @@ export function registerPortalRoutes(app: Express): void {
             preco: dinheiro(produto.precoBase),
             imagemUrl: produto.imagemUrl || ficha.foto,
             unidade: produto.modoCompra === "KG" ? "kg" : "un",
+            peso: pesoDoProduto(produto.nome, produto.modoCompra),
             estoque: estoqueNumero(produto.estoqueLoja),
           };
         }),
