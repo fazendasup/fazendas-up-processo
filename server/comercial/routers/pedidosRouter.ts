@@ -76,6 +76,22 @@ const podeConfigurarEstoqueVivo = comercialRequirePerfis(
 
 const STATUS_PEDIDO = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
 const statusSchema = z.enum(["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"]);
+
+/** Nome/categoria atuais do catálogo ( Conta Azul ), com fallback ao snapshot do item. */
+function comNomeCatalogoProduto<
+  T extends {
+    produtoNome: string;
+    categoria?: string | null;
+    produto?: { nome?: string | null; categoria?: string | null } | null;
+  },
+>(item: T): T {
+  const nome = item.produto?.nome?.trim();
+  return {
+    ...item,
+    produtoNome: nome || item.produtoNome,
+    categoria: item.produto?.categoria ?? item.categoria,
+  };
+}
 const tipoVendaSchema = z.enum([
   "RECORRENTE_SEMANAL",
   "RECORRENTE_QUINZENAL",
@@ -1114,10 +1130,17 @@ export const pedidosRouter = router({
         ctx.prisma!,
         pedidos
       );
-      return pedidos.sort(compararEntregaPorRegra).map(pedido => ({
-        ...(deveOcultarValores(ctx) ? ocultarValoresPedido(pedido) : pedido),
-        alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
-      }));
+      return pedidos.sort(compararEntregaPorRegra).map(pedido => {
+        const base = deveOcultarValores(ctx)
+          ? ocultarValoresPedido(pedido)
+          : pedido;
+        return {
+          ...base,
+          itens: base.itens.map(comNomeCatalogoProduto),
+          avarias: base.avarias.map(comNomeCatalogoProduto),
+          alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
+        };
+      });
     }),
 
   salvarPedido: comercialProcedure
@@ -1796,9 +1819,16 @@ export const pedidosRouter = router({
               },
             },
           },
-          itens: true,
+          itens: {
+            include: {
+              produto: { select: { id: true, nome: true, categoria: true } },
+            },
+          },
           avarias: {
-            include: { criadoPor: { select: { nome: true, email: true } } },
+            include: {
+              criadoPor: { select: { nome: true, email: true } },
+              produto: { select: { id: true, nome: true } },
+            },
           },
         },
         orderBy: [
@@ -1870,11 +1900,11 @@ export const pedidosRouter = router({
           atual.prioridadeEntrega = p.prioridadeEntrega;
         }
         atual.pedidos.push(pedido);
-        // Mesma fonte da agenda: itens salvos no pedido operacional (não trocar por
-        // orçamento CA nem por entrega da semana anterior).
+        // Quantidades do pedido operacional; nome/categoria vêm do catálogo atual
+        // ( Conta Azul → produtoComercial ), não do snapshot antigo em produto_nome.
         atual.itens.push(
           ...p.itens.map((i: any) => ({
-            ...i,
+            ...comNomeCatalogoProduto(i),
             quantidade: Number(i.quantidade ?? 0) || 0,
             quantidadePronta: Number(i.quantidadePronta ?? 0) || 0,
             pronto: Boolean(i.pronto),
@@ -1883,7 +1913,7 @@ export const pedidosRouter = router({
         );
         atual.avarias.push(
           ...pedido.avarias.map((a: any) => ({
-            ...a,
+            ...comNomeCatalogoProduto(a),
             tipoVenda: p.tipoVenda,
           }))
         );

@@ -353,6 +353,23 @@ function nomeLocalDoItemCa(item: ContaAzulProdutoResumo): string {
   return enriquecerNomeComPesoKg(item.nome, item.pesoLiquidoKg);
 }
 
+/** Pedidos abertos guardam snapshot de nome; espelha o catálogo após sync Conta Azul. */
+async function propagarNomeProdutoPedidosAbertos(
+  prisma: PrismaClient,
+  produtoId: string,
+  nome: string,
+): Promise<void> {
+  const nomeFinal = nome.slice(0, 191);
+  await prisma.pedidoOperacionalItem.updateMany({
+    where: {
+      produtoId,
+      produtoNome: { not: nomeFinal },
+      pedido: { status: { in: ["PENDENTE", "PRONTO"] } },
+    },
+    data: { produtoNome: nomeFinal },
+  });
+}
+
 async function upsertProdutoCatalogo(
   prisma: PrismaClient,
   item: ContaAzulProdutoResumo,
@@ -388,6 +405,9 @@ async function upsertProdutoCatalogo(
           ...(inativoNoCa ? { ativo: false, importadoOperacao: false } : {}),
         },
       });
+      if (nome !== existenteCa.nome) {
+        await propagarNomeProdutoPedidosAbertos(prisma, existenteCa.id, nome);
+      }
       return "atualizado";
     } catch (e) {
       if (
@@ -395,10 +415,11 @@ async function upsertProdutoCatalogo(
         e.code === "P2002"
       ) {
         await liberarNomeParaDono(prisma, nomeComPeso, existenteCa.id);
+        const nomeFallback = nomeComPeso.slice(0, 191);
         await prisma.produtoComercial.update({
           where: { id: existenteCa.id },
           data: {
-            nome: nomeComPeso.slice(0, 191),
+            nome: nomeFallback,
             sku: item.codigo,
             statusContaAzul: item.status,
             precoBase:
@@ -409,6 +430,13 @@ async function upsertProdutoCatalogo(
             ...(inativoNoCa ? { ativo: false, importadoOperacao: false } : {}),
           },
         });
+        if (nomeFallback !== existenteCa.nome) {
+          await propagarNomeProdutoPedidosAbertos(
+            prisma,
+            existenteCa.id,
+            nomeFallback,
+          );
+        }
         return "atualizado";
       }
       throw e;
