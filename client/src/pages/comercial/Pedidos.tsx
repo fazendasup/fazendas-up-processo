@@ -56,36 +56,50 @@ import {
   labelProdutoComPeso,
   partesProdutoComPeso,
   pesoDoProduto,
+  pesoDoProdutoComCatalogo,
 } from "@shared/produtoPeso";
 
-/** Nome do produto com peso visível (do cadastro ou modo KG). */
+type ProdutoRotulo = {
+  nome?: string | null;
+  modoCompra?: string | null;
+};
+
+/** Nome do produto com peso visível (do cadastro, modo KG ou catálogo). */
 function rotuloProduto(
   nome: string | null | undefined,
   modoCompra?: string | null,
+  catalogo?: ProdutoRotulo[] | null,
 ): string {
-  return labelProdutoComPeso(nome?.trim() || "Produto sem nome", modoCompra);
+  return labelProdutoComPeso(
+    nome?.trim() || "Produto sem nome",
+    modoCompra,
+    catalogo,
+  );
 }
 
-function rotuloProdutoCadastro(p: {
-  nome?: string | null;
-  modoCompra?: string | null;
-}): string {
-  return rotuloProduto(p.nome, p.modoCompra);
+function rotuloProdutoCadastro(
+  p: ProdutoRotulo,
+  catalogo?: ProdutoRotulo[] | null,
+): string {
+  return rotuloProduto(p.nome, p.modoCompra, catalogo);
 }
 
 /** Badge de peso — formato de pill como o preço, cor distinta (azul) para não confundir. */
 function BadgePesoProduto({
   nome,
   modoCompra,
+  catalogo,
   className = "",
 }: {
   nome: string | null | undefined;
   modoCompra?: string | null;
+  catalogo?: ProdutoRotulo[] | null;
   className?: string;
 }) {
   const { peso } = partesProdutoComPeso(
     nome?.trim() || "",
     modoCompra,
+    catalogo,
   );
   if (!peso) return null;
   return (
@@ -101,22 +115,27 @@ function BadgePesoProduto({
 function NomeProdutoComPeso({
   nome,
   modoCompra,
+  catalogo,
   className = "",
   title,
 }: {
   nome: string | null | undefined;
   modoCompra?: string | null;
+  catalogo?: ProdutoRotulo[] | null;
   className?: string;
   title?: string;
 }) {
   const partes = partesProdutoComPeso(
     nome?.trim() || "Produto sem nome",
     modoCompra,
+    catalogo,
   );
   return (
     <span className={`inline-flex min-w-0 max-w-full items-center gap-1.5 ${className}`} title={title ?? partes.label}>
       <span className="truncate font-extrabold leading-tight">{partes.nome}</span>
-      {partes.peso ? <BadgePesoProduto nome={nome} modoCompra={modoCompra} /> : null}
+      {partes.peso ? (
+        <BadgePesoProduto nome={nome} modoCompra={modoCompra} catalogo={catalogo} />
+      ) : null}
     </span>
   );
 }
@@ -2209,7 +2228,7 @@ export function Pedidos({
                           .filter((p: any) => p.ativo)
                           .map((p: any) => (
                             <option key={p.id} value={p.id}>
-                              {rotuloProdutoCadastro(p)}
+                              {rotuloProdutoCadastro(p, produtos.data)}
                               {p.categoria ? ` · ${p.categoria}` : ""}
                             </option>
                           ))}
@@ -2254,9 +2273,14 @@ export function Pedidos({
                       />
                       {produto && (
                         <p className="text-xs text-muted-foreground sm:col-span-3">
-                          {pesoDoProduto(produto.nome, produto.modoCompra)
-                            ? `Peso: ${pesoDoProduto(produto.nome, produto.modoCompra)} · `
-                            : ""}
+                          {(() => {
+                            const peso = pesoDoProdutoComCatalogo(
+                              produto.nome,
+                              produto.modoCompra,
+                              produtos.data,
+                            );
+                            return peso ? `Peso: ${peso} · ` : "";
+                          })()}
                           Categoria: {produto.categoria || "sem categoria"}
                           {podeVerValores
                             ? ` · preço usado: ${fmtMoney(especial ?? produto.precoBase ?? 0)}`
@@ -2320,7 +2344,7 @@ export function Pedidos({
                           .filter((p: any) => p.ativo)
                           .map((p: any) => (
                             <option key={p.id} value={p.id}>
-                              {rotuloProdutoCadastro(p)}
+                              {rotuloProdutoCadastro(p, produtos.data)}
                               {p.categoria ? ` · ${p.categoria}` : ""}
                             </option>
                           ))}
@@ -3873,7 +3897,7 @@ function RegrasClienteArea({
                   .map((p: any) => (
                     <div key={p.id}>
                       <Label className="text-xs">
-                        {rotuloProdutoCadastro(p)}
+                        {rotuloProdutoCadastro(p, produtos)}
                       </Label>
                       <Input
                         type="number"
@@ -4163,7 +4187,7 @@ function ProdutosArea({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">
-                        {rotuloProdutoCadastro(prod)}
+                        {rotuloProdutoCadastro(prod, itensCatalogo)}
                         {prod.importadoOperacao && prod.ativo ? (
                           <span className="ml-1 text-xs font-normal text-emerald-700 dark:text-emerald-300">
                             (já na operação)
@@ -4206,11 +4230,20 @@ function ProdutosArea({
               ) : (
                 <>
                   <p className="text-sm font-medium">
-                    {rotuloProdutoCadastro(p)}
+                    {rotuloProdutoCadastro(p, produtosOperacao)}
                   </p>
-                  {pesoDoProduto(p.nome, p.modoCompra) ? (
+                  {pesoDoProdutoComCatalogo(
+                    p.nome,
+                    p.modoCompra,
+                    produtosOperacao,
+                  ) ? (
                     <p className="text-xs text-muted-foreground">
-                      Peso: {pesoDoProduto(p.nome, p.modoCompra)}
+                      Peso:{" "}
+                      {pesoDoProdutoComCatalogo(
+                        p.nome,
+                        p.modoCompra,
+                        produtosOperacao,
+                      )}
                     </p>
                   ) : null}
                   {p.contaAzulProdutoId && (
@@ -4288,7 +4321,7 @@ function ProdutosArea({
                 >
                   <div>
                     <p className="font-semibold">
-                      {rotuloProdutoCadastro(prod)}
+                      {rotuloProdutoCadastro(prod, produtosOperacao)}
                       {!prod.ativo && (
                         <span className="text-xs text-muted-foreground">
                           {" "}
@@ -4298,8 +4331,12 @@ function ProdutosArea({
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {prod.categoria || "sem categoria"}
-                      {pesoDoProduto(prod.nome, prod.modoCompra)
-                        ? ` · ${pesoDoProduto(prod.nome, prod.modoCompra)}`
+                      {pesoDoProdutoComCatalogo(
+                        prod.nome,
+                        prod.modoCompra,
+                        produtosOperacao,
+                      )
+                        ? ` · ${pesoDoProdutoComCatalogo(prod.nome, prod.modoCompra, produtosOperacao)}`
                         : ""}{" "}
                       · {fmtMoney(prod.precoBase ?? 0)}
                       {prod.sku ? ` · SKU ${prod.sku}` : ""}
