@@ -73,7 +73,7 @@ function rotuloProdutoCadastro(p: {
   return rotuloProduto(p.nome, p.modoCompra);
 }
 
-/** Badge de peso — mesmo destaque visual do preço. */
+/** Badge de peso — formato de pill como o preço, cor distinta (azul) para não confundir. */
 function BadgePesoProduto({
   nome,
   modoCompra,
@@ -90,7 +90,8 @@ function BadgePesoProduto({
   if (!peso) return null;
   return (
     <span
-      className={`shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100 dark:bg-slate-950/70 dark:text-emerald-200 dark:ring-emerald-900 ${className}`}
+      className={`shrink-0 rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sky-800 ring-1 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800 ${className}`}
+      title="Peso da embalagem"
     >
       {peso}
     </span>
