@@ -275,7 +275,7 @@ export async function criarCobrancasPessoa(input: {
   if (total < MIN_ORDER_PESSOA_REAIS) {
     throw new LojaErro(
       400,
-      `O Conta Azul só emite Pix/cartão a partir de R$ ${MIN_ORDER_PESSOA_REAIS.toFixed(2).replace(".", ",")}. Ajuste o pedido.`,
+      `O pedido mínimo para pessoa física é R$ ${MIN_ORDER_PESSOA_REAIS.toFixed(2).replace(".", ",")}.`,
     );
   }
   const taxaCartao = input.formaPagamento === "cartao" ? Math.round((total - base) * 100) / 100 : 0;

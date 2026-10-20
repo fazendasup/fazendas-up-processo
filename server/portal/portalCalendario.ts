@@ -2,9 +2,8 @@
 
 export const MIN_ORDER_REAIS = 300;
 export const MIN_ORDER_RECORRENTE_REAIS = 150;
-/** Pessoa física paga na hora (Pix/cartão) — sem pedido mínimo. */
-/** Conta Azul (Pix/link) recusa cobrança abaixo de R$ 10 → status INVALIDO. */
-export const MIN_ORDER_PESSOA_REAIS = 10;
+/** Pessoa física: pedido mínimo R$ 200; entrega com 2 dias úteis (48h), como a empresa. */
+export const MIN_ORDER_PESSOA_REAIS = 200;
 
 /** Acréscimo no total cobrado quando o cliente paga com cartão. */
 export const TAXA_CARTAO_PESSOA = 0.05;
