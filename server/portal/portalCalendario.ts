@@ -3,7 +3,11 @@
 export const MIN_ORDER_REAIS = 300;
 export const MIN_ORDER_RECORRENTE_REAIS = 150;
 /** Pessoa física paga na hora (Pix/cartão) — sem pedido mínimo. */
-export const MIN_ORDER_PESSOA_REAIS = 0;
+/** Conta Azul (Pix/link) recusa cobrança abaixo de R$ 10 → status INVALIDO. */
+export const MIN_ORDER_PESSOA_REAIS = 10;
+
+/** Acréscimo no total cobrado quando o cliente paga com cartão. */
+export const TAXA_CARTAO_PESSOA = 0.05;
 export const LEAD_BUSINESS_DAYS = 2;
 const TIMEZONE = "America/Manaus";
 
