@@ -169,16 +169,16 @@ export function fichaDoProduto(nome: string): FichaProduto {
     foto,
   });
 
-  if (/repolho roxo/.test(n)) return legume("Repolho roxo, de cor firme.", "/produtos/repolho-roxo.jpg?v=3");
-  if (/repolho/.test(n)) return legume("Repolho verde.", "/produtos/repolho.jpg?v=3");
-  if (/cebola roxa/.test(n)) return legume("Cebola roxa.", "/produtos/cebola-roxa.jpg?v=3");
-  if (/cebola/.test(n)) return legume("Cebola branca.", "/produtos/cebola.jpg?v=3");
-  if (/alho/.test(n)) return legume("Alho descascado e higienizado.", "/produtos/alho.jpg?v=3");
-  if (/batata portuguesa/.test(n)) return legume("Batata portuguesa.", "/produtos/batata.jpg?v=3");
+  if (/repolho roxo/.test(n)) return legume("Repolho roxo, de cor firme.", "/produtos/repolho-roxo.jpg?v=4");
+  if (/repolho/.test(n)) return legume("Repolho verde.", "/produtos/repolho.jpg?v=4");
+  if (/cebola roxa/.test(n)) return legume("Cebola roxa.", "/produtos/cebola-roxa.jpg?v=4");
+  if (/cebola/.test(n)) return legume("Cebola branca.", "/produtos/cebola.jpg?v=4");
+  if (/alho/.test(n)) return legume("Alho descascado e higienizado.", "/produtos/alho.jpg?v=4");
+  if (/batata portuguesa/.test(n)) return legume("Batata portuguesa.", "/produtos/batata.jpg?v=4");
   if (/batata/.test(n)) return legume("Batata bolinha.", "/produtos/batata-bolinha.jpg?v=2");
-  if (/cenoura/.test(n)) return legume("Cenoura.", "/produtos/cenoura.jpg?v=3");
-  if (/beterraba/.test(n)) return legume("Beterraba.", "/produtos/beterraba.jpg?v=3");
-  if (/tomate/.test(n)) return legume("Tomate.", "/produtos/tomate.jpg");
+  if (/cenoura/.test(n)) return legume("Cenoura.", "/produtos/cenoura.jpg?v=4");
+  if (/beterraba/.test(n)) return legume("Beterraba.", "/produtos/beterraba.jpg?v=4");
+  if (/tomate/.test(n)) return legume("Tomate.", "/produtos/tomate.jpg?v=2");
   if (/nabo/.test(n)) return legume("Nabo japonês, de sabor suave.", "/produtos/nabo.jpg");
   if (/rabanete|rabano/.test(n)) return legume("Rabanete, de polpa firme e sabor leve.", "/produtos/rabanete.jpg");
 
