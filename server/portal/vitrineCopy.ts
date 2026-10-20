@@ -106,7 +106,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
   }
 
   const folha = (descricao: string, foto: string, aplicacao = "Salada, sanduíche e acompanhamento."): FichaProduto => ({
-    grupo: preparado ? "Processados" : "Folhas",
+    grupo: preparado ? "Minimamente Processados" : "Folhas",
     descricao: preparado ? `${descricao} Lavada e preparada para a cozinha.` : descricao,
     aplicacao: preparado ? "Mise en place, salada e linha fria." : aplicacao,
     foto,
@@ -149,7 +149,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
   if (/couve/.test(n)) return folha("Couve de folha, para refogado e salada.", "/produtos/couve.jpg", "Refogado, salada e suco.");
 
   const legume = (descricao: string, foto: string): FichaProduto => ({
-    grupo: preparado ? "Processados" : "Legumes",
+    grupo: preparado ? "Minimamente Processados" : "Legumes",
     descricao: preparado ? `${descricao} ${/fatiad/.test(n) ? "Lavada, descascada e fatiada." : "Lavada e descascada."}` : descricao,
     aplicacao: preparado ? "Mise en place e linha quente." : "Cocção, salada e acompanhamento.",
     foto,
@@ -178,7 +178,7 @@ export function fichaDoProduto(nome: string): FichaProduto {
   }
 
   return {
-    grupo: preparado ? "Processados" : "Da fazenda",
+    grupo: preparado ? "Minimamente Processados" : "Da fazenda",
     descricao: preparado ? "Lavado e preparado para a cozinha." : "Produto da fazenda, no padrão de entrega.",
     aplicacao: preparado ? "Mise en place." : "Cozinha e salada.",
     foto: "/uploads/IMG_7964.jpg",

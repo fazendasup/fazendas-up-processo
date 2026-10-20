@@ -11,7 +11,7 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("MIx de Alfaces com Rúcula 100g").foto).toBe("/produtos/mix-rucula.jpg");
     expect(fichaDoProduto("Batata Bolinha Kg").foto).not.toBe(fichaDoProduto("Batata Portuguesa Kg").foto);
     expect(fichaDoProduto("Mix de flores - Flores").grupo).toBe("Flores");
-    expect(fichaDoProduto("Cenoura Higienizada e Descascada- 200g").grupo).toBe("Processados");
+    expect(fichaDoProduto("Cenoura Higienizada e Descascada- 200g").grupo).toBe("Minimamente Processados");
     expect(fichaDoProduto("Alface Crespa Roxa 100g").foto).toBe("/produtos/alface-roxa.jpg?v=1");
     expect(fichaDoProduto("Alface Americana 150g").foto).toBe("/produtos/americana.jpg?v=1");
     expect(fichaDoProduto("Alface Crespa 200g").foto).toBe("/produtos/alface.jpg?v=1");
@@ -24,7 +24,7 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("Mix Chefe - Seleção Especial").foto).toBe("/produtos/mix-chefe.jpg?v=1");
     expect(fichaDoProduto("Mix Crocante - Base para Salada").foto).toBe("/produtos/mix-crocante.jpg?v=1");
     expect(fichaDoProduto("Mix de Alfaces 200g").foto).toBe("/produtos/mix-alfaces.jpg?v=1");
-    expect(fichaDoProduto("Alho Inteiro Descascado e Higienizado Kg").grupo).toBe("Processados");
+    expect(fichaDoProduto("Alho Inteiro Descascado e Higienizado Kg").grupo).toBe("Minimamente Processados");
   });
 
   it("esconde produto exclusivo de quem não tem o preço na regra", () => {
