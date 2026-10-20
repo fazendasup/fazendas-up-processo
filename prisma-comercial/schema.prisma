@@ -331,6 +331,8 @@ model ProdutoComercial {
   exclusivoPortal          Boolean            @default(false) @map("exclusivo_portal")
   descricaoLoja            String?            @map("descricao_loja") @db.Text
   aplicacaoLoja            String?            @map("aplicacao_loja") @db.Text
+  /// Classe da vitrine (ex.: Folhas). Se vazio, usa a classificação automática pelo nome.
+  grupoLoja                String?            @map("grupo_loja") @db.VarChar(80)
   estoqueLoja              Decimal?           @map("estoque_loja") @db.Decimal(14, 3)
   criadoEm                 DateTime           @default(now()) @map("criado_em")
   atualizadoEm             DateTime           @updatedAt @map("atualizado_em")

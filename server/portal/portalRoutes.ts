@@ -16,15 +16,17 @@ import {
 import { clienteAceitouRecorrencia } from "./contratoRecorrencia";
 import { aceitarContrato, lerConta, minimoDaConta, salvarConta } from "./portalConta";
 import { lerProgramacao, salvarProgramacao } from "./portalProgramacao";
-import { fichaDoProduto } from "./vitrineCopy";
+import { fichaDoProduto, grupoEfetivo, normalizarNomeGrupo } from "./vitrineCopy";
 import { pesoDoProduto } from "./produtoPeso";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import {
+  alinharPagamentoPedidoCancelado,
   alterarFormaPagamentoPedido,
   cancelarPedidoCliente,
   criarCobrancasPessoa,
   formaPagamentoDoRegistro,
+  idsParcelasPortalAtivas,
   lerPagamentoPedido,
 } from "./portalPagamento";
 import {
@@ -303,7 +305,7 @@ export function registerPortalRoutes(app: Express): void {
             {
               id: produto.id,
               nome: produto.nome,
-              grupo: ficha.grupo,
+              grupo: grupoEfetivo(produto.nome, produto.grupoLoja),
               descricao: produto.descricaoLoja || ficha.descricao,
               aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
               preco: logado ? preco : null,
@@ -607,12 +609,75 @@ export function registerPortalRoutes(app: Express): void {
     }
     try {
       res.json({
+        nome: acesso.cliente.nome,
+        email: acesso.email,
         endereco: await lerEnderecoEntrega(getComercialPrisma(), acesso.clienteId),
         telefone: acesso.cliente.telefoneWhatsapp ?? "",
+        documento: acesso.cliente.cnpjCpf ?? "",
       });
     } catch (error) {
       console.error("[portal] endereco", error);
       falha(res, 503, "Não foi possível carregar o endereço.");
+    }
+  });
+
+  app.patch("/api/portal/endereco", async (req, res) => {
+    const acesso = await clienteDaSessao(req);
+    if (!acesso) {
+      falha(res, 401, "Entre para atualizar o endereço.");
+      return;
+    }
+    const parsed = z
+      .object({
+        telefone: z.string().trim().min(10).max(20).optional(),
+        endereco: z.object({
+          cep: z.string().trim().min(8).max(16),
+          logradouro: z.string().trim().min(2).max(255),
+          numero: z.string().trim().min(1).max(32),
+          complemento: z.string().trim().max(255).optional().default(""),
+          bairro: z.string().trim().min(2).max(255),
+          cidade: z.string().trim().min(2).max(255),
+          estado: z.string().trim().min(2).max(2),
+        }),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Confira telefone e endereço completos.");
+      return;
+    }
+    try {
+      const prisma = getComercialPrisma();
+      const telefone = parsed.data.telefone?.replace(/\D/g, "") || acesso.cliente.telefoneWhatsapp || "";
+      const endereco = await salvarEnderecoEntrega(
+        prisma,
+        acesso.clienteId,
+        parsed.data.endereco,
+        telefone,
+        acesso.cliente.nome,
+      );
+      if (telefone && telefone !== (acesso.cliente.telefoneWhatsapp ?? "")) {
+        await prisma.cliente.update({
+          where: { id: acesso.clienteId },
+          data: { telefoneWhatsapp: telefone },
+        });
+      }
+      const contaAzulId = acesso.cliente.externalId?.trim();
+      if (contaAzulId) await sincronizarEnderecoContaAzul(prisma, contaAzulId, endereco);
+      res.json({
+        nome: acesso.cliente.nome,
+        email: acesso.email,
+        telefone,
+        endereco,
+        documento: acesso.cliente.cnpjCpf ?? "",
+        mensagem: "Dados de entrega atualizados.",
+      });
+    } catch (error) {
+      if (error instanceof LojaErro) {
+        falha(res, error.status, error.message);
+        return;
+      }
+      console.error("[portal] salvar endereco", error);
+      falha(res, 503, "Não foi possível salvar o endereço agora.");
     }
   });
 
@@ -809,6 +874,16 @@ export function registerPortalRoutes(app: Express): void {
         where: { pedidoId: { in: pedidos.map((pedido) => pedido.id) } },
       });
       const pagamentoPorPedido = new Map(pagamentos.map((item) => [item.pedidoId, item]));
+      // Cura inconsistência: pedido cancelado com cobrança ainda "AGUARDANDO".
+      for (const pedido of pedidos) {
+        if (pedido.status !== "CANCELADO") continue;
+        const pag = pagamentoPorPedido.get(pedido.id);
+        if (!pag || pag.status === "CANCELADO" || pag.status === "PAGO") continue;
+        void alinharPagamentoPedidoCancelado(prisma, pedido.id).catch((error) =>
+          console.warn("[portal] alinhar pagamento cancelado", pedido.id, error),
+        );
+        pagamentoPorPedido.set(pedido.id, { ...pag, status: "CANCELADO", pixUrl: null, cartaoUrl: null });
+      }
       res.json({
         pedidos: pedidos.map((pedido) => {
           const dataEntrega = new Intl.DateTimeFormat("en-CA", {
@@ -829,10 +904,11 @@ export function registerPortalRoutes(app: Express): void {
             pagamento: pagamento
               ? {
                   status: pagamento.status,
-                  pixUrl: pagamento.pixUrl,
-                  cartaoUrl: pagamento.cartaoUrl,
+                  pixUrl: pagamento.status === "CANCELADO" ? null : pagamento.pixUrl,
+                  cartaoUrl: pagamento.status === "CANCELADO" ? null : pagamento.cartaoUrl,
                   total: dinheiro(pagamento.total),
-                  formaPagamento: formaPagamentoDoRegistro(pagamento),
+                  formaPagamento:
+                    pagamento.status === "CANCELADO" ? null : formaPagamentoDoRegistro(pagamento),
                 }
               : null,
             itens: pedido.itens.map((item) => ({
@@ -1003,7 +1079,9 @@ export function registerPortalRoutes(app: Express): void {
             "Pedido pelo site (pessoa). Aguardando pagamento.",
             `Entrega: ${rotuloPeriodo(periodo!)}`,
             `Endereço: ${textoEndereco(enderecoSalvo!)}`,
-            formaPagamento === "pix" ? "Pagamento: Pix" : "Pagamento: cartão",
+            formaPagamento === "pix"
+              ? "Pagamento: Pix"
+              : "Pagamento: cartão (taxa de 5%)",
             nota ? `Obs.: ${nota}` : null,
           ]
             .filter(Boolean)
@@ -1181,8 +1259,8 @@ export function registerPortalRoutes(app: Express): void {
         ...cobranca,
         mensagem:
           parsed.data.formaPagamento === "pix"
-            ? "Pagamento alterado para Pix."
-            : "Pagamento alterado para cartão.",
+            ? "Pagamento alterado para Pix (sem taxa de cartão)."
+            : "Pagamento alterado para cartão com taxa de 5%.",
       });
     } catch (error) {
       if (error instanceof LojaErro) {
@@ -1290,28 +1368,49 @@ export function registerPortalRoutes(app: Express): void {
         dataInicio: addCalendarDays(hoje, -180),
         dataFim: addCalendarDays(hoje, 90),
       });
-      const titulos = extrato.titulos.map((titulo) => ({
-        id: titulo.id,
-        descricao: titulo.descricao,
-        vencimento: titulo.dataVencimento,
-        pagamento: titulo.dataPagamento,
-        status: titulo.status,
-        valor: titulo.valorTotal,
-        emAberto: titulo.valorAberto,
-        pago: titulo.valorPago,
-        referencia: titulo.referencia,
-      }));
+      const pessoa = ehPerfilPessoa(acesso.perfil, acesso.cliente.cnpjCpf);
+      // PF: só cobranças de pedidos vivos do portal (evita "a vencer" de cancelados/órfãos).
+      const parcelasAtivas = pessoa
+        ? await idsParcelasPortalAtivas(getComercialPrisma(), acesso.clienteId, contaAzulId)
+        : null;
+      const titulos = extrato.titulos
+        .filter((titulo) => !/PERDIDO|CANCELADO/i.test(titulo.status))
+        .filter((titulo) => {
+          if (!pessoa || !parcelasAtivas) return true;
+          if (titulo.valorAberto <= 0.009) return true;
+          return parcelasAtivas.has(titulo.id);
+        })
+        .map((titulo) => ({
+          id: titulo.id,
+          descricao: titulo.descricao,
+          vencimento: titulo.dataVencimento,
+          pagamento: titulo.dataPagamento,
+          status: titulo.status,
+          valor: titulo.valorTotal,
+          emAberto: titulo.valorAberto,
+          pago: titulo.valorPago,
+          referencia: titulo.referencia,
+        }));
+      const totais = {
+        recebido: Math.round(titulos.reduce((s, t) => s + t.pago, 0) * 100) / 100,
+        emAberto: Math.round(titulos.reduce((s, t) => s + t.emAberto, 0) * 100) / 100,
+        emAtraso:
+          Math.round(
+            titulos
+              .filter((t) => t.emAberto > 0.009 && t.vencimento && t.vencimento < hoje)
+              .reduce((s, t) => s + t.emAberto, 0) * 100,
+          ) / 100,
+      };
       lembrarTitulosDoCliente(
         contaAzulId,
         titulos.map((titulo) => ({ id: titulo.id, vencimento: titulo.vencimento })),
       );
       res.json({
-        totais: {
-          recebido: extrato.totais.recebido,
-          emAberto: extrato.totais.emAberto,
-          emAtraso: extrato.totais.emAtraso,
-        },
+        totais,
         titulos,
+        ...(pessoa && extrato.titulos.some((t) => t.valorAberto > 0.009 && !parcelasAtivas!.has(t.id))
+          ? { aviso: "Cobranças antigas de pedidos cancelados foram ocultadas." }
+          : {}),
       });
     } catch (error) {
       console.error("[portal] financeiro", error);
@@ -1412,7 +1511,7 @@ export function registerPortalRoutes(app: Express): void {
             id: produto.id,
             nome: produto.nome,
             categoria: produto.categoria,
-            grupo: ficha.grupo,
+            grupo: grupoEfetivo(produto.nome, produto.grupoLoja),
             descricao: produto.descricaoLoja || ficha.descricao,
             aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
             naLoja: produto.visivelPortal,
@@ -1471,6 +1570,7 @@ export function registerPortalRoutes(app: Express): void {
         descricao: z.string().trim().max(400).optional(),
         aplicacao: z.string().trim().max(240).optional(),
         estoque: z.number().min(0).max(99999).nullable().optional(),
+        grupo: z.string().trim().min(2).max(80).optional(),
       })
       .safeParse(req.body);
     const temCampo =
@@ -1481,13 +1581,19 @@ export function registerPortalRoutes(app: Express): void {
         parsed.data.imagemUrl !== undefined ||
         parsed.data.descricao != null ||
         parsed.data.aplicacao != null ||
-        parsed.data.estoque !== undefined);
+        parsed.data.estoque !== undefined ||
+        parsed.data.grupo != null);
     if (!parsed.success || !temCampo) {
-      falha(res, 400, "Informe preço, foto, estoque ou se o item fica na loja.");
+      falha(res, 400, "Informe preço, foto, estoque, classe ou se o item fica na loja.");
       return;
     }
     if (parsed.data.imagemUrl && !imagemValida(parsed.data.imagemUrl)) {
       falha(res, 400, "A foto precisa ser um endereço https.");
+      return;
+    }
+    const grupoNovo = parsed.data.grupo ? normalizarNomeGrupo(parsed.data.grupo) : undefined;
+    if (parsed.data.grupo != null && !grupoNovo) {
+      falha(res, 400, "Informe um nome de classe válido.");
       return;
     }
     try {
@@ -1510,6 +1616,7 @@ export function registerPortalRoutes(app: Express): void {
           ...(parsed.data.imagemUrl !== undefined ? { imagemUrl: parsed.data.imagemUrl || null } : {}),
           ...(parsed.data.descricao != null ? { descricaoLoja: parsed.data.descricao } : {}),
           ...(parsed.data.aplicacao != null ? { aplicacaoLoja: parsed.data.aplicacao } : {}),
+          ...(grupoNovo != null ? { grupoLoja: grupoNovo } : {}),
           ...(parsed.data.estoque !== undefined
             ? { estoqueLoja: parsed.data.estoque == null ? null : parsed.data.estoque.toFixed(3) }
             : {}),
@@ -1524,10 +1631,61 @@ export function registerPortalRoutes(app: Express): void {
         descricao: atualizado.descricaoLoja,
         aplicacao: atualizado.aplicacaoLoja,
         estoque: estoqueNumero(atualizado.estoqueLoja),
+        grupo: grupoEfetivo(atualizado.nome, atualizado.grupoLoja),
       });
     } catch (error) {
       console.error("[portal] patch produto", error);
       falha(res, 503, "Não foi possível salvar o produto.");
+    }
+  });
+
+  app.post("/api/portal/equipe/grupos/renomear", async (req, res) => {
+    const equipe = await equipeDaSessao(req);
+    if (!equipe) {
+      falha(res, 401, "Entre com o acesso da equipe.");
+      return;
+    }
+    const parsed = z
+      .object({
+        de: z.string().trim().min(2).max(80),
+        para: z.string().trim().min(2).max(80),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      falha(res, 400, "Informe o nome atual e o novo nome da classe.");
+      return;
+    }
+    const de = normalizarNomeGrupo(parsed.data.de);
+    const para = normalizarNomeGrupo(parsed.data.para);
+    if (!de || !para) {
+      falha(res, 400, "Informe o nome atual e o novo nome da classe.");
+      return;
+    }
+    if (de === para) {
+      falha(res, 400, "O novo nome precisa ser diferente do atual.");
+      return;
+    }
+    try {
+      const prisma = getComercialPrisma();
+      const produtos = await prisma.produtoComercial.findMany({
+        where: { importadoOperacao: true, contaAzulProdutoId: { not: null } },
+        select: { id: true, nome: true, grupoLoja: true },
+      });
+      const ids = produtos
+        .filter((produto) => grupoEfetivo(produto.nome, produto.grupoLoja) === de)
+        .map((produto) => produto.id);
+      if (ids.length === 0) {
+        falha(res, 404, `Nenhum produto na classe “${de}”.`);
+        return;
+      }
+      await prisma.produtoComercial.updateMany({
+        where: { id: { in: ids } },
+        data: { grupoLoja: para },
+      });
+      res.json({ atualizados: ids.length, de, para });
+    } catch (error) {
+      console.error("[portal] renomear grupo", error);
+      falha(res, 503, "Não foi possível renomear a classe.");
     }
   });
 

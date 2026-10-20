@@ -331,6 +331,8 @@ model ProdutoComercial {
   exclusivoPortal        Boolean           @default(false) @map("exclusivo_portal")
   descricaoLoja          String?           @map("descricao_loja") @db.Text
   aplicacaoLoja          String?           @map("aplicacao_loja") @db.Text
+  /// Classe da vitrine (ex.: Folhas). Se vazio, usa a classificação automática pelo nome.
+  grupoLoja              String?           @map("grupo_loja") @db.VarChar(80)
   estoqueLoja            Decimal?          @map("estoque_loja") @db.Decimal(14, 3)
   criadoEm               DateTime          @default(now()) @map("criado_em")
   atualizadoEm           DateTime          @updatedAt @map("atualizado_em")
@@ -352,22 +354,49 @@ model ProdutoComercial {
   @@map("produtos_comerciais")
 }
 
-/// Acesso do cliente B2B ao site. A senha nasce só quando a pessoa ativa o convite.
+enum PortalPerfil {
+  EMPRESA
+  PESSOA
+}
+
+/// Acesso do cliente ao site. Empresa (B2B) ou pessoa física.
 model PortalAcesso {
-  id              String    @id @default(cuid())
-  clienteId       String    @unique @map("cliente_id")
-  email           String    @unique
-  senhaHash       String?   @map("senha_hash")
-  conviteHash     String?   @map("convite_hash")
-  conviteExpiraEm DateTime? @map("convite_expira_em")
-  ativo           Boolean   @default(true)
-  criadoEm        DateTime  @default(now()) @map("criado_em")
-  atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
+  id              String       @id @default(cuid())
+  clienteId       String       @unique @map("cliente_id")
+  email           String       @unique
+  senhaHash       String?      @map("senha_hash")
+  conviteHash     String?      @map("convite_hash")
+  conviteExpiraEm DateTime?    @map("convite_expira_em")
+  perfil          PortalPerfil @default(EMPRESA)
+  ativo           Boolean      @default(true)
+  criadoEm        DateTime     @default(now()) @map("criado_em")
+  atualizadoEm    DateTime     @updatedAt @map("atualizado_em")
 
   cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@index([conviteHash])
+  @@index([perfil])
   @@map("portal_acessos")
+}
+
+/// Cobrança Pix / link de cartão gerada no Conta Azul para pedido de pessoa física.
+model PortalPedidoPagamento {
+  id                 String    @id @default(cuid())
+  pedidoId           String    @unique @map("pedido_id")
+  status             String    @default("AGUARDANDO")
+  total              Decimal   @db.Decimal(14, 2)
+  contaAzulReceberId String?   @map("conta_azul_receber_id")
+  parcelaId          String?   @map("parcela_id")
+  pixCobrancaId      String?   @map("pix_cobranca_id")
+  pixUrl             String?   @map("pix_url") @db.Text
+  cartaoCobrancaId   String?   @map("cartao_cobranca_id")
+  cartaoUrl          String?   @map("cartao_url") @db.Text
+  criadoEm           DateTime  @default(now()) @map("criado_em")
+  atualizadoEm       DateTime  @updatedAt @map("atualizado_em")
+  pagoEm             DateTime? @map("pago_em")
+
+  @@index([status])
+  @@map("portal_pedido_pagamentos")
 }
 
 /// Dados cadastrais editáveis na conta do site. O CNPJ permanece no cliente.

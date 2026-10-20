@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bytesDaFoto, jpegValido, marcaHeic, produtoVisivelNaLoja } from "./portalLoja";
-import { fichaDoProduto } from "./vitrineCopy";
+import { fichaDoProduto, grupoEfetivo, normalizarNomeGrupo } from "./vitrineCopy";
 
 describe("fichaDoProduto", () => {
   it("separa microverde, flor, processado e folha", () => {
@@ -25,6 +25,13 @@ describe("fichaDoProduto", () => {
     expect(fichaDoProduto("Mix Crocante - Base para Salada").foto).toBe("/produtos/mix-crocante.jpg?v=1");
     expect(fichaDoProduto("Mix de Alfaces 200g").foto).toBe("/produtos/mix-alfaces.jpg?v=1");
     expect(fichaDoProduto("Alho Inteiro Descascado e Higienizado Kg").grupo).toBe("Minimamente Processados");
+  });
+
+  it("prioriza grupo salvo pela equipe e normaliza legado", () => {
+    expect(normalizarNomeGrupo("Processados")).toBe("Minimamente Processados");
+    expect(grupoEfetivo("Rúcula", null)).toBe("Folhas");
+    expect(grupoEfetivo("Rúcula", "Temperos")).toBe("Temperos");
+    expect(grupoEfetivo("Rúcula", "Processados")).toBe("Minimamente Processados");
   });
 
   it("esconde produto exclusivo de quem não tem o preço na regra", () => {

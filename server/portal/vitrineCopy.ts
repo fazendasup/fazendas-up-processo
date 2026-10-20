@@ -5,6 +5,20 @@ export type FichaProduto = {
   foto: string;
 };
 
+/** Normaliza o rótulo de uma classe (legado Processados → Minimamente Processados). */
+export function normalizarNomeGrupo(valor: string): string {
+  const bruto = valor.trim().replace(/\s+/g, " ");
+  if (!bruto) return "";
+  return bruto === "Processados" ? "Minimamente Processados" : bruto;
+}
+
+/** Prioriza a classe salva pela equipe; senão usa a classificação automática pelo nome. */
+export function grupoEfetivo(nome: string, grupoLoja?: string | null): string {
+  const override = grupoLoja?.trim();
+  if (override) return normalizarNomeGrupo(override) || "Da fazenda";
+  return normalizarNomeGrupo(fichaDoProduto(nome).grupo) || "Da fazenda";
+}
+
 function semAcento(valor: string): string {
   return valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
