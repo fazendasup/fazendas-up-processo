@@ -3045,11 +3045,13 @@ function CampoProntoVariedade({
   max,
   disabled,
   onSalvar,
+  compact = false,
 }: {
   valor: number;
   max: number;
   disabled: boolean;
   onSalvar: (quantidade: number) => void;
+  compact?: boolean;
 }) {
   const [texto, setTexto] = useState(() => textoQuantidade(valor));
   const focado = useRef(false);
@@ -3074,7 +3076,7 @@ function CampoProntoVariedade({
   }
 
   return (
-    <label className="mt-2 flex items-center gap-2">
+    <label className={`flex items-center gap-2 ${compact ? "" : "mt-2"}`}>
       <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
         Pronto
       </span>
@@ -3118,7 +3120,20 @@ function PedidosKpiDashboard({
   salvandoPronto: boolean;
   onDefinirPronto: (itemIds: string[], quantidade: number) => void;
 }) {
-  const produtosPorVariedade = kpis.produtos ?? [];
+  const produtosPorVariedade = (kpis.produtos ?? []) as Array<{
+    nome: string;
+    categoria?: string;
+    clientes?: number;
+    quantidade: number;
+    pronto: number;
+    entregue: number;
+    falta: number;
+    destinos?: Array<{ id: string; nome: string; quantidade: number }>;
+    linhasAbertas?: Array<{ id: string; quantidade: number }>;
+  }>;
+  const [mostrarFeitos, setMostrarFeitos] = useState(false);
+  const pendentes = produtosPorVariedade.filter(p => Number(p.falta ?? 0) > 0);
+  const feitos = produtosPorVariedade.filter(p => Number(p.falta ?? 0) <= 0);
 
   return (
     <div className="space-y-3">
@@ -3171,83 +3186,64 @@ function PedidosKpiDashboard({
 
       <Card className="border bg-card/80">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <ShoppingBasket className="h-4 w-4" /> Produtos por variedade
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Falta = total − pronto − entregue. Digite o pronto na variedade para preencher os clientes na ordem de produção. Passe o mouse para ver quem recebe.
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <ShoppingBasket className="h-4 w-4" /> Produção do dia
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Foque no que falta. Digite o pronto para distribuir na ordem de produção.
+              </p>
+            </div>
+            <p className="text-xs tabular-nums text-muted-foreground">
+              {pendentes.length} pendente{pendentes.length === 1 ? "" : "s"}
+              {feitos.length > 0 ? ` · ${feitos.length} feito${feitos.length === 1 ? "" : "s"}` : ""}
+            </p>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {produtosPorVariedade.length === 0 ? (
             <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
               Sem produtos no dia.
             </p>
+          ) : pendentes.length === 0 ? (
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+              Tudo pronto neste dia.
+            </p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {produtosPorVariedade.map((produto: any, index: number) => {
+            <ul className="divide-y rounded-lg border">
+              {pendentes.map((produto, index) => {
                 const total = Number(produto.quantidade ?? 0);
-                const falta = Number(produto.falta ?? produto.pendente ?? total);
+                const falta = Number(produto.falta ?? 0);
                 const pronto = Number(produto.pronto ?? 0);
                 const entregue = Number(produto.entregue ?? 0);
-                const feito = pronto + entregue;
-                const pctFeito =
-                  total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : 0;
-                const destinos = (produto.destinos ?? []) as Array<{
-                  id: string;
-                  nome: string;
-                  quantidade: number;
-                }>;
-                const linhasAbertas = (produto.linhasAbertas ?? []) as Array<{
-                  id: string;
-                  quantidade: number;
-                }>;
+                const destinos = produto.destinos ?? [];
+                const linhasAbertas = produto.linhasAbertas ?? [];
                 const maxPronto = Math.max(0, total - entregue);
+                const clientes = Number(produto.clientes ?? destinos.length);
                 return (
-                  <div
+                  <li
                     key={produto.nome}
-                    className="rounded-lg border bg-muted/20 p-2 text-left"
+                    className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3"
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="cursor-default">
-                          <div className="mb-1 flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="flex min-w-0 items-center gap-1 text-xs">
-                                <span className="shrink-0 font-semibold">
-                                  {index + 1}.
-                                </span>
-                                <NomeProdutoComPeso
-                                  nome={produto.nome}
-                                  className="text-xs [&_span:first-child]:font-semibold"
-                                />
-                              </div>
-                              <p className="truncate text-[10px] text-muted-foreground">
-                                {produto.categoria} · {produto.clientes} cliente(s)
-                              </p>
-                            </div>
-                            <span
-                              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                                falta > 0
-                                  ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
-                                  : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100"
-                              }`}
-                            >
-                              {falta > 0
-                                ? `Falta ${formatQuantidade(falta)}`
-                                : "Feito"}
+                        <div className="min-w-0 flex-1 cursor-default">
+                          <div className="flex min-w-0 items-center gap-1.5 text-sm">
+                            <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                              {index + 1}.
                             </span>
-                          </div>
-                          <p className="mb-1 text-[10px] tabular-nums text-muted-foreground">
-                            {formatQuantidade(total)} − pronto {formatQuantidade(pronto)} −
-                            entregue {formatQuantidade(entregue)}
-                          </p>
-                          <div className="h-1.5 overflow-hidden rounded-full bg-amber-200/70 dark:bg-amber-900/40">
-                            <div
-                              className="h-full rounded-full bg-emerald-500"
-                              style={{ width: `${pctFeito}%` }}
+                            <NomeProdutoComPeso
+                              nome={produto.nome}
+                              className="min-w-0 [&_span:first-child]:font-semibold"
                             />
                           </div>
+                          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                            {clientes} cliente{clientes === 1 ? "" : "s"}
+                            {entregue > 0
+                              ? ` · entregue ${formatQuantidade(entregue)}`
+                              : ""}
+                          </p>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent
@@ -3270,24 +3266,73 @@ function PedidosKpiDashboard({
                         )}
                       </TooltipContent>
                     </Tooltip>
-                    {podeEditar && linhasAbertas.length > 0 ? (
-                      <CampoProntoVariedade
-                        valor={pronto}
-                        max={maxPronto}
-                        disabled={salvandoPronto}
-                        onSalvar={quantidade =>
-                          onDefinirPronto(
-                            linhasAbertas.map(linha => linha.id),
-                            quantidade,
-                          )
-                        }
-                      />
-                    ) : null}
-                  </div>
+
+                    <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                          Falta
+                        </p>
+                        <p className="text-xl font-extrabold tabular-nums leading-none text-amber-900 dark:text-amber-100">
+                          {formatQuantidade(falta)}
+                        </p>
+                      </div>
+                      {podeEditar && linhasAbertas.length > 0 ? (
+                        <CampoProntoVariedade
+                          compact
+                          valor={pronto}
+                          max={maxPronto}
+                          disabled={salvandoPronto}
+                          onSalvar={quantidade =>
+                            onDefinirPronto(
+                              linhasAbertas.map(linha => linha.id),
+                              quantidade,
+                            )
+                          }
+                        />
+                      ) : (
+                        <p className="text-xs tabular-nums text-muted-foreground">
+                          pronto {formatQuantidade(pronto)}/{formatQuantidade(maxPronto)}
+                        </p>
+                      )}
+                    </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
+
+          {feitos.length > 0 ? (
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs text-muted-foreground"
+                onClick={() => setMostrarFeitos(v => !v)}
+              >
+                {mostrarFeitos ? "Ocultar" : "Ver"} {feitos.length} já feito
+                {feitos.length === 1 ? "" : "s"}
+              </Button>
+              {mostrarFeitos ? (
+                <ul className="divide-y rounded-lg border border-emerald-200/70 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                  {feitos.map(produto => (
+                    <li
+                      key={produto.nome}
+                      className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                    >
+                      <NomeProdutoComPeso
+                        nome={produto.nome}
+                        className="min-w-0 text-muted-foreground [&_span:first-child]:font-medium"
+                      />
+                      <span className="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        Feito · {formatQuantidade(produto.quantidade)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>
