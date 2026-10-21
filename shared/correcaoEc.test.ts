@@ -4,6 +4,8 @@ import {
   calcularCorrecaoEc,
   concentracaoGalaoGL,
   potenciaEcPorMlPorLitro,
+  receitaIgual,
+  resumoMudancaReceita,
 } from "./correcaoEc";
 
 describe("correcaoEc", () => {
@@ -68,5 +70,17 @@ describe("correcaoEc", () => {
     });
     expect(r.mlA).toBe(0);
     expect(r.aviso).toMatch(/alvo/i);
+  });
+
+  it("resume mudança de massa nos concentrados", () => {
+    const depois = {
+      ...RECEITA_AB_PADRAO,
+      galaoA: RECEITA_AB_PADRAO.galaoA.map((s) =>
+        s.id === "mkp" ? { ...s, massaKg: 1.6 } : s,
+      ),
+    };
+    expect(resumoMudancaReceita(RECEITA_AB_PADRAO, depois)).toMatch(/MKP/);
+    expect(receitaIgual(RECEITA_AB_PADRAO, RECEITA_AB_PADRAO)).toBe(true);
+    expect(receitaIgual(RECEITA_AB_PADRAO, depois)).toBe(false);
   });
 });

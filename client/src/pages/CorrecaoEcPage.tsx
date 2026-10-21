@@ -19,7 +19,11 @@ import {
   calcularCorrecaoEc,
   concentracaoGalaoGL,
   normalizarReceita,
+  receitaIgual,
+  resumoMudancaReceita,
   type ReceitaConcentradoAb,
+  type ReceitaHistoricoAcao,
+  type ReceitaHistoricoEntry,
 } from "@shared/correcaoEc";
 import {
   FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO,
@@ -31,7 +35,7 @@ import {
   KOH_TEOR_MIN,
   calcularCorrecaoPhKoh,
 } from "@shared/correcaoPh";
-import { AlertTriangle, Beaker, Copy, Droplets, FlaskConical, Link2, RotateCcw, ShieldAlert } from "lucide-react";
+import { AlertTriangle, Beaker, Copy, Droplets, FlaskConical, History, Link2, RotateCcw, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -44,7 +48,9 @@ import {
 } from "@/lib/pwa";
 
 const STORAGE_KEY_EC = "fazendas.correcaoEc.receita.v2";
+const STORAGE_KEY_EC_HIST = "fazendas.correcaoEc.receita.historico.v1";
 const STORAGE_KEY_PH = "fazendas.correcaoPh.fatorMlEstoque";
+const HISTORICO_MAX = 40;
 const FASES_ORDEM: Fase[] = ["mudas", "vegetativa", "maturacao"];
 
 const SOLUCOES_CONCENTRADAS = [
@@ -113,6 +119,51 @@ function loadReceita(): ReceitaConcentradoAb {
   } catch {
     return RECEITA_AB_PADRAO;
   }
+}
+
+function loadHistoricoReceita(): ReceitaHistoricoEntry[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_EC_HIST);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ReceitaHistoricoEntry[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((e) => e && typeof e.id === "string" && e.receita)
+      .map((e) => ({
+        ...e,
+        receita: normalizarReceita(e.receita),
+      }))
+      .slice(0, HISTORICO_MAX);
+  } catch {
+    return [];
+  }
+}
+
+function persistHistoricoReceita(entries: ReceitaHistoricoEntry[]) {
+  localStorage.setItem(STORAGE_KEY_EC_HIST, JSON.stringify(entries.slice(0, HISTORICO_MAX)));
+}
+
+function rotuloAcaoHistorico(acao: ReceitaHistoricoAcao): string {
+  switch (acao) {
+    case "salvar":
+      return "Atualização";
+    case "restaurar_padrao":
+      return "Restaurada ao padrão";
+    case "restaurar_historico":
+      return "Restaurada do histórico";
+  }
+}
+
+function formatarQuandoHistorico(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function loadFatorPh(): number {
@@ -195,6 +246,11 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   const [ecAtual, setEcAtual] = useState("");
   const [ecAlvo, setEcAlvo] = useState("");
   const [receita, setReceita] = useState<ReceitaConcentradoAb>(() => loadReceita());
+  const [receitaSalva, setReceitaSalva] = useState<ReceitaConcentradoAb>(() => loadReceita());
+  const [historicoReceita, setHistoricoReceita] = useState<ReceitaHistoricoEntry[]>(() =>
+    loadHistoricoReceita(),
+  );
+  const [notaHistorico, setNotaHistorico] = useState("");
   const [mostrarReceita, setMostrarReceita] = useState(false);
 
   const [volumePh, setVolumePh] = useState("");
@@ -322,15 +378,72 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
     });
   }, [volumePh, phAtual, phAlvo, fatorPh]);
 
+  const registrarHistorico = (
+    acao: ReceitaHistoricoAcao,
+    anterior: ReceitaConcentradoAb,
+    nova: ReceitaConcentradoAb,
+    nota?: string,
+  ) => {
+    const entry: ReceitaHistoricoEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      em: new Date().toISOString(),
+      acao,
+      receita: nova,
+      resumo: resumoMudancaReceita(anterior, nova),
+      autor: user?.name ?? user?.email ?? null,
+      nota: nota?.trim() || null,
+    };
+    setHistoricoReceita((prev) => {
+      const next = [entry, ...prev].slice(0, HISTORICO_MAX);
+      persistHistoricoReceita(next);
+      return next;
+    });
+  };
+
   const salvarReceita = () => {
+    if (receitaIgual(receita, receitaSalva)) {
+      toast.message("Nenhuma alteração nos concentrados para salvar");
+      return;
+    }
     localStorage.setItem(STORAGE_KEY_EC, JSON.stringify(receita));
-    toast.success("Receita dos concentrados salva neste navegador");
+    registrarHistorico("salvar", receitaSalva, receita, notaHistorico);
+    setReceitaSalva(receita);
+    setNotaHistorico("");
+    toast.success("Receita dos concentrados salva — histórico atualizado");
   };
 
   const restaurarReceita = () => {
+    if (receitaIgual(receitaSalva, RECEITA_AB_PADRAO) && receitaIgual(receita, RECEITA_AB_PADRAO)) {
+      toast.message("A receita já está no padrão");
+      return;
+    }
+    const anterior = receitaSalva;
     setReceita(RECEITA_AB_PADRAO);
     localStorage.removeItem(STORAGE_KEY_EC);
-    toast.success("Receita restaurada ao padrão");
+    registrarHistorico("restaurar_padrao", anterior, RECEITA_AB_PADRAO, notaHistorico);
+    setReceitaSalva(RECEITA_AB_PADRAO);
+    setNotaHistorico("");
+    toast.success("Receita restaurada ao padrão — registrado no histórico");
+  };
+
+  const restaurarDoHistorico = (entry: ReceitaHistoricoEntry) => {
+    const nova = normalizarReceita(entry.receita);
+    if (receitaIgual(nova, receitaSalva)) {
+      setReceita(nova);
+      toast.message("Essa versão já é a receita atual");
+      return;
+    }
+    const anterior = receitaSalva;
+    setReceita(nova);
+    localStorage.setItem(STORAGE_KEY_EC, JSON.stringify(nova));
+    registrarHistorico(
+      "restaurar_historico",
+      anterior,
+      nova,
+      `Versão de ${formatarQuandoHistorico(entry.em)}`,
+    );
+    setReceitaSalva(nova);
+    toast.success("Receita restaurada do histórico");
   };
 
   const salvarFatorPh = () => {
@@ -710,6 +823,16 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                     </div>
                   </div>
 
+                  <div className="space-y-1 max-w-lg">
+                    <Label className="text-xs">Nota (opcional, fica no histórico)</Label>
+                    <Input
+                      value={notaHistorico}
+                      onChange={(e) => setNotaHistorico(e.target.value)}
+                      placeholder="Ex.: nova remessa de MKP, ajuste após leitura das caixas"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" onClick={salvarReceita}>
                       Salvar receita
@@ -719,8 +842,63 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                       Restaurar padrão
                     </Button>
                   </div>
+
                 </CardContent>
               ) : null}
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <History className="w-4 h-4 text-muted-foreground" />
+                  Histórico dos concentrados
+                </CardTitle>
+                <CardDescription>
+                  Cada salvamento ou restauração fica registrado com o que mudou (neste navegador).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {historicoReceita.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Ainda não há registros. Abra “Editar receita”, altere as massas e salve para começar o
+                    histórico.
+                  </p>
+                ) : (
+                  <ul className="space-y-2 max-h-72 overflow-y-auto">
+                    {historicoReceita.map((entry) => (
+                      <li
+                        key={entry.id}
+                        className="rounded-md border bg-muted/20 px-2.5 py-2 text-xs space-y-1"
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <span className="font-medium">
+                            {rotuloAcaoHistorico(entry.acao)} · {formatarQuandoHistorico(entry.em)}
+                          </span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-[11px]"
+                            onClick={() => {
+                              setMostrarReceita(true);
+                              restaurarDoHistorico(entry);
+                            }}
+                          >
+                            Usar esta versão
+                          </Button>
+                        </div>
+                        <p className="text-muted-foreground leading-snug">{entry.resumo}</p>
+                        {entry.autor ? (
+                          <p className="text-[11px] text-muted-foreground">Por {entry.autor}</p>
+                        ) : null}
+                        {entry.nota ? (
+                          <p className="text-[11px] italic text-foreground/80">“{entry.nota}”</p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
             </Card>
           </TabsContent>
 

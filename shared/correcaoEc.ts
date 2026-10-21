@@ -101,6 +101,56 @@ export function normalizarReceita(bruta: Partial<ReceitaConcentradoAb> | null | 
   };
 }
 
+export type ReceitaHistoricoAcao =
+  | "salvar"
+  | "restaurar_padrao"
+  | "restaurar_historico";
+
+/** Entrada do histórico de atualização dos concentrados A/B. */
+export type ReceitaHistoricoEntry = {
+  id: string;
+  em: string;
+  acao: ReceitaHistoricoAcao;
+  receita: ReceitaConcentradoAb;
+  /** Texto curto do que mudou (ex.: "MKP 1,4 → 1,6 kg"). */
+  resumo: string;
+  autor?: string | null;
+  nota?: string | null;
+};
+
+function fmtKg(n: number): string {
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+}
+
+/** Compara duas receitas e descreve as mudanças de massa/volume. */
+export function resumoMudancaReceita(
+  antes: ReceitaConcentradoAb,
+  depois: ReceitaConcentradoAb,
+): string {
+  const partes: string[] = [];
+  if (antes.volumeGalaoL !== depois.volumeGalaoL) {
+    partes.push(`Volume ${fmtKg(antes.volumeGalaoL)} → ${fmtKg(depois.volumeGalaoL)} L`);
+  }
+  const comparar = (lado: "A" | "B", a: SalConcentrado[], b: SalConcentrado[]) => {
+    for (const sal of b) {
+      const old = a.find((x) => x.id === sal.id);
+      const massaAntes = old?.massaKg ?? 0;
+      if (Math.abs(massaAntes - sal.massaKg) < 1e-9) continue;
+      partes.push(`${lado}: ${sal.nome} ${fmtKg(massaAntes)} → ${fmtKg(sal.massaKg)} kg`);
+    }
+  };
+  comparar("A", antes.galaoA, depois.galaoA);
+  comparar("B", antes.galaoB, depois.galaoB);
+  return partes.length > 0 ? partes.join("; ") : "Sem alteração de massas";
+}
+
+export function receitaIgual(
+  a: ReceitaConcentradoAb,
+  b: ReceitaConcentradoAb,
+): boolean {
+  return resumoMudancaReceita(a, b) === "Sem alteração de massas";
+}
+
 export type EntradaCorrecaoEc = {
   volumeCaixaL: number;
   ecAtual: number;
