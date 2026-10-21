@@ -1083,38 +1083,45 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {SOLUCOES_CONCENTRADAS.map((caixa) => (
-                <Card key={caixa.id} className={caixa.tom}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className={`text-base ${caixa.tituloClasse}`}>{caixa.titulo}</CardTitle>
-                    <CardDescription>Complete {RECEITA_AB_PADRAO.volumeGalaoL} L</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ul className="space-y-1.5 text-sm">
-                      {(caixa.id === "A" ? RECEITA_AB_PADRAO.galaoA : RECEITA_AB_PADRAO.galaoB).map((item) => (
-                        <li key={item.id} className="flex items-baseline justify-between gap-3">
-                          <span>{item.nome}</span>
-                          <span className="shrink-0 font-semibold tabular-nums">
-                            {new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(
-                              Math.round(item.massaKg * 1000),
-                            )}{" "}
-                            g
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <ol className="list-decimal space-y-1.5 pl-4 text-sm text-muted-foreground">
-                      {caixa.passos.map((passo) => (
-                        <li key={passo}>{passo}</li>
-                      ))}
-                    </ol>
-                  </CardContent>
-                </Card>
-              ))}
+              {SOLUCOES_CONCENTRADAS.map((caixa) => {
+                const sais = caixa.id === "A" ? receita.galaoA : receita.galaoB;
+                const volumeTxt = formatDecimalForInput(receita.volumeGalaoL, 0);
+                return (
+                  <Card key={caixa.id} className={caixa.tom}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className={`text-base ${caixa.tituloClasse}`}>{caixa.titulo}</CardTitle>
+                      <CardDescription>Complete {volumeTxt} L</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <ul className="space-y-1.5 text-sm">
+                        {sais.map((item) => (
+                          <li key={item.id} className="flex items-baseline justify-between gap-3">
+                            <span>{item.nome}</span>
+                            <span className="shrink-0 font-semibold tabular-nums">
+                              {new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(
+                                Math.round(item.massaKg * 1000),
+                              )}{" "}
+                              g
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      <ol className="list-decimal space-y-1.5 pl-4 text-sm text-muted-foreground">
+                        {caixa.passos.map((passo) => (
+                          <li key={passo}>
+                            {passo.replace(/\b50 L\b/g, `${volumeTxt} L`)}
+                          </li>
+                        ))}
+                      </ol>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Na caixa de cultivo, A e B entram separados e em volumes iguais. A dose de correção fica na aba Correção EC.
+              Quantidades da receita atual (aba Correção EC → Editar receita). Na caixa de cultivo, A e B entram
+              separados e em volumes iguais.
             </p>
           </TabsContent>
         </Tabs>
