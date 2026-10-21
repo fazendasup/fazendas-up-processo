@@ -58,6 +58,13 @@ import {
   pesoDoProduto,
   pesoDoProdutoComCatalogo,
 } from "@shared/produtoPeso";
+import {
+  CATEGORIA_OPERACAO_OUTROS,
+  CATEGORIAS_OPERACAO,
+  categoriaOperacaoDoProduto,
+  ordemCategoriaOperacao,
+  type CategoriaOperacaoOuOutros,
+} from "@shared/produtoCategoriaOperacao";
 
 type ProdutoRotulo = {
   nome?: string | null;
@@ -171,7 +178,7 @@ const TIPOS = [
   ["PLANO", "Plano"],
   ["AVULSO", "Avulso"],
 ] as const;
-const CATEGORIAS = ["Buque", "Desfolhado", "Pote"];
+const CATEGORIAS = [...CATEGORIAS_OPERACAO];
 
 function isoLocal(date: Date) {
   const y = date.getFullYear();
@@ -3120,7 +3127,7 @@ function PedidosKpiDashboard({
   salvandoPronto: boolean;
   onDefinirPronto: (itemIds: string[], quantidade: number) => void;
 }) {
-  const produtosPorVariedade = (kpis.produtos ?? []) as Array<{
+  type ProdutoPainel = {
     nome: string;
     categoria?: string;
     clientes?: number;
@@ -3130,10 +3137,52 @@ function PedidosKpiDashboard({
     falta: number;
     destinos?: Array<{ id: string; nome: string; quantidade: number }>;
     linhasAbertas?: Array<{ id: string; quantidade: number }>;
-  }>;
+  };
+  const produtosPorVariedade = (kpis.produtos ?? []) as ProdutoPainel[];
   const [mostrarFeitos, setMostrarFeitos] = useState(false);
-  const pendentes = produtosPorVariedade.filter(p => Number(p.falta ?? 0) > 0);
-  const feitos = produtosPorVariedade.filter(p => Number(p.falta ?? 0) <= 0);
+  const [filtroCategoria, setFiltroCategoria] = useState<
+    "todas" | CategoriaOperacaoOuOutros
+  >("todas");
+
+  const comCategoria = useMemo(
+    () =>
+      produtosPorVariedade.map(p => ({
+        ...p,
+        categoriaOperacao: categoriaOperacaoDoProduto(p.nome, p.categoria),
+      })),
+    [produtosPorVariedade],
+  );
+
+  const categoriasComProduto = useMemo(() => {
+    const set = new Set<CategoriaOperacaoOuOutros>();
+    for (const p of comCategoria) set.add(p.categoriaOperacao);
+    return [...set].sort(
+      (a, b) => ordemCategoriaOperacao(a) - ordemCategoriaOperacao(b),
+    );
+  }, [comCategoria]);
+
+  const filtrados = useMemo(() => {
+    if (filtroCategoria === "todas") return comCategoria;
+    return comCategoria.filter(p => p.categoriaOperacao === filtroCategoria);
+  }, [comCategoria, filtroCategoria]);
+
+  const pendentes = filtrados.filter(p => Number(p.falta ?? 0) > 0);
+  const feitos = filtrados.filter(p => Number(p.falta ?? 0) <= 0);
+
+  const gruposPendentes = useMemo(() => {
+    const map = new Map<
+      CategoriaOperacaoOuOutros,
+      Array<(typeof comCategoria)[number]>
+    >();
+    for (const p of pendentes) {
+      const list = map.get(p.categoriaOperacao) ?? [];
+      list.push(p);
+      map.set(p.categoriaOperacao, list);
+    }
+    return [...map.entries()].sort(
+      (a, b) => ordemCategoriaOperacao(a[0]) - ordemCategoriaOperacao(b[0]),
+    );
+  }, [pendentes]);
 
   return (
     <div className="space-y-3">
@@ -3202,103 +3251,185 @@ function PedidosKpiDashboard({
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
+          {produtosPorVariedade.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={filtroCategoria === "todas" ? "default" : "outline"}
+                className="h-8 rounded-full px-3 text-xs"
+                onClick={() => setFiltroCategoria("todas")}
+              >
+                Todas
+              </Button>
+              {CATEGORIAS_OPERACAO.filter(cat =>
+                categoriasComProduto.includes(cat),
+              ).map(cat => {
+                const qtd = comCategoria.filter(
+                  p => p.categoriaOperacao === cat && Number(p.falta ?? 0) > 0,
+                ).length;
+                return (
+                  <Button
+                    key={cat}
+                    type="button"
+                    size="sm"
+                    variant={filtroCategoria === cat ? "default" : "outline"}
+                    className="h-8 rounded-full px-3 text-xs"
+                    onClick={() => setFiltroCategoria(cat)}
+                  >
+                    {cat}
+                    {qtd > 0 ? (
+                      <span className="ml-1 tabular-nums opacity-80">{qtd}</span>
+                    ) : null}
+                  </Button>
+                );
+              })}
+              {categoriasComProduto.includes(CATEGORIA_OPERACAO_OUTROS) ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    filtroCategoria === CATEGORIA_OPERACAO_OUTROS
+                      ? "default"
+                      : "outline"
+                  }
+                  className="h-8 rounded-full px-3 text-xs"
+                  onClick={() => setFiltroCategoria(CATEGORIA_OPERACAO_OUTROS)}
+                >
+                  Outros
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
           {produtosPorVariedade.length === 0 ? (
             <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
               Sem produtos no dia.
             </p>
           ) : pendentes.length === 0 ? (
             <p className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
-              Tudo pronto neste dia.
+              {filtroCategoria === "todas"
+                ? "Tudo pronto neste dia."
+                : `Nada pendente em ${filtroCategoria}.`}
             </p>
           ) : (
-            <ul className="divide-y rounded-lg border">
-              {pendentes.map((produto, index) => {
-                const total = Number(produto.quantidade ?? 0);
-                const falta = Number(produto.falta ?? 0);
-                const pronto = Number(produto.pronto ?? 0);
-                const entregue = Number(produto.entregue ?? 0);
-                const destinos = produto.destinos ?? [];
-                const linhasAbertas = produto.linhasAbertas ?? [];
-                const maxPronto = Math.max(0, total - entregue);
-                const clientes = Number(produto.clientes ?? destinos.length);
+            <div className="space-y-4">
+              {gruposPendentes.map(([categoria, itens]) => {
+                let indiceGlobal =
+                  gruposPendentes
+                    .slice(
+                      0,
+                      gruposPendentes.findIndex(([c]) => c === categoria),
+                    )
+                    .reduce((sum, [, list]) => sum + list.length, 0) + 1;
                 return (
-                  <li
-                    key={produto.nome}
-                    className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3"
-                  >
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="min-w-0 flex-1 cursor-default">
-                          <div className="flex min-w-0 items-center gap-1.5 text-sm">
-                            <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                              {index + 1}.
-                            </span>
-                            <NomeProdutoComPeso
-                              nome={produto.nome}
-                              className="min-w-0 [&_span:first-child]:font-semibold"
-                            />
-                          </div>
-                          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                            {clientes} cliente{clientes === 1 ? "" : "s"}
-                            {entregue > 0
-                              ? ` · entregue ${formatQuantidade(entregue)}`
-                              : ""}
-                          </p>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        className="max-h-64 max-w-xs overflow-y-auto text-left"
-                      >
-                        <div className="mb-1">
-                          <NomeProdutoComPeso nome={produto.nome} />
-                        </div>
-                        {destinos.length === 0 ? (
-                          <p>Nenhum cliente neste produto.</p>
-                        ) : (
-                          <ul className="space-y-0.5">
-                            {destinos.map(destino => (
-                              <li key={destino.id}>
-                                {destino.nome} · {formatQuantidade(destino.quantidade)}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
-                          Falta
-                        </p>
-                        <p className="text-xl font-extrabold tabular-nums leading-none text-amber-900 dark:text-amber-100">
-                          {formatQuantidade(falta)}
-                        </p>
-                      </div>
-                      {podeEditar && linhasAbertas.length > 0 ? (
-                        <CampoProntoVariedade
-                          compact
-                          valor={pronto}
-                          max={maxPronto}
-                          disabled={salvandoPronto}
-                          onSalvar={quantidade =>
-                            onDefinirPronto(
-                              linhasAbertas.map(linha => linha.id),
-                              quantidade,
-                            )
-                          }
-                        />
-                      ) : (
-                        <p className="text-xs tabular-nums text-muted-foreground">
-                          pronto {formatQuantidade(pronto)}/{formatQuantidade(maxPronto)}
-                        </p>
-                      )}
+                  <section key={categoria} className="space-y-1.5">
+                    <div className="flex items-baseline justify-between gap-2 px-0.5">
+                      <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                        {categoria}
+                      </h4>
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        {itens.length} item{itens.length === 1 ? "" : "s"}
+                      </span>
                     </div>
-                  </li>
+                    <ul className="divide-y rounded-lg border">
+                      {itens.map(produto => {
+                        const index = indiceGlobal++;
+                        const total = Number(produto.quantidade ?? 0);
+                        const falta = Number(produto.falta ?? 0);
+                        const pronto = Number(produto.pronto ?? 0);
+                        const entregue = Number(produto.entregue ?? 0);
+                        const destinos = produto.destinos ?? [];
+                        const linhasAbertas = produto.linhasAbertas ?? [];
+                        const maxPronto = Math.max(0, total - entregue);
+                        const clientes = Number(
+                          produto.clientes ?? destinos.length,
+                        );
+                        return (
+                          <li
+                            key={produto.nome}
+                            className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3"
+                          >
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="min-w-0 flex-1 cursor-default">
+                                  <div className="flex min-w-0 items-center gap-1.5 text-sm">
+                                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                                      {index}.
+                                    </span>
+                                    <NomeProdutoComPeso
+                                      nome={produto.nome}
+                                      className="min-w-0 [&_span:first-child]:font-semibold"
+                                    />
+                                  </div>
+                                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                                    {clientes} cliente
+                                    {clientes === 1 ? "" : "s"}
+                                    {entregue > 0
+                                      ? ` · entregue ${formatQuantidade(entregue)}`
+                                      : ""}
+                                  </p>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="max-h-64 max-w-xs overflow-y-auto text-left"
+                              >
+                                <div className="mb-1">
+                                  <NomeProdutoComPeso nome={produto.nome} />
+                                </div>
+                                {destinos.length === 0 ? (
+                                  <p>Nenhum cliente neste produto.</p>
+                                ) : (
+                                  <ul className="space-y-0.5">
+                                    {destinos.map(destino => (
+                                      <li key={destino.id}>
+                                        {destino.nome} ·{" "}
+                                        {formatQuantidade(destino.quantidade)}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+                              <div className="text-right">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                                  Falta
+                                </p>
+                                <p className="text-xl font-extrabold tabular-nums leading-none text-amber-900 dark:text-amber-100">
+                                  {formatQuantidade(falta)}
+                                </p>
+                              </div>
+                              {podeEditar && linhasAbertas.length > 0 ? (
+                                <CampoProntoVariedade
+                                  compact
+                                  valor={pronto}
+                                  max={maxPronto}
+                                  disabled={salvandoPronto}
+                                  onSalvar={quantidade =>
+                                    onDefinirPronto(
+                                      linhasAbertas.map(linha => linha.id),
+                                      quantidade,
+                                    )
+                                  }
+                                />
+                              ) : (
+                                <p className="text-xs tabular-nums text-muted-foreground">
+                                  pronto {formatQuantidade(pronto)}/
+                                  {formatQuantidade(maxPronto)}
+                                </p>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
                 );
               })}
-            </ul>
+            </div>
           )}
 
           {feitos.length > 0 ? (
@@ -3312,6 +3443,7 @@ function PedidosKpiDashboard({
               >
                 {mostrarFeitos ? "Ocultar" : "Ver"} {feitos.length} já feito
                 {feitos.length === 1 ? "" : "s"}
+                {filtroCategoria !== "todas" ? ` em ${filtroCategoria}` : ""}
               </Button>
               {mostrarFeitos ? (
                 <ul className="divide-y rounded-lg border border-emerald-200/70 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20">
@@ -3320,10 +3452,15 @@ function PedidosKpiDashboard({
                       key={produto.nome}
                       className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
                     >
-                      <NomeProdutoComPeso
-                        nome={produto.nome}
-                        className="min-w-0 text-muted-foreground [&_span:first-child]:font-medium"
-                      />
+                      <div className="min-w-0">
+                        <NomeProdutoComPeso
+                          nome={produto.nome}
+                          className="min-w-0 text-muted-foreground [&_span:first-child]:font-medium"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          {produto.categoriaOperacao}
+                        </p>
+                      </div>
                       <span className="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                         Feito · {formatQuantidade(produto.quantidade)}
                       </span>
