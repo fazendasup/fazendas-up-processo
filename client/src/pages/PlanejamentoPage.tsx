@@ -136,7 +136,8 @@ function agendaFilterFromStorage(): AgendaFilter {
 export default function PlanejamentoPage() {
   const { data } = useFazenda();
   const isHidroponia = data.projetoTipo === 'hidroponia';
-  const { isAdmin } = useRole();
+  const { isAdmin, isOperador } = useRole();
+  const podeOperarPlano = isAdmin || isOperador;
   const utils = trpc.useUtils();
 
   const planosQuery = trpc.planosPlantio.list.useQuery();
@@ -753,7 +754,7 @@ export default function PlanejamentoPage() {
                               />
                             )}
                           </div>
-                          {isAdmin && (
+                          {podeOperarPlano && (
                             listaModoSimples ? (
                               <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0 min-w-[10rem]">
                                 {status === 'planejado' && nextStatus === 'em_germinacao' && (
@@ -797,6 +798,7 @@ export default function PlanejamentoPage() {
                                     Marcar colhido
                                   </Button>
                                 )}
+                                {isAdmin ? (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button size="sm" variant="outline" className="text-xs gap-1 w-full sm:w-auto">
@@ -849,9 +851,53 @@ export default function PlanejamentoPage() {
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
+                                ) : null}
                               </div>
                             ) : (
                               <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
+                                {status === 'planejado' && nextStatus === 'em_germinacao' && (
+                                  <Button
+                                    size="sm"
+                                    className="text-xs gap-1 bg-emerald-600 hover:bg-emerald-700"
+                                    onClick={() => avancarMutation.mutate({ id: plano.id, novoStatus: 'em_germinacao' })}
+                                    disabled={avancarMutation.isPending}
+                                  >
+                                    <Sprout className="w-3 h-3" />
+                                    Iniciar germinação
+                                  </Button>
+                                )}
+                                {status === 'em_germinacao' && faseG === 'pronto_mudas' && nextStatus === 'em_producao' && (
+                                  <Button
+                                    size="sm"
+                                    className="text-xs gap-1 bg-emerald-600 hover:bg-emerald-700"
+                                    onClick={() => avancarMutation.mutate({ id: plano.id, novoStatus: 'em_producao' })}
+                                    disabled={avancarMutation.isPending || naoPodeIrProducao}
+                                    title={
+                                      naoPodeIrProducao
+                                        ? 'Marque a germinação como pronta para mudas antes de avançar para produção'
+                                        : undefined
+                                    }
+                                  >
+                                    <Play className="w-3 h-3" />
+                                    Passar para produção
+                                  </Button>
+                                )}
+                                {status === 'em_producao' && nextStatus === 'colhido' && (
+                                  <Button
+                                    size="sm"
+                                    className="text-xs gap-1 bg-amber-600 hover:bg-amber-700"
+                                    onClick={() => {
+                                      if (!window.confirm('Marcar este plano como colhido?')) return;
+                                      avancarMutation.mutate({ id: plano.id, novoStatus: 'colhido' });
+                                    }}
+                                    disabled={avancarMutation.isPending}
+                                  >
+                                    <Scissors className="w-3 h-3" />
+                                    Marcar colhido
+                                  </Button>
+                                )}
+                                {isAdmin ? (
+                                  <>
                                 {isPlanoOperacional(plano) && (
                                   <Button
                                     size="sm"
@@ -873,7 +919,12 @@ export default function PlanejamentoPage() {
                                   <Pencil className="w-3 h-3" />
                                   Editar
                                 </Button>
-                                {nextStatus && (
+                                {nextStatus &&
+                                  !(
+                                    (status === 'planejado' && nextStatus === 'em_germinacao') ||
+                                    (status === 'em_germinacao' && nextStatus === 'em_producao') ||
+                                    (status === 'em_producao' && nextStatus === 'colhido')
+                                  ) && (
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -912,6 +963,8 @@ export default function PlanejamentoPage() {
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
+                                  </>
+                                ) : null}
                               </div>
                             )
                           )}

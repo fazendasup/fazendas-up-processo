@@ -5,6 +5,7 @@ import { addDays } from "date-fns";
 import * as db from "../db";
 import { syncPlanoAposContagemGerminacao } from "../planoOperacaoSync";
 import type { InsertPlanoPlantio } from "../../drizzle/schema";
+import { isOperationalAdminRole, NOT_ADMIN_ERR_MSG } from "../../shared/const";
 
 const datasPlanoOrdemSchema = z
   .object({
@@ -265,12 +266,19 @@ export const planosPlantioRouter = router({
         await db.updatePlanoPlantio(projetoIdFromCtx(ctx), input.id, { germinacaoFase: 'pronto_mudas' });
         return { success: true };
       }),
-    avancarStatus: adminProjectProcedure
+    /** Operador pode iniciar germinação / avançar produção / colher; cancelar fica só admin. */
+    avancarStatus: projectProcedure
       .input(z.object({
         id: z.number(),
         novoStatus: z.enum(['em_germinacao', 'em_producao', 'colhido', 'cancelado']),
       }))
       .mutation(async ({ ctx, input }) => {
+        if (
+          input.novoStatus === "cancelado" &&
+          !isOperationalAdminRole(ctx.user?.role)
+        ) {
+          throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+        }
         const plano = await db.getPlanoPlantioById(projetoIdFromCtx(ctx), input.id);
         if (!plano) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Plano não encontrado' });

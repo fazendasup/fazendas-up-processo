@@ -203,7 +203,7 @@ type PlanoAcaoHoje = Record<string, unknown> & {
 function HojePlanoAcaoRow({
   plano,
   hojeYmd,
-  isAdmin,
+  podeOperarPlano,
   salvarTaxaEMarcarPronta,
   comboBusy,
   onAvancar,
@@ -215,7 +215,8 @@ function HojePlanoAcaoRow({
 }: {
   plano: PlanoAcaoHoje;
   hojeYmd: string;
-  isAdmin: boolean;
+  /** Admin ou operador de chão — pode iniciar germinação / avançar. */
+  podeOperarPlano: boolean;
   salvarTaxaEMarcarPronta: (input: { id: number; germinadas: number; naoGerminadas: number }) => Promise<void>;
   comboBusy: boolean;
   onAvancar: (id: number, novoStatus: 'em_germinacao' | 'em_producao' | 'colhido') => void;
@@ -259,7 +260,7 @@ function HojePlanoAcaoRow({
           </p>
           {resumo ? <p className="text-xs text-foreground/90 leading-snug">{resumo}</p> : null}
         </div>
-        {isAdmin && (
+        {podeOperarPlano && (
           <div className="flex flex-col gap-1.5 shrink-0 items-stretch sm:items-end">
             {status === 'planejado' && nextStatus === 'em_germinacao' && (
               <Button
@@ -376,7 +377,8 @@ export function HojeAgendaPanel({
 }) {
   const { data, refetch: refetchFazenda } = useFazenda();
   const isHidroponia = data.projetoTipo === 'hidroponia';
-  const { isAdmin } = useRole();
+  const { isAdmin, isOperador } = useRole();
+  const podeOperarPlano = isAdmin || isOperador;
   const planosQuery = trpc.planosPlantio.list.useQuery();
   const tarefasQuery = trpc.tarefas.list.useQuery();
   const utils = trpc.useUtils();
@@ -1144,7 +1146,7 @@ export function HojeAgendaPanel({
                                     key={plano.id}
                                     plano={plano}
                                     hojeYmd={hojeYmdOperacao}
-                                    isAdmin={!!isAdmin}
+                                    podeOperarPlano={podeOperarPlano}
                                     agendaSomentePlantio
                                     fecharAgendaAoIniciarGerminacao={fecharAgendaAoIniciarGerminacaoPlantio}
                                     salvarTaxaEMarcarPronta={salvarTaxaEMarcarProntaHoje}
@@ -1173,7 +1175,7 @@ export function HojeAgendaPanel({
                                     key={plano.id}
                                     plano={plano}
                                     hojeYmd={hojeYmdOperacao}
-                                    isAdmin={!!isAdmin}
+                                    podeOperarPlano={podeOperarPlano}
                                     agendaSomentePlantio
                                     fecharAgendaAoIniciarGerminacao={fecharAgendaAoIniciarGerminacaoPlantio}
                                     salvarTaxaEMarcarPronta={salvarTaxaEMarcarProntaHoje}
