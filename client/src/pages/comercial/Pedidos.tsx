@@ -3604,15 +3604,19 @@ function KpiResumoCard({
   className: string;
 }) {
   return (
-    <div className={`rounded-2xl border p-3.5 shadow-sm ${className}`}>
-      <div className="mb-1.5 flex items-center gap-1.5">
+    <div className={`rounded-xl border p-2.5 shadow-sm ${className}`}>
+      <div className="mb-1 flex items-center gap-1">
         {icon}
-        <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
           {label}
         </span>
       </div>
-      <p className="text-2xl font-extrabold tracking-tight">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      <p className="text-xl font-extrabold tracking-tight leading-none">
+        {value}
+      </p>
+      <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+        {hint}
+      </p>
     </div>
   );
 }
