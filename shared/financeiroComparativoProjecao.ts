@@ -4,6 +4,7 @@
  */
 import {
   ehNaoDesembolsoCusto,
+  ehReceitaCaixaContaAzul,
   ehReceitaVendasCaixa,
   ehRubricaTipicaDeAtrasoMensal,
   escolherCategoriaReceitaPrincipal,
@@ -441,6 +442,13 @@ export function montarComparativoReceitaMes(input: {
   parcelasReceberMes: ParcelaBaseProjecao[];
   /** @deprecated Ignorado — vencidos de outros meses não entram mais. */
   parcelasReceberExtras?: ParcelaBaseProjecao[];
+  /**
+   * Baixas Conta Azul com data_pagamento no mês (API filtrada).
+   * Quando informadas, `recebido` sai só daqui — não usa fallback de
+   * vencimento (a listagem por vencimento omite data_pagamento e atribuía
+   * baixas ao mês errado).
+   */
+  baixasRecebidoMes?: ParcelaBaseProjecao[];
   /** Vendas faturadas no mês (competência). */
   vendasFaturadasMes?: number;
   /** Orçamentos com competência no mês (≤15 ou spill do mês anterior). */
@@ -467,6 +475,7 @@ export function montarComparativoReceitaMes(input: {
   const hojeYm = input.hojeYm ?? mesYm;
   const diaHoje = input.diaHoje ?? 31;
   const hojeIso = `${hojeYm}-${String(Math.min(Math.max(1, Math.floor(diaHoje)), 31)).padStart(2, "0")}`;
+  const usarBaixasApi = input.baixasRecebidoMes != null;
 
   const porId = new Map<string, ParcelaBaseProjecao>();
   for (const p of input.parcelasReceberMes) {
@@ -482,16 +491,18 @@ export function montarComparativoReceitaMes(input: {
   const aReceberDetalhe: ComparativoReceitaDetalheTitulo[] = [];
 
   for (const p of Array.from(porId.values())) {
-    // Venda, venda+frete ou só frete — mesmo critério do ainda entra.
-    if (!ehReceitaVendasCaixa(p)) continue;
+    // Mesmo critério do Conta Azul Em aberto / Recebidos (todas as
+    // categorias a receber, exceto aporte/investimento).
+    if (!ehReceitaCaixaContaAzul(p)) continue;
 
     const vencYm = mesVencimentoParcela(p);
     const vencMes = vencYm === mesYm;
     const aberto = p.valorEmAberto > 0.009;
     const vencIso = (p.dataVencimento ?? "").slice(0, 10);
-    // Listagem CA de receber costuma omitir data_pagamento: fallback ao
+    // Sem baixas da API: listagem CA omite data_pagamento — fallback ao
     // vencimento se o título já está quitado.
     const pagMes =
+      !usarBaixasApi &&
       mesPagamentoParcela(p, { fallbackVencimentoSeQuitado: true }) === mesYm;
 
     if (vencMes) {
@@ -550,6 +561,29 @@ export function montarComparativoReceitaMes(input: {
           rubrica: p.rubrica,
         });
       }
+    }
+  }
+
+  if (usarBaixasApi) {
+    const baixasPorId = new Map<string, ParcelaBaseProjecao>();
+    for (const p of input.baixasRecebidoMes ?? []) {
+      baixasPorId.set(p.id, p);
+    }
+    for (const p of Array.from(baixasPorId.values())) {
+      if (!ehReceitaCaixaContaAzul(p)) continue;
+      const pago = valorPagoParcela(p);
+      if (pago <= 0) continue;
+      recebido += pago;
+      recebidosDetalhe.push({
+        id: p.id,
+        descricao: p.descricao,
+        fornecedor: p.fornecedor,
+        clienteId: p.clienteId ?? null,
+        valor: round2(pago),
+        dataVencimento: p.dataVencimento,
+        dataPagamento: p.dataPagamento,
+        rubrica: p.rubrica,
+      });
     }
   }
 
@@ -659,6 +693,11 @@ export function montarComparativoReceitaMes(input: {
  */
 export function agregarReceitaCaixaPeriodo(input: {
   parcelasReceber: ParcelaBaseProjecao[];
+  /**
+   * Baixas com pagamento no período (API). Quando informadas, `recebido`
+   * vem só daqui — evita fallback de vencimento.
+   */
+  baixasRecebido?: ParcelaBaseProjecao[];
   inicioIso: string;
   fimIso: string;
   hojeIso: string;
@@ -671,6 +710,7 @@ export function agregarReceitaCaixaPeriodo(input: {
   pctRecebidoDoPrevisto: number | null;
 } {
   const { inicioIso, fimIso, hojeIso } = input;
+  const usarBaixasApi = input.baixasRecebido != null;
   let recebido = 0;
   let aReceberNoMes = 0;
   let vencido = 0;
@@ -681,7 +721,7 @@ export function agregarReceitaCaixaPeriodo(input: {
   }
 
   for (const p of Array.from(porId.values())) {
-    if (!ehReceitaVendasCaixa(p)) continue;
+    if (!ehReceitaCaixaContaAzul(p)) continue;
 
     const vencIso = (p.dataVencimento ?? "").slice(0, 10);
     const pagIso = (p.dataPagamento ?? "").slice(0, 10);
@@ -705,6 +745,8 @@ export function agregarReceitaCaixaPeriodo(input: {
       }
     }
 
+    if (usarBaixasApi) continue;
+
     let pagRef = pagIso;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(pagRef)) {
       const mesPag = mesPagamentoParcela(p, {
@@ -718,6 +760,18 @@ export function agregarReceitaCaixaPeriodo(input: {
       pagRef >= inicioIso &&
       pagRef <= fimIso
     ) {
+      const pago = valorPagoParcela(p);
+      if (pago > 0) recebido += pago;
+    }
+  }
+
+  if (usarBaixasApi) {
+    const baixasPorId = new Map<string, ParcelaBaseProjecao>();
+    for (const p of input.baixasRecebido ?? []) {
+      baixasPorId.set(p.id, p);
+    }
+    for (const p of Array.from(baixasPorId.values())) {
+      if (!ehReceitaCaixaContaAzul(p)) continue;
       const pago = valorPagoParcela(p);
       if (pago > 0) recebido += pago;
     }
@@ -927,6 +981,7 @@ export function montarFinanceiroComparativo(input: {
   parcelasPagarMes: ParcelaBaseProjecao[];
   parcelasReceberMes: ParcelaBaseProjecao[];
   parcelasReceberExtras?: ParcelaBaseProjecao[];
+  baixasRecebidoMes?: ParcelaBaseProjecao[];
   vendasFaturadasMes?: number;
   orcamentosCompetenciaMes?: number;
   vendasMesAtual?: number;
@@ -956,6 +1011,7 @@ export function montarFinanceiroComparativo(input: {
     mesYm: input.mesYm,
     parcelasReceberMes: input.parcelasReceberMes,
     parcelasReceberExtras: input.parcelasReceberExtras,
+    baixasRecebidoMes: input.baixasRecebidoMes,
     vendasFaturadasMes: input.vendasFaturadasMes,
     orcamentosCompetenciaMes: input.orcamentosCompetenciaMes,
     vendasMesAtual: input.vendasMesAtual,

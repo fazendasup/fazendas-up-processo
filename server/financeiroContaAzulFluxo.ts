@@ -67,10 +67,42 @@ type ParcelaCaRaw = {
   cliente?: { id?: string; nome?: string };
 };
 
+type ContaAzulTotaisReceber = {
+  pago: number;
+  vencido: number;
+  venceHoje: number;
+  /** A vencer (pendente). */
+  pendente: number;
+  aberto: number;
+  todos: number;
+};
+
 type BuscaParcelasResponse = {
   itens?: ParcelaCaRaw[];
   itens_totais?: number;
+  totais?: {
+    pago?: { valor?: number };
+    vencido?: { valor?: number };
+    vence_hoje?: { valor?: number };
+    pendente?: { valor?: number };
+    aberto?: { valor?: number };
+    todos?: number;
+  };
 };
+
+function mapTotaisReceberCa(
+  raw: BuscaParcelasResponse["totais"] | undefined,
+): ContaAzulTotaisReceber | null {
+  if (!raw) return null;
+  return {
+    pago: round2(Number(raw.pago?.valor ?? 0)),
+    vencido: round2(Number(raw.vencido?.valor ?? 0)),
+    venceHoje: round2(Number(raw.vence_hoje?.valor ?? 0)),
+    pendente: round2(Number(raw.pendente?.valor ?? 0)),
+    aberto: round2(Number(raw.aberto?.valor ?? 0)),
+    todos: round2(Number(raw.todos ?? 0)),
+  };
+}
 
 type ContaFinanceiraRaw = {
   id?: string;
@@ -1222,6 +1254,44 @@ export async function buscarParcelasPagarHistoricoVencimento(
   const ativas = parcelasAtivasParaRelatorio(pagar);
   historicoPagarCache.set(cacheKey, { at: Date.now(), parcelas: ativas });
   return ativas;
+}
+
+/**
+ * Totais oficiais da listagem Conta Azul (mesma barra da UI:
+ * Vencidos / Vencem hoje / A vencer / Recebidos / Total).
+ * Uma página basta — os totais vêm no envelope da resposta.
+ */
+export async function buscarTotaisReceberContaAzul(
+  inicio: Date,
+  fim: Date,
+  opts?: { status?: string },
+): Promise<ContaAzulTotaisReceber | null> {
+  const env = getComercialEnv();
+  const prisma = getComercialPrisma();
+  const cred = await ensureValidAccessToken(prisma, env);
+  if (!cred?.accessToken) {
+    throw new Error(
+      "Conta Azul não conectado. Configure em Comercial → Configurações.",
+    );
+  }
+  const http = createContaAzulHttp(env, cred.accessToken);
+  const qs = new URLSearchParams({
+    pagina: "1",
+    tamanho_pagina: "1",
+    data_vencimento_de: isoDateLocal(inicio),
+    data_vencimento_ate: isoDateLocal(fim),
+  });
+  if (opts?.status) qs.set("status", opts.status);
+  try {
+    const res = await fetchParcelasPagina(
+      http,
+      "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+      qs,
+    );
+    return mapTotaisReceberCa(res.totais);
+  } catch {
+    return null;
+  }
 }
 
 /** Contas a receber normalizadas + overrides (comparativo de receita). */

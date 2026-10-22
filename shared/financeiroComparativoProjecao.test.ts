@@ -11,6 +11,7 @@ import {
   ehCreditoOuDescontoObtido,
   ehNaoDesembolsoCusto,
   ehRecebimentoDaPropriaEmpresa,
+  ehReceitaCaixaContaAzul,
   ehReceitaVendasCaixa,
   ehTransferenciaEntreContas,
   efeitoTransferenciaNoCaixaConsolidado,
@@ -168,6 +169,40 @@ describe("ehReceitaVendasCaixa", () => {
         entradaDre: null,
       }),
     ).toBe(true);
+  });
+
+  it("aceita venda mesmo com DRE OUTRAS da 1ª categoria Identificar", () => {
+    expect(
+      ehReceitaVendasCaixa({
+        descricao: "Venda 5659 / NF-e:4543",
+        rubrica: "Receitas a Identificar",
+        categorias: ["Receitas a Identificar", "Receitas de Vendas"],
+        entradaDre: "OUTRAS_RECEITAS",
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("ehReceitaCaixaContaAzul", () => {
+  it("inclui só Receitas a Identificar (como Conta Azul Em aberto)", () => {
+    expect(
+      ehReceitaCaixaContaAzul({
+        descricao: "Cliente X",
+        rubrica: "Receitas a Identificar",
+        categorias: ["Receitas a Identificar"],
+        entradaDre: "OUTRAS_RECEITAS",
+      }),
+    ).toBe(true);
+  });
+
+  it("ainda rejeita aporte/investimento", () => {
+    expect(
+      ehReceitaCaixaContaAzul({
+        descricao: "Aporte sócio",
+        rubrica: "Investimento",
+        entradaDre: null,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -594,6 +629,63 @@ describe("montarComparativoReceitaMes", () => {
     expect(out.recebido).toBe(43_000);
     expect(out.aReceberNoMes).toBe(5_000);
     expect(out.vencido).toBe(0);
+  });
+
+  it("Entrou usa baixas por pagamento (não fallback de vencimento)", () => {
+    const out = montarComparativoReceitaMes({
+      mesYm: "2026-10",
+      parcelasReceberMes: [
+        // Venceu em set; listagem por vencimento de out não traz — só a baixa.
+        parcela({
+          id: "pago-set-venc",
+          descricao: "Venda 5513",
+          valor: 609.28,
+          valorPago: 609.28,
+          valorEmAberto: 0,
+          status: "ACQUITTED",
+          dataPagamento: null,
+          dataVencimento: "2026-09-30",
+        }),
+        parcela({
+          id: "aberto-out",
+          descricao: "Em aberto out",
+          valor: 1_000,
+          valorPago: 0,
+          valorEmAberto: 1_000,
+          status: "EM_ABERTO",
+          dataPagamento: null,
+          dataVencimento: "2026-10-25",
+        }),
+      ],
+      baixasRecebidoMes: [
+        parcela({
+          id: "pago-set-venc",
+          descricao: "Venda 5513",
+          valor: 609.28,
+          valorPago: 609.28,
+          valorEmAberto: 0,
+          status: "ACQUITTED",
+          dataPagamento: "2026-10-01",
+          dataVencimento: "2026-09-30",
+        }),
+        parcela({
+          id: "pago-out",
+          descricao: "Venda 5613",
+          valor: 5_000,
+          valorPago: 5_000,
+          valorEmAberto: 0,
+          status: "ACQUITTED",
+          dataPagamento: "2026-10-05",
+          dataVencimento: "2026-10-12",
+        }),
+      ],
+      hojeYm: "2026-10",
+      diaHoje: 22,
+    });
+    // Sem baixas API: fallback atribuiria 609,28 a set (não a out).
+    expect(out.recebido).toBe(5_609.28);
+    expect(out.aReceberNoMes).toBe(1_000);
+    expect(out.recebidosDetalhe).toHaveLength(2);
   });
 });
 

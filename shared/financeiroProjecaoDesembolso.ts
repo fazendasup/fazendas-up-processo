@@ -162,10 +162,6 @@ export function ehReceitaVendasCaixa(
     return false;
   }
 
-  const dre = (p.entradaDre ?? "").trim().toUpperCase();
-  if (dre && ENTRADAS_DRE_NAO_VENDA.has(dre)) return false;
-  if (dre && /^(DESPESA|CUSTO|DEDUC|OUTRAS_)/.test(dre)) return false;
-
   const labels = [
     p.rubrica,
     ...(p.categorias ?? []),
@@ -179,6 +175,8 @@ export function ehReceitaVendasCaixa(
     )
     .filter(Boolean);
 
+  // Qualquer categoria de venda/frete conta — mesmo se a 1ª categoria
+  // (entrada_dre) for "Receitas a Identificar" / OUTRAS_RECEITAS.
   for (const rubrica of labels) {
     if (ehNomeCategoriaReceitaVendas(rubrica)) return true;
     if (ehNomeCategoriaFreteRecebido(rubrica)) return true;
@@ -192,6 +190,10 @@ export function ehReceitaVendasCaixa(
     return true;
   }
 
+  const dre = (p.entradaDre ?? "").trim().toUpperCase();
+  if (dre && ENTRADAS_DRE_NAO_VENDA.has(dre)) return false;
+  if (dre && /^(DESPESA|CUSTO|DEDUC|OUTRAS_)/.test(dre)) return false;
+
   if (dre === ENTRADA_DRE_RECEITA_VENDAS) {
     const blob = [t, ...labels].join(" ");
     if (/\b(venda|vendas|faturamento|mercadoria|produto|servico)\b/.test(blob)) {
@@ -201,6 +203,33 @@ export function ehReceitaVendasCaixa(
   }
 
   return false;
+}
+
+/**
+ * Título a receber que entra no caixa Conta Azul (Em aberto / Recebidos).
+ * Inclui venda, frete e demais receitas operacionais; exclui aporte/investimento.
+ */
+export function ehReceitaCaixaContaAzul(
+  p: Pick<
+    ParcelaBaseProjecao,
+    "descricao" | "rubrica" | "entradaDre" | "categorias"
+  >,
+): boolean {
+  if (ehReceitaVendasCaixa(p)) return true;
+  const t = textoClassificacaoReceita(p.descricao, p.rubrica);
+  if (
+    t &&
+    /\b(investimento|investimentos|aporte|aportes|integraliza|capital social|entrada de capital|aumento de capital|m.?utuo|emprestimo|emprestimos|financiamento|socios?|quotista|quotistas)\b/.test(
+      t,
+    )
+  ) {
+    return false;
+  }
+  const dre = (p.entradaDre ?? "").trim().toUpperCase();
+  if (dre && /^(DESPESA|CUSTO|DEDUC)/.test(dre)) return false;
+  // Qualquer título a receber restante (ex.: só "Receitas a Identificar")
+  // entra no total Conta Azul Em aberto / Recebidos.
+  return true;
 }
 
 /** Nome canônico de receita de vendas (já normalizado: minúsculo, sem acento). */

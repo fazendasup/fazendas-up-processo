@@ -962,30 +962,31 @@ export default function FinanceiroDashboardPage() {
                   Entradas — caixa e vendas
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Camadas do caixa: recebido e ainda entra. O projetado soma o a
-                  receber (no prazo) com a média histórica só de clientes que
-                  ainda não têm título em aberto — sem duplicar o mesmo cliente.
-                  Não misture com faturado/orçamento (volume).
+                  Alinhado ao Conta Azul: Entrou = baixas por pagamento; A
+                  receber / Em atraso = títulos em aberto por vencimento no mês
+                  (todas as categorias). O projetado soma o a receber com a
+                  média histórica só de clientes novos (venda/frete). Não
+                  misture com faturado/orçamento (volume).
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Kpi
                   title="Entrou (recebido)"
                   value={fmtMoney(rec?.recebido)}
-                  hint="Baixas de venda e/ou frete neste mês"
+                  hint="Baixas Conta Azul por data de pagamento neste mês"
                   tone="down"
                   href={kpiHref("entrou")}
                 />
                 <Kpi
                   title="A receber (no prazo)"
                   value={fmtMoney(rec?.aReceberNoMes)}
-                  hint="Venda e/ou frete em aberto, vence neste mês"
+                  hint="Em aberto no Conta Azul, vence neste mês (inclui vence hoje)"
                   href={kpiHref("a-receber")}
                 />
                 <Kpi
                   title="Em atraso"
                   value={fmtMoney(rec?.vencido)}
-                  hint="Venda e/ou frete em aberto, venceu neste mês"
+                  hint="Em aberto no Conta Azul, venceu neste mês"
                   tone={(rec?.vencido ?? 0) > 0.009 ? "up" : "neutral"}
                   href={kpiHref("em-atraso")}
                 />

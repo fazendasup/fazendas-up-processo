@@ -4,6 +4,7 @@ import {
   buscarParcelasPagarParaProjecao,
   buscarParcelasPagarHistoricoVencimento,
   buscarParcelasReceberParaComparativo,
+  buscarTotaisReceberContaAzul,
   fetchCatalogoCategorias,
   idsCategoriasReceitaVendas,
 } from "./financeiroContaAzulFluxo";
@@ -23,6 +24,7 @@ import {
 import { listFinanceiroCaRubricasMeta } from "./financeiroClassificacaoDb";
 import { mapaComportamentoPorRubrica } from "@shared/financeiroRubricaComportamento";
 import {
+  ehReceitaCaixaContaAzul,
   ehReceitaVendasCaixa,
   ehTransferenciaEntreContas,
   mesAnteriorProjecao,
@@ -598,13 +600,16 @@ export async function carregarComparativoProjecao(
   const mesInicioPlanoCmp =
     mesYm >= hojeYmCmp ? mesAnteriorProjecao(mesYm) : mesYm;
 
-  const [grade, pagarMes, receberMes, baixas1, baixas2, receber1, receber2, vendas, rubricasConcluidas] =
+  const [grade, pagarMes, receberMes, baixasRecebidoMes, baixas1, baixas2, receber1, receber2, totaisReceberMes, vendas, rubricasConcluidas] =
     await Promise.all([
       carregarProjecaoDesembolso(projetoId, mesInicioPlanoCmp, {
         forceRefreshCa: opts?.forceRefreshCa,
       }),
       carregarParcelasBaseMes(projetoId, mesYm, opts?.forceRefreshCa === true),
       buscarParcelasReceberParaComparativo(iniMes, fimMes, projetoId).then(r =>
+        r.map(toBase),
+      ),
+      buscarBaixasReceberPorPeriodoPagamento(iniMes, fimMes, projetoId).then(r =>
         r.map(toBase),
       ),
       diasRestantes > 0
@@ -631,6 +636,7 @@ export async function carregarComparativoProjecao(
         boundsMesYmAmericaSp(mes2).fim,
         projetoId,
       ).then(r => r.map(toBase)),
+      buscarTotaisReceberContaAzul(iniMes, fimMes, { status: "EM_ABERTO" }),
       carregarTotaisVendasCompetencia(mesYm, {
         hojeYm,
         diaHoje,
@@ -670,6 +676,7 @@ export async function carregarComparativoProjecao(
     linhasProjecao: grade.linhas,
     parcelasPagarMes: pagarMes,
     parcelasReceberMes: receberMes,
+    baixasRecebidoMes,
     vendasFaturadasMes: vendas.vendasFaturadasMes,
     orcamentosCompetenciaMes: vendas.orcamentosCompetenciaMes,
     vendasMesAtual: vendas.vendasMesAtual,
@@ -684,15 +691,43 @@ export async function carregarComparativoProjecao(
     rubricasConcluidas,
   });
 
+  const aReceberCa = totaisReceberMes
+    ? Math.round(
+        (totaisReceberMes.pendente + totaisReceberMes.venceHoje) * 100,
+      ) / 100
+    : comparativo.receita.aReceberNoMes;
+  const vencidoCa = totaisReceberMes?.vencido ?? comparativo.receita.vencido;
+  const histNovos =
+    comparativo.receita.projecaoVendas.historicoClientesNovos ?? 0;
+  const aindaEntraCa = Math.round((aReceberCa + histNovos) * 100) / 100;
+  const receitaAjustada = {
+    ...comparativo.receita,
+    aReceberNoMes: aReceberCa,
+    vencido: vencidoCa,
+    aReceber: Math.round((aReceberCa + vencidoCa) * 100) / 100,
+    projecaoVendas: {
+      ...comparativo.receita.projecaoVendas,
+      aReceberNoProjetado: aReceberCa,
+      aindaEntraProjetado: aindaEntraCa,
+      projecaoMesTotal: Math.round(
+        (comparativo.receita.recebido + aindaEntraCa) * 100,
+      ) / 100,
+    },
+  };
+
   return {
     ...comparativo,
+    receita: receitaAjustada,
     orcamentoFiltros: {
       diaLimiteOrcamento: vendas.diaLimiteOrcamento,
       clienteIdsOrcamento: filtroOrcamento.clienteIdsOrcamento ?? [],
       clientesOpcoes: vendas.clientesOrcamentoOpcoes,
     },
     avisos: [
-      "Caixa (já recebido / a receber / vencido) = Conta Azul ao vivo por vencimento e pagamento.",
+      "Entrou (recebido) = baixas Conta Azul por data de pagamento no mês.",
+      totaisReceberMes
+        ? `A receber / Em atraso = totais Conta Azul Em aberto (a vencer + vence hoje / vencidos).`
+        : "A receber / em atraso = títulos em aberto por vencimento no mês.",
       `Ainda entra = a receber (no prazo) + média das baixas dos últimos N dias só de clientes que ainda não têm título em aberto${idsVendas.length ? ` (DRE vendas: ${idsVendas.length} cat.)` : ""}.`,
       avisoCats,
       "Já faturado = pedidos sincronizados (status venda). Orçamento ainda não é caixa.",
@@ -771,11 +806,16 @@ export async function carregarFinanceiroDashboard(
     receber2,
     receber1,
     receberMes,
+    baixas2,
+    baixas1,
+    baixasMes,
     baixasRest1,
     baixasRest2,
+    totaisReceberMes,
     vendas,
     pagarPeriodo,
     receberPeriodo,
+    baixasPeriodo,
     pagarHoje,
     receberHoje,
     rubricasConcluidas,
@@ -800,6 +840,21 @@ export async function carregarFinanceiroDashboard(
       projetoId,
     ).then(r => r.map(toBase)),
     buscarParcelasReceberParaComparativo(
+      bounds(mesYm).inicio,
+      bounds(mesYm).fim,
+      projetoId,
+    ).then(r => r.map(toBase)),
+    buscarBaixasReceberPorPeriodoPagamento(
+      bounds(mes2).inicio,
+      bounds(mes2).fim,
+      projetoId,
+    ).then(r => r.map(toBase)),
+    buscarBaixasReceberPorPeriodoPagamento(
+      bounds(mes1).inicio,
+      bounds(mes1).fim,
+      projetoId,
+    ).then(r => r.map(toBase)),
+    buscarBaixasReceberPorPeriodoPagamento(
       bounds(mesYm).inicio,
       bounds(mesYm).fim,
       projetoId,
@@ -834,6 +889,10 @@ export async function carregarFinanceiroDashboard(
         await buscarBaixasReceberPorPeriodoPagamento(b.inicio, b.fim, projetoId)
       ).map(toBase);
     })(),
+    // Mesma barra do Conta Azul (Vencidos / Vencem hoje / A vencer).
+    buscarTotaisReceberContaAzul(bounds(mesYm).inicio, bounds(mesYm).fim, {
+      status: "EM_ABERTO",
+    }),
     carregarTotaisVendasCompetencia(mesYm, {
       hojeYm,
       diaHoje,
@@ -850,6 +909,13 @@ export async function carregarFinanceiroDashboard(
     periodo.planoAlinhadoAoPeriodo
       ? Promise.resolve([] as ParcelaBaseProjecao[])
       : buscarParcelasReceberParaComparativo(
+          periodo.inicio,
+          periodo.fim,
+          projetoId,
+        ).then(r => r.map(toBase)),
+    periodo.planoAlinhadoAoPeriodo
+      ? Promise.resolve([] as ParcelaBaseProjecao[])
+      : buscarBaixasReceberPorPeriodoPagamento(
           periodo.inicio,
           periodo.fim,
           projetoId,
@@ -909,10 +975,15 @@ export async function carregarFinanceiroDashboard(
       parcelasPagarMes: pagar,
     });
 
-  const receitaDe = (ym: string, receber: typeof receberMes) =>
+  const receitaDe = (
+    ym: string,
+    receber: typeof receberMes,
+    baixas: typeof baixasMes,
+  ) =>
     montarComparativoReceitaMes({
       mesYm: ym,
       parcelasReceberMes: receber,
+      baixasRecebidoMes: baixas,
       hojeYm,
       diaHoje,
     });
@@ -949,11 +1020,12 @@ export async function carregarFinanceiroDashboard(
       ? mediaDeDoisPositivos(recebidoRestante1, recebidoRestante2)
       : 0;
 
-  const r2 = receitaDe(mes2, receber2);
-  const r1 = receitaDe(mes1, receber1);
+  const r2 = receitaDe(mes2, receber2, baixas2);
+  const r1 = receitaDe(mes1, receber1, baixas1);
   const rMes = montarComparativoReceitaMes({
     mesYm,
     parcelasReceberMes: receberMes,
+    baixasRecebidoMes: baixasMes,
     vendasFaturadasMes: vendas.vendasFaturadasMes,
     orcamentosCompetenciaMes: vendas.orcamentosCompetenciaMes,
     vendasMesAtual: vendas.vendasMesAtual,
@@ -974,6 +1046,27 @@ export async function carregarFinanceiroDashboard(
     vendas: vendas.vendasFaturadasMes,
     orcamentos: vendas.orcamentosCompetenciaMes,
     total: vendas.vendasMesAtual,
+  };
+
+  // Conta Azul Em aberto: Vencidos + Vencem hoje + A vencer (totais oficiais).
+  const aReceberCa = totaisReceberMes
+    ? Math.round(
+        (totaisReceberMes.pendente + totaisReceberMes.venceHoje) * 100,
+      ) / 100
+    : rMes.aReceberNoMes;
+  const vencidoCa = totaisReceberMes?.vencido ?? rMes.vencido;
+  const aReceberTotalCa =
+    Math.round((aReceberCa + vencidoCa) * 100) / 100;
+  const histNovos = rMes.projecaoVendas.historicoClientesNovos ?? 0;
+  const aindaEntraCa =
+    Math.round((aReceberCa + histNovos) * 100) / 100;
+  const projecaoMesTotalCa =
+    Math.round((rMes.recebido + aindaEntraCa) * 100) / 100;
+  const projecaoVendasOut = {
+    ...rMes.projecaoVendas,
+    aReceberNoProjetado: aReceberCa,
+    aindaEntraProjetado: aindaEntraCa,
+    projecaoMesTotal: projecaoMesTotalCa,
   };
 
   const serie3Meses = montarSerieDashboard3Meses({
@@ -1012,7 +1105,7 @@ export async function carregarFinanceiroDashboard(
         desembolsoPago: dMes.totais.pago,
         previsto: rMes.previsto,
         recebido: rMes.recebido,
-        aReceber: rMes.aReceber,
+        aReceber: aReceberTotalCa,
       },
     ],
   });
@@ -1022,7 +1115,7 @@ export async function carregarFinanceiroDashboard(
     ((dMes.totais.pagoEmAtraso ?? 0) + (dMes.totais.pagoAMais ?? 0)) * 100,
   ) / 100;
   const gapCaixaMes = Math.round(
-    (rMes.projecaoVendas.projecaoMesTotal -
+    (projecaoMesTotalCa -
       dMes.totais.projetadoEfetivo -
       naoPlanejadoDash) *
       100,
@@ -1041,16 +1134,20 @@ export async function carregarFinanceiroDashboard(
   let receitaOut = {
     previsto: rMes.previsto,
     recebido: rMes.recebido,
-    aReceberNoMes: rMes.aReceberNoMes,
-    vencido: rMes.vencido,
-    aReceber: rMes.aReceber,
+    aReceberNoMes: aReceberCa,
+    vencido: vencidoCa,
+    aReceber: aReceberTotalCa,
     pctRecebidoDoPrevisto: rMes.pctRecebidoDoPrevisto,
     vendasCompetencia: rMes.vendasCompetencia,
   };
   let desembolsoTotaisOut = { ...dMes.totais };
   let saldoRealizado = mesAtual.saldoCaixa;
   const avisos: string[] = [
-      `Ainda entra = a receber (no prazo) + média das baixas dos últimos N dias só de clientes sem título em aberto${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
+    totaisReceberMes
+      ? `A receber / Em atraso = totais Conta Azul Em aberto (a vencer ${totaisReceberMes.pendente.toLocaleString("pt-BR")} + vence hoje ${totaisReceberMes.venceHoje.toLocaleString("pt-BR")} · vencidos ${totaisReceberMes.vencido.toLocaleString("pt-BR")}).`
+      : "A receber / Em atraso = títulos em aberto por vencimento no mês.",
+    "Entrou = baixas Conta Azul por data de pagamento no mês.",
+    `Ainda entra = a receber (no prazo) + média das baixas dos últimos N dias só de clientes sem título em aberto${idsVendas.length ? ` (catálogo DRE vendas: ${idsVendas.length})` : ""}.`,
     (() => {
       const cats = resumirBaixasPorCategoria(
         [...baixasRest1, ...baixasRest2],
@@ -1076,6 +1173,7 @@ export async function carregarFinanceiroDashboard(
   if (!periodo.planoAlinhadoAoPeriodo) {
     const caixaPeriodo = agregarReceitaCaixaPeriodo({
       parcelasReceber: receberPeriodo,
+      baixasRecebido: baixasPeriodo,
       inicioIso: periodo.inicioIso,
       fimIso: periodo.fimIso,
       hojeIso,
@@ -1162,7 +1260,7 @@ export async function carregarFinanceiroDashboard(
     periodo: periodoMeta,
     serie3Meses,
     mesAtual,
-    projecaoVendas: rMes.projecaoVendas,
+    projecaoVendas: projecaoVendasOut,
     caixa: {
       saldoRealizado,
       gapCaixaMes,
@@ -1479,31 +1577,32 @@ export async function carregarDashboardKpiDetalhe(
     const bounds = periodo.planoAlinhadoAoPeriodo
       ? boundsMesYmAmericaSp(mesYm)
       : { inicio: periodo.inicio, fim: periodo.fim };
-    const receber = (
-      await buscarParcelasReceberParaComparativo(
+    const [receber, baixasRecebido] = await Promise.all([
+      buscarParcelasReceberParaComparativo(
         bounds.inicio,
         bounds.fim,
         projetoId,
-      )
-    ).map(toBase);
+      ).then(r => r.map(toBase)),
+      buscarBaixasReceberPorPeriodoPagamento(
+        bounds.inicio,
+        bounds.fim,
+        projetoId,
+      ).then(r => r.map(toBase)),
+    ]);
 
     if (!periodo.planoAlinhadoAoPeriodo) {
       const caixa = agregarReceitaCaixaPeriodo({
         parcelasReceber: receber,
+        baixasRecebido,
         inicioIso: periodo.inicioIso,
         fimIso: periodo.fimIso,
         hojeIso,
       });
       if (kpi === "entrou") {
-        const linhas: DashboardKpiLinha[] = receber
-          .filter(p => {
-            const dp = (p.dataPagamento ?? p.dataVencimento ?? "").slice(0, 10);
-            return (
-              valorPagoParcela(p) > 0.009 &&
-              dp >= periodo.inicioIso &&
-              dp <= periodo.fimIso
-            );
-          })
+        const linhas: DashboardKpiLinha[] = baixasRecebido
+          .filter(
+            p => ehReceitaCaixaContaAzul(p) && valorPagoParcela(p) > 0.009,
+          )
           .map(p => ({
             id: p.id,
             titulo: p.descricao,
@@ -1516,14 +1615,16 @@ export async function carregarDashboardKpiDetalhe(
         return linhasDe(
           linhas,
           "Entrou (recebido)",
-          `Baixas Conta Azul em ${periodo.label}.`,
+          `Baixas Conta Azul por data de pagamento em ${periodo.label}.`,
           caixa.recebido,
         );
       }
       if (kpi === "em-atraso") {
         const linhas: DashboardKpiLinha[] = receber
           .filter(p => {
-            if (!ehReceitaVendasCaixa(p) || p.valorEmAberto <= 0.009) return false;
+            if (!ehReceitaCaixaContaAzul(p) || p.valorEmAberto <= 0.009) {
+              return false;
+            }
             const venc = (p.dataVencimento ?? "").slice(0, 10);
             return (
               /^\d{4}-\d{2}-\d{2}$/.test(venc) &&
@@ -1544,13 +1645,15 @@ export async function carregarDashboardKpiDetalhe(
         return linhasDe(
           linhas,
           "Em atraso",
-          `Vencidos em aberto no período ${periodo.label}.`,
+          `Vencidos em aberto no período ${periodo.label} (como Conta Azul).`,
           caixa.vencido,
         );
       }
       const linhas: DashboardKpiLinha[] = receber
         .filter(p => {
-          if (!ehReceitaVendasCaixa(p) || p.valorEmAberto <= 0.009) return false;
+          if (!ehReceitaCaixaContaAzul(p) || p.valorEmAberto <= 0.009) {
+            return false;
+          }
           const venc = (p.dataVencimento ?? "").slice(0, 10);
           return (
             /^\d{4}-\d{2}-\d{2}$/.test(venc) &&
@@ -1571,7 +1674,7 @@ export async function carregarDashboardKpiDetalhe(
       return linhasDe(
         linhas,
         "A receber no período",
-        `Em aberto com vencimento em ${periodo.label}.`,
+        `Em aberto com vencimento em ${periodo.label} (como Conta Azul).`,
         caixa.aReceberNoMes,
       );
     }
@@ -1579,6 +1682,7 @@ export async function carregarDashboardKpiDetalhe(
     const r = montarComparativoReceitaMes({
       mesYm,
       parcelasReceberMes: receber,
+      baixasRecebidoMes: baixasRecebido,
       hojeYm,
       diaHoje,
     });
@@ -1594,7 +1698,7 @@ export async function carregarDashboardKpiDetalhe(
           grupo: t.rubrica ?? null,
         })),
         "Entrou (recebido)",
-        "Baixas Conta Azul com pagamento neste mês.",
+        "Baixas Conta Azul com data de pagamento neste mês (venda/frete).",
         r.recebido,
       );
     }
