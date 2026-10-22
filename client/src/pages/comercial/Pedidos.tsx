@@ -3083,17 +3083,25 @@ function CampoProntoVariedade({
   }
 
   return (
-    <label className={`flex items-center gap-2 ${compact ? "" : "mt-2"}`}>
-      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-        Pronto
-      </span>
+    <label
+      className={`flex items-center ${compact ? "gap-1" : "mt-2 gap-2"}`}
+    >
+      {compact ? null : (
+        <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+          Pronto
+        </span>
+      )}
       <Input
         type="text"
         inputMode="decimal"
         value={texto}
         disabled={disabled}
         aria-label="Quantidade pronta"
-        className="h-8 w-20 px-2 text-right text-sm font-semibold tabular-nums"
+        className={
+          compact
+            ? "h-7 w-14 px-1.5 text-right text-xs font-semibold tabular-nums"
+            : "h-8 w-20 px-2 text-right text-sm font-semibold tabular-nums"
+        }
         onFocus={() => {
           focado.current = true;
         }}
@@ -3110,11 +3118,66 @@ function CampoProntoVariedade({
         }}
       />
       <span className="text-[10px] tabular-nums text-muted-foreground">
-        / {textoQuantidade(max)}
+        /{textoQuantidade(max)}
       </span>
     </label>
   );
 }
+
+/** Cor de coluna fixa por categoria — facilita achar sem reler o título. */
+const ESTILO_COLUNA_CATEGORIA: Record<
+  CategoriaOperacaoOuOutros,
+  { shell: string; head: string; rowAlt: string }
+> = {
+  Folhas: {
+    shell:
+      "border-emerald-200/80 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/25",
+    head: "text-emerald-900 dark:text-emerald-100",
+    rowAlt: "bg-emerald-100/40 dark:bg-emerald-900/20",
+  },
+  Microverdes: {
+    shell:
+      "border-teal-200/80 bg-teal-50/50 dark:border-teal-900/50 dark:bg-teal-950/25",
+    head: "text-teal-900 dark:text-teal-100",
+    rowAlt: "bg-teal-100/40 dark:bg-teal-900/20",
+  },
+  Flores: {
+    shell:
+      "border-rose-200/80 bg-rose-50/45 dark:border-rose-900/50 dark:bg-rose-950/25",
+    head: "text-rose-900 dark:text-rose-100",
+    rowAlt: "bg-rose-100/40 dark:bg-rose-900/20",
+  },
+  "Minimamente processados": {
+    shell:
+      "border-amber-200/80 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/25",
+    head: "text-amber-950 dark:text-amber-100",
+    rowAlt: "bg-amber-100/45 dark:bg-amber-900/20",
+  },
+  "In natura": {
+    shell:
+      "border-lime-200/80 bg-lime-50/50 dark:border-lime-900/50 dark:bg-lime-950/25",
+    head: "text-lime-950 dark:text-lime-100",
+    rowAlt: "bg-lime-100/40 dark:bg-lime-900/20",
+  },
+  Ervas: {
+    shell:
+      "border-violet-200/80 bg-violet-50/45 dark:border-violet-900/50 dark:bg-violet-950/25",
+    head: "text-violet-950 dark:text-violet-100",
+    rowAlt: "bg-violet-100/40 dark:bg-violet-900/20",
+  },
+  "Saladas (mix)": {
+    shell:
+      "border-sky-200/80 bg-sky-50/50 dark:border-sky-900/50 dark:bg-sky-950/25",
+    head: "text-sky-950 dark:text-sky-100",
+    rowAlt: "bg-sky-100/40 dark:bg-sky-900/20",
+  },
+  [CATEGORIA_OPERACAO_OUTROS]: {
+    shell:
+      "border-slate-200/80 bg-slate-50/60 dark:border-slate-700/50 dark:bg-slate-900/30",
+    head: "text-slate-800 dark:text-slate-100",
+    rowAlt: "bg-slate-100/50 dark:bg-slate-800/30",
+  },
+};
 
 function PedidosKpiDashboard({
   kpis,
@@ -3199,24 +3262,25 @@ function PedidosKpiDashboard({
     );
   }, [feitos]);
 
-  const colunasCategoriaClass =
-    filtroCategoria === "todas" && gruposPendentes.length > 1
-      ? "grid gap-3 items-start grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-      : "grid gap-3 items-start grid-cols-1";
+  const variasColunas =
+    filtroCategoria === "todas" && gruposPendentes.length > 1;
+  const colunasCategoriaClass = variasColunas
+    ? "grid gap-2 items-start grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+    : "grid gap-2 items-start grid-cols-1 max-w-xl";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <section>
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-700 ring-1 ring-cyan-500/20 dark:text-cyan-300">
-            <BarChart3 className="h-4 w-4" />
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-700 ring-1 ring-cyan-500/20 dark:text-cyan-300">
+            <BarChart3 className="h-3.5 w-3.5" />
           </span>
           Indicadores do dia
         </h3>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <KpiResumoCard
             icon={
-              <ClipboardList className="h-4 w-4 text-cyan-700 dark:text-cyan-300" />
+              <ClipboardList className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-300" />
             }
             label="Pedidos ativos"
             value={kpis.pedidos}
@@ -3225,7 +3289,7 @@ function PedidosKpiDashboard({
           />
           <KpiResumoCard
             icon={
-              <PackageCheck className="h-4 w-4 text-emerald-700 dark:text-emerald-300" />
+              <PackageCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-300" />
             }
             label="Ainda falta"
             value={formatQuantidade(kpis.unidadesFalta ?? kpis.unidades)}
@@ -3234,7 +3298,7 @@ function PedidosKpiDashboard({
           />
           <KpiResumoCard
             icon={
-              <Users className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+              <Users className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" />
             }
             label="Clientes do dia"
             value={kpis.clientes}
@@ -3243,7 +3307,7 @@ function PedidosKpiDashboard({
           />
           <KpiResumoCard
             icon={
-              <Sprout className="h-4 w-4 text-lime-700 dark:text-lime-300" />
+              <Sprout className="h-3.5 w-3.5 text-lime-700 dark:text-lime-300" />
             }
             label="Produtos do dia"
             value={kpis.produtosDistintos}
@@ -3254,30 +3318,32 @@ function PedidosKpiDashboard({
       </section>
 
       <Card className="border bg-card/80">
-        <CardHeader className="pb-2">
+        <CardHeader className="space-y-1 px-3 py-2.5">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <ShoppingBasket className="h-4 w-4" /> Produção do dia
+              <CardTitle className="flex items-center gap-1.5 text-sm">
+                <ShoppingBasket className="h-3.5 w-3.5" /> Produção do dia
               </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Foque no que falta. Digite o pronto para distribuir na ordem de produção.
+              <p className="text-[11px] text-muted-foreground">
+                Número âmbar = falta. Digite o pronto à direita.
               </p>
             </div>
-            <p className="text-xs tabular-nums text-muted-foreground">
+            <p className="text-[11px] tabular-nums text-muted-foreground">
               {pendentes.length} pendente{pendentes.length === 1 ? "" : "s"}
-              {feitos.length > 0 ? ` · ${feitos.length} feito${feitos.length === 1 ? "" : "s"}` : ""}
+              {feitos.length > 0
+                ? ` · ${feitos.length} feito${feitos.length === 1 ? "" : "s"}`
+                : ""}
             </p>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2.5 px-3 pb-3 pt-0">
           {produtosPorVariedade.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               <Button
                 type="button"
                 size="sm"
                 variant={filtroCategoria === "todas" ? "default" : "outline"}
-                className="h-8 rounded-full px-3 text-xs"
+                className="h-7 rounded-full px-2.5 text-[11px]"
                 onClick={() => setFiltroCategoria("todas")}
               >
                 Todas
@@ -3294,7 +3360,7 @@ function PedidosKpiDashboard({
                     type="button"
                     size="sm"
                     variant={filtroCategoria === cat ? "default" : "outline"}
-                    className="h-8 rounded-full px-3 text-xs"
+                    className="h-7 rounded-full px-2.5 text-[11px]"
                     onClick={() => setFiltroCategoria(cat)}
                   >
                     {cat}
@@ -3313,7 +3379,7 @@ function PedidosKpiDashboard({
                       ? "default"
                       : "outline"
                   }
-                  className="h-8 rounded-full px-3 text-xs"
+                  className="h-7 rounded-full px-2.5 text-[11px]"
                   onClick={() => setFiltroCategoria(CATEGORIA_OPERACAO_OUTROS)}
                 >
                   Outros
@@ -3323,11 +3389,11 @@ function PedidosKpiDashboard({
           ) : null}
 
           {produtosPorVariedade.length === 0 ? (
-            <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+            <p className="rounded-lg border border-dashed p-2.5 text-xs text-muted-foreground">
               Sem produtos no dia.
             </p>
           ) : pendentes.length === 0 ? (
-            <p className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-2.5 py-1.5 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
               {filtroCategoria === "todas"
                 ? "Tudo pronto neste dia."
                 : `Nada pendente em ${filtroCategoria}.`}
@@ -3335,22 +3401,27 @@ function PedidosKpiDashboard({
           ) : (
             <div className={colunasCategoriaClass}>
               {gruposPendentes.map(([categoria, itens]) => {
+                const estilo =
+                  ESTILO_COLUNA_CATEGORIA[categoria] ??
+                  ESTILO_COLUNA_CATEGORIA[CATEGORIA_OPERACAO_OUTROS];
                 let indice = 1;
                 return (
                   <section
                     key={categoria}
-                    className="min-w-0 space-y-1.5 rounded-xl border bg-muted/20 p-2.5"
+                    className={`min-w-0 overflow-hidden rounded-lg border ${estilo.shell}`}
                   >
-                    <div className="flex items-baseline justify-between gap-2 px-0.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    <div
+                      className={`flex items-baseline justify-between gap-2 border-b border-black/5 px-2 py-1 dark:border-white/10 ${estilo.head}`}
+                    >
+                      <h4 className="text-[10px] font-bold uppercase tracking-wide">
                         {categoria}
                       </h4>
-                      <span className="text-[11px] tabular-nums text-muted-foreground">
-                        {itens.length} item{itens.length === 1 ? "" : "s"}
+                      <span className="text-[10px] tabular-nums opacity-70">
+                        {itens.length}
                       </span>
                     </div>
-                    <ul className="space-y-2">
-                      {itens.map(produto => {
+                    <ul className="divide-y divide-black/5 dark:divide-white/10">
+                      {itens.map((produto, rowIdx) => {
                         const index = indice++;
                         const total = Number(produto.quantidade ?? 0);
                         const falta = Number(produto.falta ?? 0);
@@ -3365,32 +3436,31 @@ function PedidosKpiDashboard({
                         return (
                           <li
                             key={produto.nome}
-                            className="flex flex-col gap-2 rounded-lg border bg-card px-3 py-2.5 shadow-sm"
+                            className={`px-2 py-1.5 ${
+                              rowIdx % 2 === 1 ? estilo.rowAlt : "bg-transparent"
+                            }`}
                           >
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="min-w-0 cursor-default">
-                                  <div className="flex min-w-0 items-start gap-1.5 text-sm">
-                                    <span className="mt-0.5 shrink-0 text-xs font-medium text-muted-foreground">
-                                      {index}.
-                                    </span>
-                                    <NomeProdutoComPeso
-                                      nome={produto.nome}
-                                      className="min-w-0 [&_span:first-child]:font-semibold"
-                                    />
-                                  </div>
-                                  <p className="mt-0.5 truncate pl-4 text-[11px] text-muted-foreground">
-                                    {clientes} cliente
-                                    {clientes === 1 ? "" : "s"}
+                                <div className="flex min-w-0 cursor-default items-center gap-1.5">
+                                  <span className="w-3.5 shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                                    {index}
+                                  </span>
+                                  <NomeProdutoComPeso
+                                    nome={produto.nome}
+                                    className="min-w-0 flex-1 text-[12px] [&_span:first-child]:font-semibold [&_span:first-child]:leading-snug"
+                                  />
+                                  <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                                    {clientes}c
                                     {entregue > 0
-                                      ? ` · entregue ${formatQuantidade(entregue)}`
+                                      ? ` · e${formatQuantidade(entregue)}`
                                       : ""}
-                                  </p>
+                                  </span>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent
                                 side="top"
-                                className="max-h-64 max-w-xs overflow-y-auto text-left"
+                                className="max-h-64 max-w-xs overflow-y-auto text-left text-xs"
                               >
                                 <div className="mb-1">
                                   <NomeProdutoComPeso nome={produto.nome} />
@@ -3410,15 +3480,13 @@ function PedidosKpiDashboard({
                               </TooltipContent>
                             </Tooltip>
 
-                            <div className="mt-auto flex items-end justify-between gap-2 border-t pt-2">
-                              <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
-                                  Falta
-                                </p>
-                                <p className="text-xl font-extrabold tabular-nums leading-none text-amber-900 dark:text-amber-100">
-                                  {formatQuantidade(falta)}
-                                </p>
-                              </div>
+                            <div className="mt-1 flex items-center justify-end gap-2 pl-4">
+                              <span
+                                className="min-w-[2.25rem] text-right text-base font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
+                                title="Falta"
+                              >
+                                {formatQuantidade(falta)}
+                              </span>
                               {podeEditar && linhasAbertas.length > 0 ? (
                                 <CampoProntoVariedade
                                   compact
@@ -3433,8 +3501,8 @@ function PedidosKpiDashboard({
                                   }
                                 />
                               ) : (
-                                <p className="text-xs tabular-nums text-muted-foreground">
-                                  pronto {formatQuantidade(pronto)}/
+                                <p className="text-[10px] tabular-nums text-muted-foreground">
+                                  {formatQuantidade(pronto)}/
                                   {formatQuantidade(maxPronto)}
                                 </p>
                               )}
@@ -3450,12 +3518,12 @@ function PedidosKpiDashboard({
           )}
 
           {feitos.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2 text-xs text-muted-foreground"
+                className="h-7 px-2 text-[11px] text-muted-foreground"
                 onClick={() => setMostrarFeitos(v => !v)}
               >
                 {mostrarFeitos ? "Ocultar" : "Ver"} {feitos.length} já feito
@@ -3466,41 +3534,52 @@ function PedidosKpiDashboard({
                 <div
                   className={
                     filtroCategoria === "todas" && gruposFeitos.length > 1
-                      ? "grid gap-3 items-start grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-                      : "grid gap-3 items-start grid-cols-1"
+                      ? "grid gap-2 items-start grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+                      : "grid gap-2 items-start grid-cols-1 max-w-xl"
                   }
                 >
-                  {gruposFeitos.map(([categoria, itens]) => (
-                    <section
-                      key={categoria}
-                      className="min-w-0 space-y-1.5 rounded-xl border border-emerald-200/50 bg-emerald-50/30 p-2.5 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-                    >
-                      <div className="flex items-baseline justify-between gap-2 px-0.5">
-                        <h4 className="text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
-                          {categoria}
-                        </h4>
-                        <span className="text-[11px] tabular-nums text-muted-foreground">
-                          {itens.length}
-                        </span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        {itens.map(produto => (
-                          <li
-                            key={produto.nome}
-                            className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200/70 bg-card/80 px-3 py-2 text-sm dark:border-emerald-900/40"
-                          >
-                            <NomeProdutoComPeso
-                              nome={produto.nome}
-                              className="min-w-0 text-muted-foreground [&_span:first-child]:font-medium"
-                            />
-                            <span className="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                              {formatQuantidade(produto.quantidade)}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  ))}
+                  {gruposFeitos.map(([categoria, itens]) => {
+                    const estilo =
+                      ESTILO_COLUNA_CATEGORIA[categoria] ??
+                      ESTILO_COLUNA_CATEGORIA[CATEGORIA_OPERACAO_OUTROS];
+                    return (
+                      <section
+                        key={categoria}
+                        className={`min-w-0 overflow-hidden rounded-lg border opacity-80 ${estilo.shell}`}
+                      >
+                        <div
+                          className={`flex items-baseline justify-between gap-2 border-b border-black/5 px-2 py-1 dark:border-white/10 ${estilo.head}`}
+                        >
+                          <h4 className="text-[10px] font-bold uppercase tracking-wide">
+                            {categoria}
+                          </h4>
+                          <span className="text-[10px] tabular-nums opacity-70">
+                            {itens.length}
+                          </span>
+                        </div>
+                        <ul className="divide-y divide-black/5 dark:divide-white/10">
+                          {itens.map((produto, rowIdx) => (
+                            <li
+                              key={produto.nome}
+                              className={`flex items-center justify-between gap-2 px-2 py-1 text-[11px] ${
+                                rowIdx % 2 === 1
+                                  ? estilo.rowAlt
+                                  : "bg-transparent"
+                              }`}
+                            >
+                              <NomeProdutoComPeso
+                                nome={produto.nome}
+                                className="min-w-0 text-muted-foreground [&_span:first-child]:font-medium"
+                              />
+                              <span className="shrink-0 font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
+                                {formatQuantidade(produto.quantidade)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>
