@@ -10,7 +10,6 @@ import {
   ClipboardList,
   Clock,
   Copy,
-  ListOrdered,
   Package,
   PackageCheck,
   Plus,
@@ -988,12 +987,24 @@ export function Pedidos({
 
   function renderGrupoDashboardCard(grupo: any) {
     const diaGrupo = diaDoGrupoDashboard(grupo);
-    const itens = (grupo.itens ?? []) as any[];
+    const itens = [...((grupo.itens ?? []) as any[])].sort((a, b) => {
+      const ca = ordemCategoriaOperacao(
+        categoriaOperacaoDoProduto(a.produtoNome, a.categoria),
+      );
+      const cb = ordemCategoriaOperacao(
+        categoriaOperacaoDoProduto(b.produtoNome, b.categoria),
+      );
+      if (ca !== cb) return ca - cb;
+      return String(a.produtoNome ?? "").localeCompare(
+        String(b.produtoNome ?? ""),
+        "pt-BR",
+      );
+    });
     const itensProntos = itens.filter(
       (i: any) =>
         Boolean(i.pronto) ||
         grupo.status === "PRONTO" ||
-        grupo.status === "ENTREGUE"
+        grupo.status === "ENTREGUE",
     ).length;
     const podeMarcarLinha =
       canEditarComercial &&
@@ -1004,66 +1015,63 @@ export function Pedidos({
         key={`${grupo.contaAzulCustomerId}-${grupo.status}-${grupo.dataEntregaIso ?? ""}`}
         className={`border-l-4 ${statusAccentClass(grupo.status)}`}
       >
-        <CardContent className="space-y-3 p-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate font-bold">
-                  {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
-                </p>
-                <InadimplenciaClienteBadge
-                  contaAzulCustomerId={String(grupo.contaAzulCustomerId)}
-                  clienteNome={grupo.cliente?.nome}
-                  resumo={mapaInadimplencia.get(String(grupo.contaAzulCustomerId))}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
+        <CardContent className="space-y-1.5 p-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+              <p className="truncate text-sm font-bold leading-tight">
+                {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
+              </p>
+              <InadimplenciaClienteBadge
+                contaAzulCustomerId={String(grupo.contaAzulCustomerId)}
+                clienteNome={grupo.cliente?.nome}
+                resumo={mapaInadimplencia.get(
+                  String(grupo.contaAzulCustomerId),
+                )}
+              />
+              <span className="text-[11px] tabular-nums text-muted-foreground">
                 {itens.length > 0
-                  ? `${itensProntos}/${itens.length} pronto${itens.length === 1 ? "" : "s"}`
-                  : "Sem itens"}
+                  ? `${itensProntos}/${itens.length}`
+                  : "—"}
                 {escopoDashboard === "semana" && grupo.dataEntregaIso
                   ? ` · ${fmtDate(`${grupo.dataEntregaIso}T12:00:00`)}`
                   : ""}
-              </p>
+              </span>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1">
-                <ListOrdered className="h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min={1}
-                  step={1}
-                  className="h-8 w-16 px-2 text-xs tabular-nums"
-                  placeholder="#"
-                  title="Ordem de produção (1 = primeiro)"
-                  disabled={!canEditarComercial || mudarPrioridade.isPending}
-                  defaultValue={
+            <div className="flex shrink-0 flex-wrap items-center gap-1">
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                className="h-7 w-12 px-1 text-center text-[11px] tabular-nums"
+                placeholder="#"
+                title="Ordem de produção (1 = primeiro)"
+                disabled={!canEditarComercial || mudarPrioridade.isPending}
+                defaultValue={
+                  grupo.prioridadeEntrega != null
+                    ? String(grupo.prioridadeEntrega)
+                    : ""
+                }
+                key={`prio-${grupo.contaAzulCustomerId}-${grupo.dataEntregaIso ?? dia}-${grupo.prioridadeEntrega ?? "x"}`}
+                onBlur={e => {
+                  const raw = e.target.value.trim();
+                  const next =
+                    raw === ""
+                      ? null
+                      : Math.max(1, Math.floor(Number(raw)) || 1);
+                  const atual =
                     grupo.prioridadeEntrega != null
-                      ? String(grupo.prioridadeEntrega)
-                      : ""
-                  }
-                  key={`prio-${grupo.contaAzulCustomerId}-${grupo.dataEntregaIso ?? dia}-${grupo.prioridadeEntrega ?? "x"}`}
-                  onBlur={e => {
-                    const raw = e.target.value.trim();
-                    const next =
-                      raw === ""
-                        ? null
-                        : Math.max(1, Math.floor(Number(raw)) || 1);
-                    const atual =
-                      grupo.prioridadeEntrega != null
-                        ? Number(grupo.prioridadeEntrega)
-                        : null;
-                    if (next === atual) return;
-                    mudarPrioridade.mutate({
-                      contaAzulCustomerId: grupo.contaAzulCustomerId,
-                      dia: diaGrupo,
-                      prioridadeEntrega: next,
-                    });
-                  }}
-                />
-              </div>
+                      ? Number(grupo.prioridadeEntrega)
+                      : null;
+                  if (next === atual) return;
+                  mudarPrioridade.mutate({
+                    contaAzulCustomerId: grupo.contaAzulCustomerId,
+                    dia: diaGrupo,
+                    prioridadeEntrega: next,
+                  });
+                }}
+              />
               <select
-                className={`h-8 rounded-md border px-2 text-xs font-semibold ${statusSelectClass(grupo.status)}`}
+                className={`h-7 rounded-md border px-1.5 text-[11px] font-semibold ${statusSelectClass(grupo.status)}`}
                 value={grupo.status}
                 onChange={e =>
                   mudarStatus.mutate({
@@ -1084,104 +1092,97 @@ export function Pedidos({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 text-xs"
+                  className="h-7 px-2 text-[11px]"
                   onClick={() => {
                     setDia(grupo.dataEntregaIso);
                     setEscopoDashboard("dia");
                   }}
                 >
-                  Abrir dia
+                  Dia
                 </Button>
               ) : null}
             </div>
           </div>
-          <RegrasResumo regra={grupo.regras} />
+          <RegrasResumo compact regra={grupo.regras} />
           <AlertaAcumuloFaturamento avisos={grupo.avisosAcumulo ?? []} />
           <AlertaAvariasPedidoCopiado alertas={grupo.alertasAvariasPendentes} />
-          <DestaqueObservacaoPedido pedidos={grupo.pedidos ?? []} />
-          <div className="grid gap-2">
+          <DestaqueObservacaoPedido
+            pedidos={grupo.pedidos ?? []}
+            className="px-2 py-1.5 [&_p:first-child]:text-[10px] [&_p:not(:first-child)]:mt-0.5 [&_p:not(:first-child)]:text-xs"
+          />
+          <ul className="divide-y divide-border/60 overflow-hidden rounded-md border bg-card/40">
             {itens.map((item: any) => {
               const obsItem = observacaoOperacional(item.observacoes);
               const linhaPronta =
                 Boolean(item.pronto) ||
                 grupo.status === "PRONTO" ||
                 grupo.status === "ENTREGUE";
+              const parcial =
+                !linhaPronta && Number(item.quantidadePronta ?? 0) > 0;
               return (
-                <div
+                <li
                   key={item.id}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ring-1 ${
+                  className={`grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-1.5 px-2 py-1.5 text-xs ${
                     linhaPronta
-                      ? "bg-emerald-50/80 ring-emerald-200 dark:bg-emerald-950/20 dark:ring-emerald-900/50"
-                      : "bg-sky-50/70 ring-sky-100 dark:bg-sky-950/20 dark:ring-sky-900/50"
+                      ? "bg-emerald-50/70 dark:bg-emerald-950/20"
+                      : "bg-transparent"
                   }`}
                 >
-                  <div
-                    className={`flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-white shadow-sm ring-1 ${
+                  <span
+                    className={`pt-0.5 text-center text-sm font-extrabold tabular-nums leading-none ${
                       linhaPronta
-                        ? "text-emerald-900 ring-emerald-100 dark:bg-slate-950 dark:text-emerald-100 dark:ring-emerald-900"
-                        : "text-sky-900 ring-sky-100 dark:bg-slate-950 dark:text-sky-100 dark:ring-sky-900"
+                        ? "text-emerald-800 dark:text-emerald-200"
+                        : "text-foreground"
                     }`}
+                    title="Quantidade"
                   >
-                    <span className="text-lg font-extrabold leading-none">
-                      {fmtQtd(item.quantidade)}
-                    </span>
-                    <span
-                      className={`mt-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                        linhaPronta
-                          ? "text-emerald-700 dark:text-emerald-300"
-                          : "text-sky-700 dark:text-sky-300"
-                      }`}
-                    >
-                      Qtd.
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
+                    {fmtQtd(item.quantidade)}
+                  </span>
+                  <div className="min-w-0">
                     <div
-                      className={`text-base text-slate-950 dark:text-slate-50 ${
-                        linhaPronta ? "line-through opacity-70" : ""
-                      }`}
+                      className={
+                        linhaPronta ? "line-through opacity-60" : undefined
+                      }
                     >
-                      <NomeProdutoComPeso nome={item.produtoNome} />
+                      <NomeProdutoComPeso
+                        wrap
+                        nome={item.produtoNome}
+                        className="text-[12px] [&_span:first-child]:font-semibold"
+                      />
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      {item.categoria ? (
-                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground ring-1 ring-sky-100 dark:bg-slate-950/70 dark:ring-sky-900">
-                          {item.categoria}
-                        </span>
-                      ) : null}
-                      {linhaPronta ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800">
-                          Pronto
-                        </span>
-                      ) : Number(item.quantidadePronta ?? 0) > 0 ? (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:ring-amber-800">
-                          Parcial {fmtQtd(item.quantidadePronta)}
-                        </span>
-                      ) : null}
-                      {podeVerValores && item.precoUnit != null ? (
-                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100 dark:bg-slate-950/70 dark:text-emerald-200 dark:ring-emerald-900">
-                          {fmtMoney(item.precoUnit)}
-                          {item.precoEspecial ? " · especial" : ""}
-                        </span>
-                      ) : null}
-                      {obsItem ? (
-                        <span className="text-xs text-muted-foreground">
-                          Obs. item: {obsItem}
-                        </span>
-                      ) : null}
-                    </div>
+                    {(parcial || obsItem || (podeVerValores && item.precoUnit != null)) ? (
+                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                        {parcial
+                          ? `parcial ${fmtQtd(item.quantidadePronta)}`
+                          : null}
+                        {parcial &&
+                        (obsItem || (podeVerValores && item.precoUnit != null))
+                          ? " · "
+                          : null}
+                        {podeVerValores && item.precoUnit != null
+                          ? `${fmtMoney(item.precoUnit)}${item.precoEspecial ? " esp." : ""}`
+                          : null}
+                        {podeVerValores &&
+                        item.precoUnit != null &&
+                        obsItem
+                          ? " · "
+                          : null}
+                        {obsItem ? obsItem : null}
+                      </p>
+                    ) : null}
                   </div>
                   {podeMarcarLinha ? (
                     <Button
                       type="button"
                       size="sm"
                       variant={linhaPronta ? "secondary" : "outline"}
-                      className={`h-9 shrink-0 gap-1 text-xs ${
+                      className={`h-7 shrink-0 gap-0.5 px-2 text-[11px] ${
                         linhaPronta
                           ? "border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-200"
                           : ""
                       }`}
                       disabled={marcarItemPronto.isPending}
+                      title={linhaPronta ? "Desfazer pronto" : "Marcar pronto"}
                       onClick={() =>
                         marcarItemPronto.mutate({
                           itemId: item.id,
@@ -1190,69 +1191,51 @@ export function Pedidos({
                       }
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      {linhaPronta ? "Desfazer" : "Pronto"}
+                      {linhaPronta ? null : "Pronto"}
                     </Button>
                   ) : null}
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
           {canEditarComercial &&
           grupo.status !== "CANCELADO" &&
           (grupo.pedidos?.length ?? 0) > 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-950/40">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                Conta Azul
-              </p>
-              <div className="space-y-1">
-                {(grupo.pedidos as any[]).map(pedido => (
-                  <div
-                    key={pedido.id}
-                    className="flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-1 first:border-t-0 first:pt-0 dark:border-slate-800"
-                  >
-                    {(grupo.pedidos?.length ?? 0) > 1 ? (
-                      <span className="text-[11px] text-muted-foreground">
-                        {fmtDate(pedido.dataEntrega)} ·{" "}
-                        {labelStatus(String(pedido.status))}
-                      </span>
-                    ) : null}
-                    <AcoesPedidoConciliacao
-                      pedido={pedido}
-                      somenteEnvio
-                      onEnviadoContaAzul={() => {
-                        void invalidarVisaoOperacionalDia();
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center gap-1">
+              {(grupo.pedidos as any[]).map(pedido => (
+                <AcoesPedidoConciliacao
+                  key={pedido.id}
+                  pedido={pedido}
+                  somenteEnvio
+                  onEnviadoContaAzul={() => {
+                    void invalidarVisaoOperacionalDia();
+                  }}
+                />
+              ))}
             </div>
           ) : null}
           {grupo.avarias?.length ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/10">
-              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+            <div className="rounded-md border border-amber-200/80 bg-amber-50/40 px-2 py-1 dark:border-amber-900/50 dark:bg-amber-950/15">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
                 Avarias
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-0.5 flex flex-wrap gap-1">
                 {grupo.avarias.map((a: any) => (
                   <span
                     key={a.id}
-                    className="rounded-lg bg-background px-2 py-1 text-xs"
+                    className="rounded bg-background/80 px-1.5 py-0.5 text-[11px]"
+                    title={
+                      [
+                        a.observacoes,
+                        a.criadoPor?.nome || a.criadoPor?.email
+                          ? `por ${a.criadoPor?.nome ?? a.criadoPor?.email}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || undefined
+                    }
                   >
-                    <span className="font-medium">
-                      {Number(a.quantidade)} × {rotuloProduto(a.produtoNome)}
-                      {a.categoria ? ` · ${a.categoria}` : ""}
-                    </span>
-                    {a.observacoes ? (
-                      <span className="block text-muted-foreground">
-                        {a.observacoes}
-                      </span>
-                    ) : null}
-                    {a.criadoPor?.nome || a.criadoPor?.email ? (
-                      <span className="block text-[10px] text-muted-foreground">
-                        Lançado por {a.criadoPor?.nome ?? a.criadoPor?.email}
-                      </span>
-                    ) : null}
+                    {Number(a.quantidade)}× {rotuloProduto(a.produtoNome)}
                   </span>
                 ))}
               </div>
@@ -1975,18 +1958,13 @@ export function Pedidos({
               ) : (
                 <div className="space-y-4">
                   {gruposAtivosPorStatus.map(bloco => (
-                    <section key={bloco.status} className="space-y-2">
+                    <section key={bloco.status} className="space-y-1.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-bold">{bloco.titulo}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {bloco.descricao}
-                          </p>
-                        </div>
+                        <p className="text-sm font-bold">{bloco.titulo}</p>
                         <span
-                          className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusSelectClass(bloco.status)}`}
+                          className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums ${statusSelectClass(bloco.status)}`}
                         >
-                          {bloco.grupos.length} cliente(s)
+                          {bloco.grupos.length}
                         </span>
                       </div>
                       {bloco.grupos.length === 0 ? (
@@ -3838,9 +3816,16 @@ function PainelConciliacaoFechamento({
   );
 }
 
-function RegrasResumo({ regra }: { regra: any }) {
+function RegrasResumo({
+  regra,
+  compact = false,
+}: {
+  regra: any;
+  compact?: boolean;
+}) {
   const [aberto, setAberto] = useState(false);
   if (!regra) {
+    if (compact) return null;
     return (
       <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs font-medium text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
         Sem regras comerciais definidas. Usando valores padrão.
@@ -3868,19 +3853,40 @@ function RegrasResumo({ regra }: { regra: any }) {
     : "Sem taxa entrega";
 
   return (
-    <div className="rounded-xl border bg-card/80 p-2 shadow-sm">
+    <div
+      className={
+        compact
+          ? "rounded-md border border-transparent bg-muted/30 px-1.5 py-0.5"
+          : "rounded-xl border bg-card/80 p-2 shadow-sm"
+      }
+    >
       <button
         type="button"
         className="flex w-full items-center justify-between gap-2 text-left"
         onClick={() => setAberto(v => !v)}
       >
-        <p className="min-w-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-          Regras comerciais
-          {!aberto ? (
-            <span className="ml-2 font-semibold normal-case tracking-normal text-foreground">
-              · {entrega} · {entregaTaxa}
-            </span>
-          ) : null}
+        <p
+          className={`min-w-0 ${
+            compact
+              ? "truncate text-[11px] text-muted-foreground"
+              : "text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
+          }`}
+        >
+          {compact ? (
+            <>
+              <span className="font-medium text-foreground">{entrega}</span>
+              <span className="opacity-70"> · {entregaTaxa}</span>
+            </>
+          ) : (
+            <>
+              Regras comerciais
+              {!aberto ? (
+                <span className="ml-2 font-semibold normal-case tracking-normal text-foreground">
+                  · {entrega} · {entregaTaxa}
+                </span>
+              ) : null}
+            </>
+          )}
         </p>
         {aberto ? (
           <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
