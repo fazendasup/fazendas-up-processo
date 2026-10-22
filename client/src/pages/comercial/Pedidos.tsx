@@ -1004,11 +1004,9 @@ export function Pedidos({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {grupo.cliente?.cnpjCpf || "Sem documento"} ·{" "}
-                {grupo.pedidos.length} pedido(s)
                 {itens.length > 0
-                  ? ` · ${itensProntos}/${itens.length} itens prontos`
-                  : ""}
+                  ? `${itensProntos}/${itens.length} pronto${itens.length === 1 ? "" : "s"}`
+                  : "Sem itens"}
                 {escopoDashboard === "semana" && grupo.dataEntregaIso
                   ? ` · ${fmtDate(`${grupo.dataEntregaIso}T12:00:00`)}`
                   : ""}
@@ -1863,20 +1861,6 @@ export function Pedidos({
                   </div>
                 </div>
               </div>
-              {escopoDashboard === "semana" ? (
-                <p className="text-xs text-muted-foreground">
-                  Pedidos ainda abertos (pendente ou pronto) de segunda a domingo
-                  da data selecionada. Digite a quantidade pronta na variedade
-                  para preencher os clientes na ordem de produção.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Ordem (#) = sequência de produção (1 primeiro). Digite a
-                  quantidade pronta na variedade — ela preenche os clientes
-                  nessa ordem. O pedido vira «Pronto» quando todas as linhas
-                  estiverem feitas.
-                </p>
-              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <PedidosKpiDashboard
@@ -3318,25 +3302,12 @@ function PedidosKpiDashboard({
       </section>
 
       <Card className="border bg-card/80">
-        <CardHeader className="space-y-1 px-3 py-2.5">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <CardTitle className="flex items-center gap-1.5 text-sm">
-                <ShoppingBasket className="h-3.5 w-3.5" /> Produção do dia
-              </CardTitle>
-              <p className="text-[11px] text-muted-foreground">
-                Número âmbar = falta. Digite o pronto à direita.
-              </p>
-            </div>
-            <p className="text-[11px] tabular-nums text-muted-foreground">
-              {pendentes.length} pendente{pendentes.length === 1 ? "" : "s"}
-              {feitos.length > 0
-                ? ` · ${feitos.length} feito${feitos.length === 1 ? "" : "s"}`
-                : ""}
-            </p>
-          </div>
+        <CardHeader className="px-3 py-2">
+          <CardTitle className="flex items-center gap-1.5 text-sm">
+            <ShoppingBasket className="h-3.5 w-3.5" /> Produção do dia
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2.5 px-3 pb-3 pt-0">
+        <CardContent className="space-y-2 px-3 pb-3 pt-0">
           {produtosPorVariedade.length > 0 ? (
             <div className="flex flex-wrap gap-1">
               <Button
@@ -3411,13 +3382,19 @@ function PedidosKpiDashboard({
                     className={`min-w-0 overflow-hidden rounded-lg border ${estilo.shell}`}
                   >
                     <div
-                      className={`flex items-baseline justify-between gap-2 border-b border-black/5 px-2 py-1 dark:border-white/10 ${estilo.head}`}
+                      className={`grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-center gap-1 border-b border-black/5 px-1.5 py-1 dark:border-white/10 ${estilo.head}`}
                     >
-                      <h4 className="text-[10px] font-bold uppercase tracking-wide">
+                      <h4 className="truncate text-[10px] font-bold uppercase tracking-wide">
                         {categoria}
+                        <span className="ml-1 font-normal tabular-nums opacity-60">
+                          {itens.length}
+                        </span>
                       </h4>
-                      <span className="text-[10px] tabular-nums opacity-70">
-                        {itens.length}
+                      <span className="text-center text-[9px] font-semibold uppercase tracking-wide opacity-60">
+                        Falta
+                      </span>
+                      <span className="text-center text-[9px] font-semibold uppercase tracking-wide opacity-60">
+                        Pronto
                       </span>
                     </div>
                     <ul className="divide-y divide-black/5 dark:divide-white/10">
@@ -3430,32 +3407,23 @@ function PedidosKpiDashboard({
                         const destinos = produto.destinos ?? [];
                         const linhasAbertas = produto.linhasAbertas ?? [];
                         const maxPronto = Math.max(0, total - entregue);
-                        const clientes = Number(
-                          produto.clientes ?? destinos.length,
-                        );
                         return (
                           <li
                             key={produto.nome}
-                            className={`px-2 py-1.5 ${
+                            className={`grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-center gap-1 px-1.5 py-1 ${
                               rowIdx % 2 === 1 ? estilo.rowAlt : "bg-transparent"
                             }`}
                           >
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex min-w-0 cursor-default items-center gap-1.5">
-                                  <span className="w-3.5 shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                                <div className="flex min-w-0 cursor-default items-center gap-1">
+                                  <span className="w-3 shrink-0 text-[10px] tabular-nums text-muted-foreground">
                                     {index}
                                   </span>
                                   <NomeProdutoComPeso
                                     nome={produto.nome}
-                                    className="min-w-0 flex-1 text-[12px] [&_span:first-child]:font-semibold [&_span:first-child]:leading-snug"
+                                    className="min-w-0 text-[12px] [&_span:first-child]:font-semibold [&_span:first-child]:leading-snug"
                                   />
-                                  <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                                    {clientes}c
-                                    {entregue > 0
-                                      ? ` · e${formatQuantidade(entregue)}`
-                                      : ""}
-                                  </span>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent
@@ -3480,13 +3448,13 @@ function PedidosKpiDashboard({
                               </TooltipContent>
                             </Tooltip>
 
-                            <div className="mt-1 flex items-center justify-end gap-2 pl-4">
-                              <span
-                                className="min-w-[2.25rem] text-right text-base font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
-                                title="Falta"
-                              >
-                                {formatQuantidade(falta)}
-                              </span>
+                            <span
+                              className="text-center text-[15px] font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
+                              title="Falta"
+                            >
+                              {formatQuantidade(falta)}
+                            </span>
+                            <div className="flex justify-end">
                               {podeEditar && linhasAbertas.length > 0 ? (
                                 <CampoProntoVariedade
                                   compact
