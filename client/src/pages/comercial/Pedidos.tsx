@@ -3332,7 +3332,7 @@ function PedidosKpiDashboard({
                         {itens.length} item{itens.length === 1 ? "" : "s"}
                       </span>
                     </div>
-                    <ul className="divide-y rounded-lg border">
+                    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                       {itens.map(produto => {
                         const index = indiceGlobal++;
                         const total = Number(produto.quantidade ?? 0);
@@ -3348,13 +3348,13 @@ function PedidosKpiDashboard({
                         return (
                           <li
                             key={produto.nome}
-                            className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3"
+                            className="flex flex-col gap-2 rounded-lg border bg-card/60 px-3 py-2.5"
                           >
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="min-w-0 flex-1 cursor-default">
-                                  <div className="flex min-w-0 items-center gap-1.5 text-sm">
-                                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                                <div className="min-w-0 cursor-default">
+                                  <div className="flex min-w-0 items-start gap-1.5 text-sm">
+                                    <span className="mt-0.5 shrink-0 text-xs font-medium text-muted-foreground">
                                       {index}.
                                     </span>
                                     <NomeProdutoComPeso
@@ -3362,7 +3362,7 @@ function PedidosKpiDashboard({
                                       className="min-w-0 [&_span:first-child]:font-semibold"
                                     />
                                   </div>
-                                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                                  <p className="mt-0.5 truncate pl-4 text-[11px] text-muted-foreground">
                                     {clientes} cliente
                                     {clientes === 1 ? "" : "s"}
                                     {entregue > 0
@@ -3393,8 +3393,8 @@ function PedidosKpiDashboard({
                               </TooltipContent>
                             </Tooltip>
 
-                            <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
-                              <div className="text-right">
+                            <div className="mt-auto flex items-end justify-between gap-2 border-t pt-2">
+                              <div>
                                 <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200">
                                   Falta
                                 </p>
@@ -3446,11 +3446,11 @@ function PedidosKpiDashboard({
                 {filtroCategoria !== "todas" ? ` em ${filtroCategoria}` : ""}
               </Button>
               {mostrarFeitos ? (
-                <ul className="divide-y rounded-lg border border-emerald-200/70 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {feitos.map(produto => (
                     <li
                       key={produto.nome}
-                      className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200/70 bg-emerald-50/40 px-3 py-2 text-sm dark:border-emerald-900/40 dark:bg-emerald-950/20"
                     >
                       <div className="min-w-0">
                         <NomeProdutoComPeso
