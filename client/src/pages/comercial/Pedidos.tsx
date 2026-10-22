@@ -125,12 +125,15 @@ function NomeProdutoComPeso({
   catalogo,
   className = "",
   title,
+  wrap = false,
 }: {
   nome: string | null | undefined;
   modoCompra?: string | null;
   catalogo?: ProdutoRotulo[] | null;
   className?: string;
   title?: string;
+  /** Mostra o nome completo (quebra linha) em vez de truncar. */
+  wrap?: boolean;
 }) {
   const partes = partesProdutoComPeso(
     nome?.trim() || "Produto sem nome",
@@ -138,8 +141,19 @@ function NomeProdutoComPeso({
     catalogo,
   );
   return (
-    <span className={`inline-flex min-w-0 max-w-full items-center gap-1.5 ${className}`} title={title ?? partes.label}>
-      <span className="truncate font-extrabold leading-tight">{partes.nome}</span>
+    <span
+      className={`inline-flex min-w-0 max-w-full gap-1.5 ${
+        wrap ? "flex-wrap items-baseline" : "items-center"
+      } ${className}`}
+      title={title ?? partes.label}
+    >
+      <span
+        className={`font-extrabold leading-snug ${
+          wrap ? "whitespace-normal break-words" : "truncate"
+        }`}
+      >
+        {partes.nome}
+      </span>
       {partes.peso ? (
         <BadgePesoProduto nome={nome} modoCompra={modoCompra} catalogo={catalogo} />
       ) : null}
@@ -3248,9 +3262,10 @@ function PedidosKpiDashboard({
 
   const variasColunas =
     filtroCategoria === "todas" && gruposPendentes.length > 1;
+  // No máx. 3 colunas: nomes legíveis; 5 colunas cortava demais.
   const colunasCategoriaClass = variasColunas
-    ? "grid gap-2 items-start grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
-    : "grid gap-2 items-start grid-cols-1 max-w-xl";
+    ? "grid gap-3 items-start grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+    : "grid gap-3 items-start grid-cols-1 max-w-3xl";
 
   return (
     <div className="space-y-2.5">
@@ -3382,9 +3397,9 @@ function PedidosKpiDashboard({
                     className={`min-w-0 overflow-hidden rounded-lg border ${estilo.shell}`}
                   >
                     <div
-                      className={`grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-center gap-1 border-b border-black/5 px-1.5 py-1 dark:border-white/10 ${estilo.head}`}
+                      className={`grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-end gap-1.5 border-b border-black/5 px-2 py-1.5 dark:border-white/10 ${estilo.head}`}
                     >
-                      <h4 className="truncate text-[10px] font-bold uppercase tracking-wide">
+                      <h4 className="text-[10px] font-bold uppercase leading-tight tracking-wide">
                         {categoria}
                         <span className="ml-1 font-normal tabular-nums opacity-60">
                           {itens.length}
@@ -3410,19 +3425,20 @@ function PedidosKpiDashboard({
                         return (
                           <li
                             key={produto.nome}
-                            className={`grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-center gap-1 px-1.5 py-1 ${
+                            className={`grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-start gap-1.5 px-2 py-1.5 ${
                               rowIdx % 2 === 1 ? estilo.rowAlt : "bg-transparent"
                             }`}
                           >
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex min-w-0 cursor-default items-center gap-1">
-                                  <span className="w-3 shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                                <div className="flex min-w-0 cursor-default items-start gap-1.5">
+                                  <span className="mt-0.5 w-3.5 shrink-0 text-[10px] tabular-nums text-muted-foreground">
                                     {index}
                                   </span>
                                   <NomeProdutoComPeso
+                                    wrap
                                     nome={produto.nome}
-                                    className="min-w-0 text-[12px] [&_span:first-child]:font-semibold [&_span:first-child]:leading-snug"
+                                    className="min-w-0 text-[12px] [&_span:first-child]:font-semibold"
                                   />
                                 </div>
                               </TooltipTrigger>
@@ -3449,12 +3465,12 @@ function PedidosKpiDashboard({
                             </Tooltip>
 
                             <span
-                              className="text-center text-[15px] font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
+                              className="pt-0.5 text-center text-[15px] font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
                               title="Falta"
                             >
                               {formatQuantidade(falta)}
                             </span>
-                            <div className="flex justify-end">
+                            <div className="flex justify-end pt-0.5">
                               {podeEditar && linhasAbertas.length > 0 ? (
                                 <CampoProntoVariedade
                                   compact
@@ -3502,8 +3518,8 @@ function PedidosKpiDashboard({
                 <div
                   className={
                     filtroCategoria === "todas" && gruposFeitos.length > 1
-                      ? "grid gap-2 items-start grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
-                      : "grid gap-2 items-start grid-cols-1 max-w-xl"
+                      ? "grid gap-3 items-start grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+                      : "grid gap-3 items-start grid-cols-1 max-w-3xl"
                   }
                 >
                   {gruposFeitos.map(([categoria, itens]) => {
@@ -3536,6 +3552,7 @@ function PedidosKpiDashboard({
                               }`}
                             >
                               <NomeProdutoComPeso
+                                wrap
                                 nome={produto.nome}
                                 className="min-w-0 text-muted-foreground [&_span:first-child]:font-medium"
                               />
