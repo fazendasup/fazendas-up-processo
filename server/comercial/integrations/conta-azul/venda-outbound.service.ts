@@ -661,10 +661,16 @@ function esperar(ms: number): Promise<void> {
 /**
  * Emite boleto (Cobranças Conta Azul) vinculado à parcela da venda.
  * Falha aqui não deve desfazer a venda — o caller decide se propaga ou só avisa.
+ *
+ * `gerar-cobranca` exige o id da parcela do evento financeiro (conta a receber).
+ * O id em `venda.condicao_pagamento.parcelas` costuma ser outro e a API rejeita —
+ * só usamos esse fallback se a venda ainda não expôs evento financeiro.
  */
 async function idParcelaReceberDaVenda(http: AxiosInstance, vendaId: string): Promise<string> {
+  const maxTentativas = 10;
   let fallbackVenda: string | null = null;
-  for (let tentativa = 1; tentativa <= 4; tentativa++) {
+  let viuEventoFinanceiro = false;
+  for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
     const venda = await contaAzulGet<unknown>(
       http,
       `/v1/venda/${encodeURIComponent(vendaId)}`,
@@ -672,6 +678,7 @@ async function idParcelaReceberDaVenda(http: AxiosInstance, vendaId: string): Pr
     fallbackVenda = extrairIdParcelaVenda(venda) ?? fallbackVenda;
     const eventoId = extrairIdEventoFinanceiro(venda);
     if (eventoId) {
+      viuEventoFinanceiro = true;
       try {
         const raw = await contaAzulGet<unknown>(
           http,
@@ -692,12 +699,17 @@ async function idParcelaReceberDaVenda(http: AxiosInstance, vendaId: string): Pr
         );
       }
     }
-    if (fallbackVenda && !eventoId) return fallbackVenda;
-    if (tentativa < 4) await esperar(700 * tentativa);
+    // Sem evento ainda: parcela da venda é o melhor que temos (raro).
+    if (fallbackVenda && !eventoId && !viuEventoFinanceiro) return fallbackVenda;
+    if (tentativa < maxTentativas) await esperar(Math.min(2500, 500 * tentativa));
   }
-  if (fallbackVenda) return fallbackVenda;
+  // Nunca usar fallback da venda depois que o evento financeiro já apareceu —
+  // esse id não serve em gerar-cobranca e gera 400 “parcela inválida”.
+  if (fallbackVenda && !viuEventoFinanceiro) return fallbackVenda;
   throw new Error(
-    "Venda criada, mas a Conta Azul ainda não liberou a parcela para emitir o boleto.",
+    viuEventoFinanceiro
+      ? "Venda criada, mas a Conta Azul ainda não liberou a parcela do evento financeiro para emitir o boleto. Tente emitir de novo em alguns segundos."
+      : "Venda criada, mas a Conta Azul ainda não liberou a parcela para emitir o boleto.",
   );
 }
 
@@ -725,7 +737,8 @@ async function emitirBoletoDaVenda(
     body.atributos = {
       desconto_antecipado: {
         percentual: perc,
-        dias_antes_vencer: 0,
+        // Conta Azul rejeita 0 — desconto no próprio vencimento usa 1 dia.
+        dias_antes_vencer: 1,
       },
     };
   }
@@ -765,7 +778,8 @@ async function aguardarRegistroCobranca(
   let url = inicial.url ? String(inicial.url) : null;
   let status = inicial.status;
   if (url) return { url, status };
-  for (let tentativa = 1; tentativa <= 4; tentativa++) {
+  const maxTentativas = 10;
+  for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
     try {
       const c = await contaAzulGet<{ url?: string; URL?: string; status?: string }>(
         http,
@@ -778,7 +792,7 @@ async function aguardarRegistroCobranca(
     } catch (err) {
       logger.warn({ err, id, tentativa }, "Conta Azul: cobrança ainda sem link do boleto");
     }
-    if (tentativa < 4) await esperar(700 * tentativa);
+    if (tentativa < maxTentativas) await esperar(Math.min(2500, 500 * tentativa));
   }
   return { url, status };
 }
