@@ -111,11 +111,12 @@ function intervaloEfetivo(passo: PassoCicloAgenda<string | number>): number {
 
 /** Dias mínimos entre a aplicação de `origem` e a próxima de `destino`. Zero: mesmo dia permitido. */
 const FOLGA_MINIMA: Record<string, Record<string, number>> = {
-  peroxido: { infinito: 1, cercobin: 1, thyper: 1, bio: 1 },
-  infinito: { peroxido: 1, cercobin: 3, thyper: 1, bio: 1 },
-  cercobin: { peroxido: 1, infinito: 1, thyper: 1, bio: 1 },
-  thyper: { peroxido: 1, infinito: 1, cercobin: 1, bio: 1 },
-  bio: { peroxido: 1, infinito: 1, cercobin: 1, thyper: 1 },
+  // Thyper substitui o peróxido (mesmo ritmo / mesmas folgas).
+  peroxido: { infinito: 1, cercobin: 1, bio: 1 },
+  thyper: { infinito: 1, cercobin: 1, bio: 1 },
+  infinito: { peroxido: 1, thyper: 1, cercobin: 3, bio: 1 },
+  cercobin: { peroxido: 1, thyper: 1, infinito: 1, bio: 1 },
+  bio: { peroxido: 1, thyper: 1, infinito: 1, cercobin: 1 },
   A: { B: 1 },
   B: { A: 1 },
 };

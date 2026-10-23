@@ -503,11 +503,7 @@ export function cicloPendenteNoProtocolo(
     if (!outro.ativo || outro.id === ciclo.id) return false;
     const outroProduto =
       produtoSolucaoDoNome(outro.nome) ?? produtoSolucaoDoNome(outro.produto || "");
-    const outroNome = `${outro.nome} ${outro.produto || ""}`.toLowerCase();
-    const isThyper = outroNome.includes("thyper") || outroNome.includes("s-50");
-    if (outroProduto !== "infinito" && outroProduto !== "cercobin" && !isThyper) {
-      return false;
-    }
+    if (outroProduto !== "infinito" && outroProduto !== "cercobin") return false;
     return cicloTemPendencia(outro, dataReferencia);
   });
 }
