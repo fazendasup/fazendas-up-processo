@@ -10,11 +10,13 @@ import { composicaoDoPedidoParaDashboard } from "../lib/composicao-valor.js";
 import {
   ESTOQUE_MIX_FOLHA_PADRAO,
   buildEstoqueVivoDia,
+  calcularProcessamentoDoDia,
   normalizeEstoqueMixFolhaLeve,
   previewMixEstoqueVivo,
   type ConfigProdutoEstoque,
   type EstoqueVivoMixCfg,
   type LinhaPedidoEstoque,
+  type PedidoItemProcessamento,
 } from "../lib/estoque-vivo.js";
 import { alocarQuantidadePronta } from "../lib/alocar-quantidade-pronta.js";
 import { classificarStatusPedido } from "../lib/pedido-status.js";
@@ -2793,6 +2795,62 @@ export const pedidosRouter = router({
     });
     return rows.map(mapMixEstoqueDbParaCfg);
   }),
+
+  /** Kg a processar por ingrediente a partir dos pedidos do dia + receitas de mix. */
+  processamentoEstoqueVivoDia: comercialProcedure
+    .input(z.object({ dia: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      if (antesDoCortePedidos(input.dia)) {
+        return {
+          mixesUsados: [],
+          ingredientes: [],
+          pedidosSemMix: [],
+          totais: { mixes: 0, ingredientes: 0, kgTotal: 0 },
+        };
+      }
+      const [pedidosDb, mixesDb] = await Promise.all([
+        ctx.prisma!.pedidoOperacional.findMany({
+          where: {
+            dataEntrega: {
+              gte: inicioComCortePedidos(input.dia),
+              lte: fimDia(input.dia),
+            },
+            status: { not: "CANCELADO" },
+          },
+          include: {
+            itens: { include: { produto: { select: { id: true, nome: true } } } },
+          },
+        }),
+        ctx.prisma!.estoqueVivoMix.findMany({
+          where: { ativo: true },
+          include: mixEstoqueInclude,
+          orderBy: { nome: "asc" },
+        }),
+      ]);
+
+      const pedidosLinhas: PedidoItemProcessamento[] = [];
+      for (const pedido of pedidosDb) {
+        for (const item of pedido.itens) {
+          pedidosLinhas.push({
+            produtoId: item.produtoId,
+            nome: item.produto?.nome ?? item.produtoNome,
+            quantidade: Number(item.quantidade ?? 0) || 0,
+          });
+        }
+      }
+
+      const mixes = mixesDb.map(mapMixEstoqueDbParaCfg);
+      const out = calcularProcessamentoDoDia(pedidosLinhas, mixes);
+      const kgTotal = out.ingredientes.reduce((s, i) => s + i.kgProcessar, 0);
+      return {
+        ...out,
+        totais: {
+          mixes: out.mixesUsados.length,
+          ingredientes: out.ingredientes.length,
+          kgTotal: Math.ceil(kgTotal * 1000) / 1000,
+        },
+      };
+    }),
 
   previewMixEstoqueVivo: comercialProcedure
     .input(

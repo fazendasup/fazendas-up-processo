@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ESTOQUE_MIX_MULT,
   buildEstoqueVivoDia,
+  calcularProcessamentoDoDia,
   calcularProducaoMix,
   fatorPerdaEstoque,
   kgComprarPorRendimento,
@@ -97,5 +98,50 @@ describe("estoque-vivo", () => {
     const linhas = calcularProducaoMix(100, mix);
     expect(linhas.find((l) => l.nome === "Cenoura")?.kgProcessar).toBe(3);
     expect(linhas.find((l) => l.nome === "Alface Crespa Verde")?.kgProcessar).toBe(13);
+  });
+
+  it("explode pedidos do dia em kg por ingrediente via receitas", () => {
+    const mix: EstoqueVivoMixCfg = {
+      id: "mc",
+      nome: "Mix Clássico",
+      produtoReferenciaId: "prod-mix",
+      produtoReferenciaNome: "Mix Clássico - 500g",
+      perdaPercentual: 0,
+      ativo: true,
+      componentes: [
+        { produtoId: "a", produtoNome: "Alface Crespa Verde", quantidade: 200 },
+        { produtoId: "c", produtoNome: "Cenoura", quantidade: 50 },
+      ],
+    };
+    const out = calcularProcessamentoDoDia(
+      [
+        { produtoId: "prod-mix", nome: "Mix Clássico - 500g", quantidade: 10 },
+        { produtoId: "tom", nome: "Tomate Regional", quantidade: 5 },
+      ],
+      [mix],
+    );
+    expect(out.mixesUsados).toHaveLength(1);
+    expect(out.mixesUsados[0]?.unidades).toBe(10);
+    expect(out.ingredientes.find((i) => i.nome === "Cenoura")?.kgProcessar).toBe(0.5);
+    expect(out.ingredientes.find((i) => i.nome === "Alface Crespa Verde")?.kgProcessar).toBe(2);
+    expect(out.pedidosSemMix.map((p) => p.nome)).toContain("Tomate Regional");
+  });
+
+  it("casa receita pelo prefixo do nome quando não há produtoReferencia", () => {
+    const mix: EstoqueVivoMixCfg = {
+      id: "c1",
+      nome: "Crocante 1",
+      produtoReferenciaId: null,
+      produtoReferenciaNome: null,
+      perdaPercentual: 10,
+      ativo: true,
+      componentes: [{ produtoId: "1", produtoNome: "Cenoura", quantidade: 30 }],
+    };
+    const out = calcularProcessamentoDoDia(
+      [{ nome: "Crocante 1 - 500g", quantidade: 100 }],
+      [mix],
+    );
+    expect(out.mixesUsados[0]?.unidades).toBe(100);
+    expect(out.ingredientes[0]?.kgProcessar).toBeCloseTo(3.334, 3);
   });
 });

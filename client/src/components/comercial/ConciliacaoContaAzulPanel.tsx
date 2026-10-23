@@ -419,7 +419,7 @@ export function ConciliacaoContaAzulPanel({
             variant="outline"
             size="sm"
             disabled={syncBusy}
-            onClick={() => syncContaAzul.mutate()}
+            onClick={() => syncContaAzul.mutate({ escopo: "vendas" })}
           >
             <RefreshCw className={`mr-1 h-3.5 w-3.5 ${syncBusy ? "animate-spin" : ""}`} />
             {syncBusy ? "Sincronizando..." : "Sync Conta Azul"}

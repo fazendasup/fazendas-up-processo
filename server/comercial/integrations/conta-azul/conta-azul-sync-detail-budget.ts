@@ -1,5 +1,8 @@
 export type ContaAzulSyncMode = "manual" | "cron";
 
+/** O que a execução busca na Conta Azul. Página aberta usa só o recorte dela. */
+export type ContaAzulSyncEscopo = "vendas" | "clientes" | "completo";
+
 /**
  * Quantos GET /v1/venda/{id} o sync pode fazer (composição frete/desconto).
  *
@@ -11,7 +14,11 @@ export type ContaAzulSyncMode = "manual" | "cron";
 const DEFAULT_MANUAL_DETAIL_MAX = 120;
 const DEFAULT_CRON_DETAIL_MAX = 80;
 
-export function contaAzulSyncDetailBudget(mode: ContaAzulSyncMode): number {
+export function contaAzulSyncDetailBudget(
+  mode: ContaAzulSyncMode,
+  escopo: ContaAzulSyncEscopo = "completo"
+): number {
+  if (escopo !== "completo") return 0;
   if (process.env.CONTA_AZUL_SYNC_SKIP_DETAIL === "1") return 0;
   if (process.env.CONTA_AZUL_SYNC_DETAIL_UNLIMITED === "1") {
     return Number.MAX_SAFE_INTEGER;

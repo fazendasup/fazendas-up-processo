@@ -220,6 +220,139 @@ export function unidadesComponenteMixComPerda(
   return ref * qtd * fatorPerdaEstoque(perdaPercentual);
 }
 
+export type PedidoItemProcessamento = {
+  produtoId?: string | null;
+  nome: string;
+  quantidade: number;
+};
+
+export type MixUsadoDia = {
+  mixId: string;
+  mixNome: string;
+  unidades: number;
+  produtoPedidoNome: string;
+  ingredientes: ReturnType<typeof calcularProducaoMix>;
+};
+
+export type IngredienteAgregadoDia = {
+  produtoId: string;
+  nome: string;
+  kgProcessar: number;
+  gramasTotais: number;
+  fontes: Array<{ mixNome: string; unidades: number; kg: number }>;
+};
+
+/** Liga linha do pedido a uma receita de mix (referência ou nome). */
+export function pedidoCasaComMix(
+  mix: EstoqueVivoMixCfg,
+  item: PedidoItemProcessamento,
+): boolean {
+  if (!mix.ativo) return false;
+  if (
+    mix.produtoReferenciaId &&
+    item.produtoId &&
+    mix.produtoReferenciaId === item.produtoId
+  ) {
+    return true;
+  }
+  const pedidoKey = nomeChaveEstoque(item.nome);
+  if (
+    mix.produtoReferenciaNome &&
+    nomeChaveEstoque(mix.produtoReferenciaNome) === pedidoKey
+  ) {
+    return true;
+  }
+  const mixKey = nomeChaveEstoque(mix.nome);
+  if (!mixKey) return false;
+  if (pedidoKey === mixKey) return true;
+  // Ex.: receita «Mix Clássico» ↔ pedido «Mix Clássico - 500g»
+  if (
+    pedidoKey.startsWith(`${mixKey} -`) ||
+    pedidoKey.startsWith(`${mixKey}-`) ||
+    pedidoKey.startsWith(`${mixKey} `)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * A partir dos pedidos do dia e das receitas, calcula kg a processar por ingrediente.
+ * Cada mix vendido explode a receita; ingredientes iguais somam.
+ */
+export function calcularProcessamentoDoDia(
+  pedidos: PedidoItemProcessamento[],
+  mixes: EstoqueVivoMixCfg[],
+): {
+  mixesUsados: MixUsadoDia[];
+  ingredientes: IngredienteAgregadoDia[];
+  pedidosSemMix: LinhaPedidoEstoque[];
+} {
+  const ativos = mixes.filter((m) => m.ativo);
+  const mixesUsados: MixUsadoDia[] = [];
+  const matchedKeys = new Set<string>();
+
+  for (const mix of ativos) {
+    let unidades = 0;
+    let produtoPedidoNome = "";
+    for (const item of pedidos) {
+      if (!pedidoCasaComMix(mix, item)) continue;
+      unidades += Number(item.quantidade) || 0;
+      produtoPedidoNome = item.nome;
+      matchedKeys.add(`${item.produtoId ?? ""}|${nomeChaveEstoque(item.nome)}`);
+    }
+    if (unidades <= 0) continue;
+    mixesUsados.push({
+      mixId: mix.id,
+      mixNome: mix.nome,
+      unidades,
+      produtoPedidoNome,
+      ingredientes: calcularProducaoMix(unidades, mix),
+    });
+  }
+
+  const agg = new Map<string, IngredienteAgregadoDia>();
+  for (const mu of mixesUsados) {
+    for (const ing of mu.ingredientes) {
+      const key = ing.produtoId || nomeChaveEstoque(ing.nome);
+      const cur = agg.get(key) ?? {
+        produtoId: ing.produtoId,
+        nome: ing.nome,
+        kgProcessar: 0,
+        gramasTotais: 0,
+        fontes: [],
+      };
+      cur.kgProcessar =
+        Math.ceil((cur.kgProcessar + ing.kgProcessar) * 1000) / 1000;
+      cur.gramasTotais += ing.gramasTotais;
+      cur.fontes.push({
+        mixNome: mu.mixNome,
+        unidades: mu.unidades,
+        kg: ing.kgProcessar,
+      });
+      agg.set(key, cur);
+    }
+  }
+
+  const pedidosSemMix = agregarPedidosPorProduto(
+    pedidos
+      .filter(
+        (p) =>
+          !matchedKeys.has(`${p.produtoId ?? ""}|${nomeChaveEstoque(p.nome)}`),
+      )
+      .map((p) => ({ nome: p.nome, quantidade: p.quantidade })),
+  );
+
+  return {
+    mixesUsados,
+    ingredientes: Array.from(agg.values()).sort(
+      (a, b) =>
+        b.kgProcessar - a.kgProcessar || a.nome.localeCompare(b.nome, "pt-BR"),
+    ),
+    pedidosSemMix,
+  };
+}
+
 export function calcularDemandaMixCustomizado(
   _pedidos: LinhaPedidoEstoque[],
   _mixes: EstoqueVivoMixCfg[],

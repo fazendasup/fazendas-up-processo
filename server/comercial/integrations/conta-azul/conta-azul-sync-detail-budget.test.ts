@@ -28,4 +28,9 @@ describe("contaAzulSyncDetailBudget", () => {
     process.env.CONTA_AZUL_SYNC_DETAIL_UNLIMITED = "1";
     expect(contaAzulSyncDetailBudget("manual")).toBe(Number.MAX_SAFE_INTEGER);
   });
+
+  it("página de vendas ou clientes não busca detalhe de venda", () => {
+    expect(contaAzulSyncDetailBudget("manual", "vendas")).toBe(0);
+    expect(contaAzulSyncDetailBudget("manual", "clientes")).toBe(0);
+  });
 });

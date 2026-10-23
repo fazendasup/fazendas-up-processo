@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { TooltipInfo } from "@/components/comercial/ui/TooltipInfo";
 import { comercialPath } from "@/lib/comercial/routes";
+import { useSyncContaAzulNaPagina } from "@/hooks/useSyncContaAzul";
 import { trpc } from "@/lib/trpc";
 
 function badgeStatus(s: string) {
@@ -67,6 +68,7 @@ function freshNovoCliente() {
 }
 
 export function Clientes() {
+  useSyncContaAzulNaPagina("clientes");
   const [, navigate] = useLocation();
   const utils = trpc.useUtils();
   const [searchParams] = useSearchParams();

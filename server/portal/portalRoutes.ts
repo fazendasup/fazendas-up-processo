@@ -265,6 +265,7 @@ export function registerPortalRoutes(app: Express): void {
   });
 
   app.get("/api/portal/vitrine", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
     try {
       const prisma = getComercialPrisma();
       await preencherFichasDaVitrine(prisma);

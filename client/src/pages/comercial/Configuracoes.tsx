@@ -156,8 +156,8 @@ export function Configuracoes() {
         <p className="text-xs font-bold uppercase tracking-wide text-[#1E40AF]">Integração</p>
         <h2 className="mt-1 text-lg font-bold text-[#1E40AF]">Conta Azul</h2>
         <p className="mt-1 text-sm text-[#6B7280]">
-          Conecte via OAuth. Com o servidor no ar, a sincronização roda sozinha a cada{" "}
-          <strong>5 minutos</strong> (e uma vez ~1 min após reiniciar). Use o botão abaixo só para forçar agora.
+          Conecte via OAuth. Pedidos e o painel atualizam as vendas ao abrir. A carteira atualiza os clientes ao abrir. O botão abaixo sincroniza os dois juntos. O servidor também faz uma passagem completa a cada{" "}
+          <strong>5 minutos</strong>.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button

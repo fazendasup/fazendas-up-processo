@@ -55,9 +55,14 @@ export type EstoqueVivoMixComponente = $Result.DefaultSelection<Prisma.$EstoqueV
 export type ProdutoComercial = $Result.DefaultSelection<Prisma.$ProdutoComercialPayload>
 /**
  * Model PortalAcesso
- * Acesso do cliente B2B ao site. A senha nasce só quando a pessoa ativa o convite.
+ * Acesso do cliente ao site. Empresa (B2B) ou pessoa física.
  */
 export type PortalAcesso = $Result.DefaultSelection<Prisma.$PortalAcessoPayload>
+/**
+ * Model PortalPedidoPagamento
+ * Cobrança Pix / link de cartão gerada no Conta Azul para pedido de pessoa física.
+ */
+export type PortalPedidoPagamento = $Result.DefaultSelection<Prisma.$PortalPedidoPagamentoPayload>
 /**
  * Model PortalConta
  * Dados cadastrais editáveis na conta do site. O CNPJ permanece no cliente.
@@ -460,6 +465,14 @@ export const ModoCompraProduto: {
 
 export type ModoCompraProduto = (typeof ModoCompraProduto)[keyof typeof ModoCompraProduto]
 
+
+export const PortalPerfil: {
+  EMPRESA: 'EMPRESA',
+  PESSOA: 'PESSOA'
+};
+
+export type PortalPerfil = (typeof PortalPerfil)[keyof typeof PortalPerfil]
+
 }
 
 export type PerfilUsuario = $Enums.PerfilUsuario
@@ -553,6 +566,10 @@ export const PeriodoEntregaCliente: typeof $Enums.PeriodoEntregaCliente
 export type ModoCompraProduto = $Enums.ModoCompraProduto
 
 export const ModoCompraProduto: typeof $Enums.ModoCompraProduto
+
+export type PortalPerfil = $Enums.PortalPerfil
+
+export const PortalPerfil: typeof $Enums.PortalPerfil
 
 /**
  * ##  Prisma Client ʲˢ
@@ -761,6 +778,16 @@ export class PrismaClient<
     * ```
     */
   get portalAcesso(): Prisma.PortalAcessoDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.portalPedidoPagamento`: Exposes CRUD operations for the **PortalPedidoPagamento** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PortalPedidoPagamentos
+    * const portalPedidoPagamentos = await prisma.portalPedidoPagamento.findMany()
+    * ```
+    */
+  get portalPedidoPagamento(): Prisma.PortalPedidoPagamentoDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.portalConta`: Exposes CRUD operations for the **PortalConta** model.
@@ -1540,6 +1567,7 @@ export namespace Prisma {
     EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
     ProdutoComercial: 'ProdutoComercial',
     PortalAcesso: 'PortalAcesso',
+    PortalPedidoPagamento: 'PortalPedidoPagamento',
     PortalConta: 'PortalConta',
     PortalContrato: 'PortalContrato',
     PortalContratoAceite: 'PortalContratoAceite',
@@ -1591,7 +1619,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalProgramacao" | "portalProgramacaoDia" | "portalProgramacaoItem" | "portalProgramacaoEntrega" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalPedidoPagamento" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalProgramacao" | "portalProgramacaoDia" | "portalProgramacaoItem" | "portalProgramacaoEntrega" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2186,6 +2214,72 @@ export namespace Prisma {
           count: {
             args: Prisma.PortalAcessoCountArgs<ExtArgs>
             result: $Utils.Optional<PortalAcessoCountAggregateOutputType> | number
+          }
+        }
+      }
+      PortalPedidoPagamento: {
+        payload: Prisma.$PortalPedidoPagamentoPayload<ExtArgs>
+        fields: Prisma.PortalPedidoPagamentoFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PortalPedidoPagamentoFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PortalPedidoPagamentoFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload>
+          }
+          findFirst: {
+            args: Prisma.PortalPedidoPagamentoFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PortalPedidoPagamentoFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload>
+          }
+          findMany: {
+            args: Prisma.PortalPedidoPagamentoFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload>[]
+          }
+          create: {
+            args: Prisma.PortalPedidoPagamentoCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload>
+          }
+          createMany: {
+            args: Prisma.PortalPedidoPagamentoCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.PortalPedidoPagamentoDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload>
+          }
+          update: {
+            args: Prisma.PortalPedidoPagamentoUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload>
+          }
+          deleteMany: {
+            args: Prisma.PortalPedidoPagamentoDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PortalPedidoPagamentoUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PortalPedidoPagamentoUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PortalPedidoPagamentoPayload>
+          }
+          aggregate: {
+            args: Prisma.PortalPedidoPagamentoAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePortalPedidoPagamento>
+          }
+          groupBy: {
+            args: Prisma.PortalPedidoPagamentoGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PortalPedidoPagamentoGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PortalPedidoPagamentoCountArgs<ExtArgs>
+            result: $Utils.Optional<PortalPedidoPagamentoCountAggregateOutputType> | number
           }
         }
       }
@@ -4472,6 +4566,7 @@ export namespace Prisma {
     estoqueVivoMixComponente?: EstoqueVivoMixComponenteOmit
     produtoComercial?: ProdutoComercialOmit
     portalAcesso?: PortalAcessoOmit
+    portalPedidoPagamento?: PortalPedidoPagamentoOmit
     portalConta?: PortalContaOmit
     portalContrato?: PortalContratoOmit
     portalContratoAceite?: PortalContratoAceiteOmit
@@ -12738,6 +12833,7 @@ export namespace Prisma {
     exclusivoPortal: boolean | null
     descricaoLoja: string | null
     aplicacaoLoja: string | null
+    grupoLoja: string | null
     estoqueLoja: Decimal | null
     criadoEm: Date | null
     atualizadoEm: Date | null
@@ -12766,6 +12862,7 @@ export namespace Prisma {
     exclusivoPortal: boolean | null
     descricaoLoja: string | null
     aplicacaoLoja: string | null
+    grupoLoja: string | null
     estoqueLoja: Decimal | null
     criadoEm: Date | null
     atualizadoEm: Date | null
@@ -12795,6 +12892,7 @@ export namespace Prisma {
     exclusivoPortal: number
     descricaoLoja: number
     aplicacaoLoja: number
+    grupoLoja: number
     estoqueLoja: number
     criadoEm: number
     atualizadoEm: number
@@ -12839,6 +12937,7 @@ export namespace Prisma {
     exclusivoPortal?: true
     descricaoLoja?: true
     aplicacaoLoja?: true
+    grupoLoja?: true
     estoqueLoja?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -12867,6 +12966,7 @@ export namespace Prisma {
     exclusivoPortal?: true
     descricaoLoja?: true
     aplicacaoLoja?: true
+    grupoLoja?: true
     estoqueLoja?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -12896,6 +12996,7 @@ export namespace Prisma {
     exclusivoPortal?: true
     descricaoLoja?: true
     aplicacaoLoja?: true
+    grupoLoja?: true
     estoqueLoja?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -13012,6 +13113,7 @@ export namespace Prisma {
     exclusivoPortal: boolean
     descricaoLoja: string | null
     aplicacaoLoja: string | null
+    grupoLoja: string | null
     estoqueLoja: Decimal | null
     criadoEm: Date
     atualizadoEm: Date
@@ -13060,6 +13162,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: boolean
     aplicacaoLoja?: boolean
+    grupoLoja?: boolean
     estoqueLoja?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
@@ -13101,12 +13204,13 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: boolean
     aplicacaoLoja?: boolean
+    grupoLoja?: boolean
     estoqueLoja?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
   }
 
-  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "exclusivoPortal" | "descricaoLoja" | "aplicacaoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
+  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "exclusivoPortal" | "descricaoLoja" | "aplicacaoLoja" | "grupoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
     programacaoItens?: boolean | ProdutoComercial$programacaoItensArgs<ExtArgs>
@@ -13163,6 +13267,10 @@ export namespace Prisma {
       exclusivoPortal: boolean
       descricaoLoja: string | null
       aplicacaoLoja: string | null
+      /**
+       * Classe da vitrine (ex.: Folhas). Se vazio, usa a classificação automática pelo nome.
+       */
+      grupoLoja: string | null
       estoqueLoja: Prisma.Decimal | null
       criadoEm: Date
       atualizadoEm: Date
@@ -13567,6 +13675,7 @@ export namespace Prisma {
     readonly exclusivoPortal: FieldRef<"ProdutoComercial", 'Boolean'>
     readonly descricaoLoja: FieldRef<"ProdutoComercial", 'String'>
     readonly aplicacaoLoja: FieldRef<"ProdutoComercial", 'String'>
+    readonly grupoLoja: FieldRef<"ProdutoComercial", 'String'>
     readonly estoqueLoja: FieldRef<"ProdutoComercial", 'Decimal'>
     readonly criadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
     readonly atualizadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
@@ -14154,6 +14263,7 @@ export namespace Prisma {
     senhaHash: string | null
     conviteHash: string | null
     conviteExpiraEm: Date | null
+    perfil: $Enums.PortalPerfil | null
     ativo: boolean | null
     criadoEm: Date | null
     atualizadoEm: Date | null
@@ -14166,6 +14276,7 @@ export namespace Prisma {
     senhaHash: string | null
     conviteHash: string | null
     conviteExpiraEm: Date | null
+    perfil: $Enums.PortalPerfil | null
     ativo: boolean | null
     criadoEm: Date | null
     atualizadoEm: Date | null
@@ -14178,6 +14289,7 @@ export namespace Prisma {
     senhaHash: number
     conviteHash: number
     conviteExpiraEm: number
+    perfil: number
     ativo: number
     criadoEm: number
     atualizadoEm: number
@@ -14192,6 +14304,7 @@ export namespace Prisma {
     senhaHash?: true
     conviteHash?: true
     conviteExpiraEm?: true
+    perfil?: true
     ativo?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -14204,6 +14317,7 @@ export namespace Prisma {
     senhaHash?: true
     conviteHash?: true
     conviteExpiraEm?: true
+    perfil?: true
     ativo?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -14216,6 +14330,7 @@ export namespace Prisma {
     senhaHash?: true
     conviteHash?: true
     conviteExpiraEm?: true
+    perfil?: true
     ativo?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -14301,6 +14416,7 @@ export namespace Prisma {
     senhaHash: string | null
     conviteHash: string | null
     conviteExpiraEm: Date | null
+    perfil: $Enums.PortalPerfil
     ativo: boolean
     criadoEm: Date
     atualizadoEm: Date
@@ -14330,6 +14446,7 @@ export namespace Prisma {
     senhaHash?: boolean
     conviteHash?: boolean
     conviteExpiraEm?: boolean
+    perfil?: boolean
     ativo?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
@@ -14345,12 +14462,13 @@ export namespace Prisma {
     senhaHash?: boolean
     conviteHash?: boolean
     conviteExpiraEm?: boolean
+    perfil?: boolean
     ativo?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
   }
 
-  export type PortalAcessoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "email" | "senhaHash" | "conviteHash" | "conviteExpiraEm" | "ativo" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalAcesso"]>
+  export type PortalAcessoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "clienteId" | "email" | "senhaHash" | "conviteHash" | "conviteExpiraEm" | "perfil" | "ativo" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalAcesso"]>
   export type PortalAcessoInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | ClienteDefaultArgs<ExtArgs>
   }
@@ -14367,6 +14485,7 @@ export namespace Prisma {
       senhaHash: string | null
       conviteHash: string | null
       conviteExpiraEm: Date | null
+      perfil: $Enums.PortalPerfil
       ativo: boolean
       criadoEm: Date
       atualizadoEm: Date
@@ -14746,6 +14865,7 @@ export namespace Prisma {
     readonly senhaHash: FieldRef<"PortalAcesso", 'String'>
     readonly conviteHash: FieldRef<"PortalAcesso", 'String'>
     readonly conviteExpiraEm: FieldRef<"PortalAcesso", 'DateTime'>
+    readonly perfil: FieldRef<"PortalAcesso", 'PortalPerfil'>
     readonly ativo: FieldRef<"PortalAcesso", 'Boolean'>
     readonly criadoEm: FieldRef<"PortalAcesso", 'DateTime'>
     readonly atualizadoEm: FieldRef<"PortalAcesso", 'DateTime'>
@@ -15107,6 +15227,1010 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PortalAcessoInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PortalPedidoPagamento
+   */
+
+  export type AggregatePortalPedidoPagamento = {
+    _count: PortalPedidoPagamentoCountAggregateOutputType | null
+    _avg: PortalPedidoPagamentoAvgAggregateOutputType | null
+    _sum: PortalPedidoPagamentoSumAggregateOutputType | null
+    _min: PortalPedidoPagamentoMinAggregateOutputType | null
+    _max: PortalPedidoPagamentoMaxAggregateOutputType | null
+  }
+
+  export type PortalPedidoPagamentoAvgAggregateOutputType = {
+    total: Decimal | null
+  }
+
+  export type PortalPedidoPagamentoSumAggregateOutputType = {
+    total: Decimal | null
+  }
+
+  export type PortalPedidoPagamentoMinAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    status: string | null
+    total: Decimal | null
+    contaAzulReceberId: string | null
+    parcelaId: string | null
+    pixCobrancaId: string | null
+    pixUrl: string | null
+    cartaoCobrancaId: string | null
+    cartaoUrl: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+    pagoEm: Date | null
+  }
+
+  export type PortalPedidoPagamentoMaxAggregateOutputType = {
+    id: string | null
+    pedidoId: string | null
+    status: string | null
+    total: Decimal | null
+    contaAzulReceberId: string | null
+    parcelaId: string | null
+    pixCobrancaId: string | null
+    pixUrl: string | null
+    cartaoCobrancaId: string | null
+    cartaoUrl: string | null
+    criadoEm: Date | null
+    atualizadoEm: Date | null
+    pagoEm: Date | null
+  }
+
+  export type PortalPedidoPagamentoCountAggregateOutputType = {
+    id: number
+    pedidoId: number
+    status: number
+    total: number
+    contaAzulReceberId: number
+    parcelaId: number
+    pixCobrancaId: number
+    pixUrl: number
+    cartaoCobrancaId: number
+    cartaoUrl: number
+    criadoEm: number
+    atualizadoEm: number
+    pagoEm: number
+    _all: number
+  }
+
+
+  export type PortalPedidoPagamentoAvgAggregateInputType = {
+    total?: true
+  }
+
+  export type PortalPedidoPagamentoSumAggregateInputType = {
+    total?: true
+  }
+
+  export type PortalPedidoPagamentoMinAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    status?: true
+    total?: true
+    contaAzulReceberId?: true
+    parcelaId?: true
+    pixCobrancaId?: true
+    pixUrl?: true
+    cartaoCobrancaId?: true
+    cartaoUrl?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    pagoEm?: true
+  }
+
+  export type PortalPedidoPagamentoMaxAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    status?: true
+    total?: true
+    contaAzulReceberId?: true
+    parcelaId?: true
+    pixCobrancaId?: true
+    pixUrl?: true
+    cartaoCobrancaId?: true
+    cartaoUrl?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    pagoEm?: true
+  }
+
+  export type PortalPedidoPagamentoCountAggregateInputType = {
+    id?: true
+    pedidoId?: true
+    status?: true
+    total?: true
+    contaAzulReceberId?: true
+    parcelaId?: true
+    pixCobrancaId?: true
+    pixUrl?: true
+    cartaoCobrancaId?: true
+    cartaoUrl?: true
+    criadoEm?: true
+    atualizadoEm?: true
+    pagoEm?: true
+    _all?: true
+  }
+
+  export type PortalPedidoPagamentoAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalPedidoPagamento to aggregate.
+     */
+    where?: PortalPedidoPagamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalPedidoPagamentos to fetch.
+     */
+    orderBy?: PortalPedidoPagamentoOrderByWithRelationInput | PortalPedidoPagamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PortalPedidoPagamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalPedidoPagamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalPedidoPagamentos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PortalPedidoPagamentos
+    **/
+    _count?: true | PortalPedidoPagamentoCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PortalPedidoPagamentoAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PortalPedidoPagamentoSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PortalPedidoPagamentoMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PortalPedidoPagamentoMaxAggregateInputType
+  }
+
+  export type GetPortalPedidoPagamentoAggregateType<T extends PortalPedidoPagamentoAggregateArgs> = {
+        [P in keyof T & keyof AggregatePortalPedidoPagamento]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePortalPedidoPagamento[P]>
+      : GetScalarType<T[P], AggregatePortalPedidoPagamento[P]>
+  }
+
+
+
+
+  export type PortalPedidoPagamentoGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PortalPedidoPagamentoWhereInput
+    orderBy?: PortalPedidoPagamentoOrderByWithAggregationInput | PortalPedidoPagamentoOrderByWithAggregationInput[]
+    by: PortalPedidoPagamentoScalarFieldEnum[] | PortalPedidoPagamentoScalarFieldEnum
+    having?: PortalPedidoPagamentoScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PortalPedidoPagamentoCountAggregateInputType | true
+    _avg?: PortalPedidoPagamentoAvgAggregateInputType
+    _sum?: PortalPedidoPagamentoSumAggregateInputType
+    _min?: PortalPedidoPagamentoMinAggregateInputType
+    _max?: PortalPedidoPagamentoMaxAggregateInputType
+  }
+
+  export type PortalPedidoPagamentoGroupByOutputType = {
+    id: string
+    pedidoId: string
+    status: string
+    total: Decimal
+    contaAzulReceberId: string | null
+    parcelaId: string | null
+    pixCobrancaId: string | null
+    pixUrl: string | null
+    cartaoCobrancaId: string | null
+    cartaoUrl: string | null
+    criadoEm: Date
+    atualizadoEm: Date
+    pagoEm: Date | null
+    _count: PortalPedidoPagamentoCountAggregateOutputType | null
+    _avg: PortalPedidoPagamentoAvgAggregateOutputType | null
+    _sum: PortalPedidoPagamentoSumAggregateOutputType | null
+    _min: PortalPedidoPagamentoMinAggregateOutputType | null
+    _max: PortalPedidoPagamentoMaxAggregateOutputType | null
+  }
+
+  type GetPortalPedidoPagamentoGroupByPayload<T extends PortalPedidoPagamentoGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PortalPedidoPagamentoGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PortalPedidoPagamentoGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PortalPedidoPagamentoGroupByOutputType[P]>
+            : GetScalarType<T[P], PortalPedidoPagamentoGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PortalPedidoPagamentoSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    pedidoId?: boolean
+    status?: boolean
+    total?: boolean
+    contaAzulReceberId?: boolean
+    parcelaId?: boolean
+    pixCobrancaId?: boolean
+    pixUrl?: boolean
+    cartaoCobrancaId?: boolean
+    cartaoUrl?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    pagoEm?: boolean
+  }, ExtArgs["result"]["portalPedidoPagamento"]>
+
+
+
+  export type PortalPedidoPagamentoSelectScalar = {
+    id?: boolean
+    pedidoId?: boolean
+    status?: boolean
+    total?: boolean
+    contaAzulReceberId?: boolean
+    parcelaId?: boolean
+    pixCobrancaId?: boolean
+    pixUrl?: boolean
+    cartaoCobrancaId?: boolean
+    cartaoUrl?: boolean
+    criadoEm?: boolean
+    atualizadoEm?: boolean
+    pagoEm?: boolean
+  }
+
+  export type PortalPedidoPagamentoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "pedidoId" | "status" | "total" | "contaAzulReceberId" | "parcelaId" | "pixCobrancaId" | "pixUrl" | "cartaoCobrancaId" | "cartaoUrl" | "criadoEm" | "atualizadoEm" | "pagoEm", ExtArgs["result"]["portalPedidoPagamento"]>
+
+  export type $PortalPedidoPagamentoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PortalPedidoPagamento"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      pedidoId: string
+      status: string
+      total: Prisma.Decimal
+      contaAzulReceberId: string | null
+      parcelaId: string | null
+      pixCobrancaId: string | null
+      pixUrl: string | null
+      cartaoCobrancaId: string | null
+      cartaoUrl: string | null
+      criadoEm: Date
+      atualizadoEm: Date
+      pagoEm: Date | null
+    }, ExtArgs["result"]["portalPedidoPagamento"]>
+    composites: {}
+  }
+
+  type PortalPedidoPagamentoGetPayload<S extends boolean | null | undefined | PortalPedidoPagamentoDefaultArgs> = $Result.GetResult<Prisma.$PortalPedidoPagamentoPayload, S>
+
+  type PortalPedidoPagamentoCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PortalPedidoPagamentoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PortalPedidoPagamentoCountAggregateInputType | true
+    }
+
+  export interface PortalPedidoPagamentoDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PortalPedidoPagamento'], meta: { name: 'PortalPedidoPagamento' } }
+    /**
+     * Find zero or one PortalPedidoPagamento that matches the filter.
+     * @param {PortalPedidoPagamentoFindUniqueArgs} args - Arguments to find a PortalPedidoPagamento
+     * @example
+     * // Get one PortalPedidoPagamento
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PortalPedidoPagamentoFindUniqueArgs>(args: SelectSubset<T, PortalPedidoPagamentoFindUniqueArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PortalPedidoPagamento that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PortalPedidoPagamentoFindUniqueOrThrowArgs} args - Arguments to find a PortalPedidoPagamento
+     * @example
+     * // Get one PortalPedidoPagamento
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PortalPedidoPagamentoFindUniqueOrThrowArgs>(args: SelectSubset<T, PortalPedidoPagamentoFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalPedidoPagamento that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalPedidoPagamentoFindFirstArgs} args - Arguments to find a PortalPedidoPagamento
+     * @example
+     * // Get one PortalPedidoPagamento
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PortalPedidoPagamentoFindFirstArgs>(args?: SelectSubset<T, PortalPedidoPagamentoFindFirstArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PortalPedidoPagamento that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalPedidoPagamentoFindFirstOrThrowArgs} args - Arguments to find a PortalPedidoPagamento
+     * @example
+     * // Get one PortalPedidoPagamento
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PortalPedidoPagamentoFindFirstOrThrowArgs>(args?: SelectSubset<T, PortalPedidoPagamentoFindFirstOrThrowArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PortalPedidoPagamentos that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalPedidoPagamentoFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PortalPedidoPagamentos
+     * const portalPedidoPagamentos = await prisma.portalPedidoPagamento.findMany()
+     * 
+     * // Get first 10 PortalPedidoPagamentos
+     * const portalPedidoPagamentos = await prisma.portalPedidoPagamento.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const portalPedidoPagamentoWithIdOnly = await prisma.portalPedidoPagamento.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PortalPedidoPagamentoFindManyArgs>(args?: SelectSubset<T, PortalPedidoPagamentoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PortalPedidoPagamento.
+     * @param {PortalPedidoPagamentoCreateArgs} args - Arguments to create a PortalPedidoPagamento.
+     * @example
+     * // Create one PortalPedidoPagamento
+     * const PortalPedidoPagamento = await prisma.portalPedidoPagamento.create({
+     *   data: {
+     *     // ... data to create a PortalPedidoPagamento
+     *   }
+     * })
+     * 
+     */
+    create<T extends PortalPedidoPagamentoCreateArgs>(args: SelectSubset<T, PortalPedidoPagamentoCreateArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PortalPedidoPagamentos.
+     * @param {PortalPedidoPagamentoCreateManyArgs} args - Arguments to create many PortalPedidoPagamentos.
+     * @example
+     * // Create many PortalPedidoPagamentos
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PortalPedidoPagamentoCreateManyArgs>(args?: SelectSubset<T, PortalPedidoPagamentoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PortalPedidoPagamento.
+     * @param {PortalPedidoPagamentoDeleteArgs} args - Arguments to delete one PortalPedidoPagamento.
+     * @example
+     * // Delete one PortalPedidoPagamento
+     * const PortalPedidoPagamento = await prisma.portalPedidoPagamento.delete({
+     *   where: {
+     *     // ... filter to delete one PortalPedidoPagamento
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PortalPedidoPagamentoDeleteArgs>(args: SelectSubset<T, PortalPedidoPagamentoDeleteArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PortalPedidoPagamento.
+     * @param {PortalPedidoPagamentoUpdateArgs} args - Arguments to update one PortalPedidoPagamento.
+     * @example
+     * // Update one PortalPedidoPagamento
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PortalPedidoPagamentoUpdateArgs>(args: SelectSubset<T, PortalPedidoPagamentoUpdateArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PortalPedidoPagamentos.
+     * @param {PortalPedidoPagamentoDeleteManyArgs} args - Arguments to filter PortalPedidoPagamentos to delete.
+     * @example
+     * // Delete a few PortalPedidoPagamentos
+     * const { count } = await prisma.portalPedidoPagamento.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PortalPedidoPagamentoDeleteManyArgs>(args?: SelectSubset<T, PortalPedidoPagamentoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PortalPedidoPagamentos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalPedidoPagamentoUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PortalPedidoPagamentos
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PortalPedidoPagamentoUpdateManyArgs>(args: SelectSubset<T, PortalPedidoPagamentoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PortalPedidoPagamento.
+     * @param {PortalPedidoPagamentoUpsertArgs} args - Arguments to update or create a PortalPedidoPagamento.
+     * @example
+     * // Update or create a PortalPedidoPagamento
+     * const portalPedidoPagamento = await prisma.portalPedidoPagamento.upsert({
+     *   create: {
+     *     // ... data to create a PortalPedidoPagamento
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PortalPedidoPagamento we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PortalPedidoPagamentoUpsertArgs>(args: SelectSubset<T, PortalPedidoPagamentoUpsertArgs<ExtArgs>>): Prisma__PortalPedidoPagamentoClient<$Result.GetResult<Prisma.$PortalPedidoPagamentoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PortalPedidoPagamentos.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalPedidoPagamentoCountArgs} args - Arguments to filter PortalPedidoPagamentos to count.
+     * @example
+     * // Count the number of PortalPedidoPagamentos
+     * const count = await prisma.portalPedidoPagamento.count({
+     *   where: {
+     *     // ... the filter for the PortalPedidoPagamentos we want to count
+     *   }
+     * })
+    **/
+    count<T extends PortalPedidoPagamentoCountArgs>(
+      args?: Subset<T, PortalPedidoPagamentoCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PortalPedidoPagamentoCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PortalPedidoPagamento.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalPedidoPagamentoAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PortalPedidoPagamentoAggregateArgs>(args: Subset<T, PortalPedidoPagamentoAggregateArgs>): Prisma.PrismaPromise<GetPortalPedidoPagamentoAggregateType<T>>
+
+    /**
+     * Group by PortalPedidoPagamento.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PortalPedidoPagamentoGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PortalPedidoPagamentoGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PortalPedidoPagamentoGroupByArgs['orderBy'] }
+        : { orderBy?: PortalPedidoPagamentoGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PortalPedidoPagamentoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPortalPedidoPagamentoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PortalPedidoPagamento model
+   */
+  readonly fields: PortalPedidoPagamentoFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PortalPedidoPagamento.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PortalPedidoPagamentoClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PortalPedidoPagamento model
+   */
+  interface PortalPedidoPagamentoFieldRefs {
+    readonly id: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly pedidoId: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly status: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly total: FieldRef<"PortalPedidoPagamento", 'Decimal'>
+    readonly contaAzulReceberId: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly parcelaId: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly pixCobrancaId: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly pixUrl: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly cartaoCobrancaId: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly cartaoUrl: FieldRef<"PortalPedidoPagamento", 'String'>
+    readonly criadoEm: FieldRef<"PortalPedidoPagamento", 'DateTime'>
+    readonly atualizadoEm: FieldRef<"PortalPedidoPagamento", 'DateTime'>
+    readonly pagoEm: FieldRef<"PortalPedidoPagamento", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PortalPedidoPagamento findUnique
+   */
+  export type PortalPedidoPagamentoFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalPedidoPagamento to fetch.
+     */
+    where: PortalPedidoPagamentoWhereUniqueInput
+  }
+
+  /**
+   * PortalPedidoPagamento findUniqueOrThrow
+   */
+  export type PortalPedidoPagamentoFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalPedidoPagamento to fetch.
+     */
+    where: PortalPedidoPagamentoWhereUniqueInput
+  }
+
+  /**
+   * PortalPedidoPagamento findFirst
+   */
+  export type PortalPedidoPagamentoFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalPedidoPagamento to fetch.
+     */
+    where?: PortalPedidoPagamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalPedidoPagamentos to fetch.
+     */
+    orderBy?: PortalPedidoPagamentoOrderByWithRelationInput | PortalPedidoPagamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalPedidoPagamentos.
+     */
+    cursor?: PortalPedidoPagamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalPedidoPagamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalPedidoPagamentos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalPedidoPagamentos.
+     */
+    distinct?: PortalPedidoPagamentoScalarFieldEnum | PortalPedidoPagamentoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalPedidoPagamento findFirstOrThrow
+   */
+  export type PortalPedidoPagamentoFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalPedidoPagamento to fetch.
+     */
+    where?: PortalPedidoPagamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalPedidoPagamentos to fetch.
+     */
+    orderBy?: PortalPedidoPagamentoOrderByWithRelationInput | PortalPedidoPagamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PortalPedidoPagamentos.
+     */
+    cursor?: PortalPedidoPagamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalPedidoPagamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalPedidoPagamentos.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PortalPedidoPagamentos.
+     */
+    distinct?: PortalPedidoPagamentoScalarFieldEnum | PortalPedidoPagamentoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalPedidoPagamento findMany
+   */
+  export type PortalPedidoPagamentoFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * Filter, which PortalPedidoPagamentos to fetch.
+     */
+    where?: PortalPedidoPagamentoWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PortalPedidoPagamentos to fetch.
+     */
+    orderBy?: PortalPedidoPagamentoOrderByWithRelationInput | PortalPedidoPagamentoOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PortalPedidoPagamentos.
+     */
+    cursor?: PortalPedidoPagamentoWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PortalPedidoPagamentos from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PortalPedidoPagamentos.
+     */
+    skip?: number
+    distinct?: PortalPedidoPagamentoScalarFieldEnum | PortalPedidoPagamentoScalarFieldEnum[]
+  }
+
+  /**
+   * PortalPedidoPagamento create
+   */
+  export type PortalPedidoPagamentoCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * The data needed to create a PortalPedidoPagamento.
+     */
+    data: XOR<PortalPedidoPagamentoCreateInput, PortalPedidoPagamentoUncheckedCreateInput>
+  }
+
+  /**
+   * PortalPedidoPagamento createMany
+   */
+  export type PortalPedidoPagamentoCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PortalPedidoPagamentos.
+     */
+    data: PortalPedidoPagamentoCreateManyInput | PortalPedidoPagamentoCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PortalPedidoPagamento update
+   */
+  export type PortalPedidoPagamentoUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * The data needed to update a PortalPedidoPagamento.
+     */
+    data: XOR<PortalPedidoPagamentoUpdateInput, PortalPedidoPagamentoUncheckedUpdateInput>
+    /**
+     * Choose, which PortalPedidoPagamento to update.
+     */
+    where: PortalPedidoPagamentoWhereUniqueInput
+  }
+
+  /**
+   * PortalPedidoPagamento updateMany
+   */
+  export type PortalPedidoPagamentoUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PortalPedidoPagamentos.
+     */
+    data: XOR<PortalPedidoPagamentoUpdateManyMutationInput, PortalPedidoPagamentoUncheckedUpdateManyInput>
+    /**
+     * Filter which PortalPedidoPagamentos to update
+     */
+    where?: PortalPedidoPagamentoWhereInput
+    /**
+     * Limit how many PortalPedidoPagamentos to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalPedidoPagamento upsert
+   */
+  export type PortalPedidoPagamentoUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * The filter to search for the PortalPedidoPagamento to update in case it exists.
+     */
+    where: PortalPedidoPagamentoWhereUniqueInput
+    /**
+     * In case the PortalPedidoPagamento found by the `where` argument doesn't exist, create a new PortalPedidoPagamento with this data.
+     */
+    create: XOR<PortalPedidoPagamentoCreateInput, PortalPedidoPagamentoUncheckedCreateInput>
+    /**
+     * In case the PortalPedidoPagamento was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PortalPedidoPagamentoUpdateInput, PortalPedidoPagamentoUncheckedUpdateInput>
+  }
+
+  /**
+   * PortalPedidoPagamento delete
+   */
+  export type PortalPedidoPagamentoDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
+    /**
+     * Filter which PortalPedidoPagamento to delete.
+     */
+    where: PortalPedidoPagamentoWhereUniqueInput
+  }
+
+  /**
+   * PortalPedidoPagamento deleteMany
+   */
+  export type PortalPedidoPagamentoDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PortalPedidoPagamentos to delete
+     */
+    where?: PortalPedidoPagamentoWhereInput
+    /**
+     * Limit how many PortalPedidoPagamentos to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PortalPedidoPagamento without action
+   */
+  export type PortalPedidoPagamentoDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PortalPedidoPagamento
+     */
+    select?: PortalPedidoPagamentoSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PortalPedidoPagamento
+     */
+    omit?: PortalPedidoPagamentoOmit<ExtArgs> | null
   }
 
 
@@ -48730,6 +49854,7 @@ export namespace Prisma {
     exclusivoPortal: 'exclusivoPortal',
     descricaoLoja: 'descricaoLoja',
     aplicacaoLoja: 'aplicacaoLoja',
+    grupoLoja: 'grupoLoja',
     estoqueLoja: 'estoqueLoja',
     criadoEm: 'criadoEm',
     atualizadoEm: 'atualizadoEm'
@@ -48745,12 +49870,32 @@ export namespace Prisma {
     senhaHash: 'senhaHash',
     conviteHash: 'conviteHash',
     conviteExpiraEm: 'conviteExpiraEm',
+    perfil: 'perfil',
     ativo: 'ativo',
     criadoEm: 'criadoEm',
     atualizadoEm: 'atualizadoEm'
   };
 
   export type PortalAcessoScalarFieldEnum = (typeof PortalAcessoScalarFieldEnum)[keyof typeof PortalAcessoScalarFieldEnum]
+
+
+  export const PortalPedidoPagamentoScalarFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    status: 'status',
+    total: 'total',
+    contaAzulReceberId: 'contaAzulReceberId',
+    parcelaId: 'parcelaId',
+    pixCobrancaId: 'pixCobrancaId',
+    pixUrl: 'pixUrl',
+    cartaoCobrancaId: 'cartaoCobrancaId',
+    cartaoUrl: 'cartaoUrl',
+    criadoEm: 'criadoEm',
+    atualizadoEm: 'atualizadoEm',
+    pagoEm: 'pagoEm'
+  };
+
+  export type PortalPedidoPagamentoScalarFieldEnum = (typeof PortalPedidoPagamentoScalarFieldEnum)[keyof typeof PortalPedidoPagamentoScalarFieldEnum]
 
 
   export const PortalContaScalarFieldEnum: {
@@ -49397,7 +50542,8 @@ export namespace Prisma {
     mixProdutoReferenciaId: 'mixProdutoReferenciaId',
     imagemUrl: 'imagemUrl',
     descricaoLoja: 'descricaoLoja',
-    aplicacaoLoja: 'aplicacaoLoja'
+    aplicacaoLoja: 'aplicacaoLoja',
+    grupoLoja: 'grupoLoja'
   };
 
   export type ProdutoComercialOrderByRelevanceFieldEnum = (typeof ProdutoComercialOrderByRelevanceFieldEnum)[keyof typeof ProdutoComercialOrderByRelevanceFieldEnum]
@@ -49412,6 +50558,21 @@ export namespace Prisma {
   };
 
   export type PortalAcessoOrderByRelevanceFieldEnum = (typeof PortalAcessoOrderByRelevanceFieldEnum)[keyof typeof PortalAcessoOrderByRelevanceFieldEnum]
+
+
+  export const PortalPedidoPagamentoOrderByRelevanceFieldEnum: {
+    id: 'id',
+    pedidoId: 'pedidoId',
+    status: 'status',
+    contaAzulReceberId: 'contaAzulReceberId',
+    parcelaId: 'parcelaId',
+    pixCobrancaId: 'pixCobrancaId',
+    pixUrl: 'pixUrl',
+    cartaoCobrancaId: 'cartaoCobrancaId',
+    cartaoUrl: 'cartaoUrl'
+  };
+
+  export type PortalPedidoPagamentoOrderByRelevanceFieldEnum = (typeof PortalPedidoPagamentoOrderByRelevanceFieldEnum)[keyof typeof PortalPedidoPagamentoOrderByRelevanceFieldEnum]
 
 
   export const PortalContaOrderByRelevanceFieldEnum: {
@@ -49868,6 +51029,13 @@ export namespace Prisma {
    * Reference to a field of type 'ModoCompraProduto'
    */
   export type EnumModoCompraProdutoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModoCompraProduto'>
+    
+
+
+  /**
+   * Reference to a field of type 'PortalPerfil'
+   */
+  export type EnumPortalPerfilFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PortalPerfil'>
     
 
 
@@ -50594,6 +51762,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    grupoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
@@ -50632,6 +51801,7 @@ export namespace Prisma {
     exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrderInput | SortOrder
     aplicacaoLoja?: SortOrderInput | SortOrder
+    grupoLoja?: SortOrderInput | SortOrder
     estoqueLoja?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -50674,6 +51844,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    grupoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
@@ -50712,6 +51883,7 @@ export namespace Prisma {
     exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrderInput | SortOrder
     aplicacaoLoja?: SortOrderInput | SortOrder
+    grupoLoja?: SortOrderInput | SortOrder
     estoqueLoja?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -50749,6 +51921,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolWithAggregatesFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
+    grupoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
@@ -50764,6 +51937,7 @@ export namespace Prisma {
     senhaHash?: StringNullableFilter<"PortalAcesso"> | string | null
     conviteHash?: StringNullableFilter<"PortalAcesso"> | string | null
     conviteExpiraEm?: DateTimeNullableFilter<"PortalAcesso"> | Date | string | null
+    perfil?: EnumPortalPerfilFilter<"PortalAcesso"> | $Enums.PortalPerfil
     ativo?: BoolFilter<"PortalAcesso"> | boolean
     criadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
     atualizadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
@@ -50777,6 +51951,7 @@ export namespace Prisma {
     senhaHash?: SortOrderInput | SortOrder
     conviteHash?: SortOrderInput | SortOrder
     conviteExpiraEm?: SortOrderInput | SortOrder
+    perfil?: SortOrder
     ativo?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -50794,6 +51969,7 @@ export namespace Prisma {
     senhaHash?: StringNullableFilter<"PortalAcesso"> | string | null
     conviteHash?: StringNullableFilter<"PortalAcesso"> | string | null
     conviteExpiraEm?: DateTimeNullableFilter<"PortalAcesso"> | Date | string | null
+    perfil?: EnumPortalPerfilFilter<"PortalAcesso"> | $Enums.PortalPerfil
     ativo?: BoolFilter<"PortalAcesso"> | boolean
     criadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
     atualizadoEm?: DateTimeFilter<"PortalAcesso"> | Date | string
@@ -50807,6 +51983,7 @@ export namespace Prisma {
     senhaHash?: SortOrderInput | SortOrder
     conviteHash?: SortOrderInput | SortOrder
     conviteExpiraEm?: SortOrderInput | SortOrder
+    perfil?: SortOrder
     ativo?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -50825,9 +52002,105 @@ export namespace Prisma {
     senhaHash?: StringNullableWithAggregatesFilter<"PortalAcesso"> | string | null
     conviteHash?: StringNullableWithAggregatesFilter<"PortalAcesso"> | string | null
     conviteExpiraEm?: DateTimeNullableWithAggregatesFilter<"PortalAcesso"> | Date | string | null
+    perfil?: EnumPortalPerfilWithAggregatesFilter<"PortalAcesso"> | $Enums.PortalPerfil
     ativo?: BoolWithAggregatesFilter<"PortalAcesso"> | boolean
     criadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"PortalAcesso"> | Date | string
+  }
+
+  export type PortalPedidoPagamentoWhereInput = {
+    AND?: PortalPedidoPagamentoWhereInput | PortalPedidoPagamentoWhereInput[]
+    OR?: PortalPedidoPagamentoWhereInput[]
+    NOT?: PortalPedidoPagamentoWhereInput | PortalPedidoPagamentoWhereInput[]
+    id?: StringFilter<"PortalPedidoPagamento"> | string
+    pedidoId?: StringFilter<"PortalPedidoPagamento"> | string
+    status?: StringFilter<"PortalPedidoPagamento"> | string
+    total?: DecimalFilter<"PortalPedidoPagamento"> | Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    parcelaId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    pixCobrancaId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    pixUrl?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    cartaoCobrancaId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    cartaoUrl?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    criadoEm?: DateTimeFilter<"PortalPedidoPagamento"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalPedidoPagamento"> | Date | string
+    pagoEm?: DateTimeNullableFilter<"PortalPedidoPagamento"> | Date | string | null
+  }
+
+  export type PortalPedidoPagamentoOrderByWithRelationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    contaAzulReceberId?: SortOrderInput | SortOrder
+    parcelaId?: SortOrderInput | SortOrder
+    pixCobrancaId?: SortOrderInput | SortOrder
+    pixUrl?: SortOrderInput | SortOrder
+    cartaoCobrancaId?: SortOrderInput | SortOrder
+    cartaoUrl?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    pagoEm?: SortOrderInput | SortOrder
+    _relevance?: PortalPedidoPagamentoOrderByRelevanceInput
+  }
+
+  export type PortalPedidoPagamentoWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    pedidoId?: string
+    AND?: PortalPedidoPagamentoWhereInput | PortalPedidoPagamentoWhereInput[]
+    OR?: PortalPedidoPagamentoWhereInput[]
+    NOT?: PortalPedidoPagamentoWhereInput | PortalPedidoPagamentoWhereInput[]
+    status?: StringFilter<"PortalPedidoPagamento"> | string
+    total?: DecimalFilter<"PortalPedidoPagamento"> | Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    parcelaId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    pixCobrancaId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    pixUrl?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    cartaoCobrancaId?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    cartaoUrl?: StringNullableFilter<"PortalPedidoPagamento"> | string | null
+    criadoEm?: DateTimeFilter<"PortalPedidoPagamento"> | Date | string
+    atualizadoEm?: DateTimeFilter<"PortalPedidoPagamento"> | Date | string
+    pagoEm?: DateTimeNullableFilter<"PortalPedidoPagamento"> | Date | string | null
+  }, "id" | "pedidoId">
+
+  export type PortalPedidoPagamentoOrderByWithAggregationInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    contaAzulReceberId?: SortOrderInput | SortOrder
+    parcelaId?: SortOrderInput | SortOrder
+    pixCobrancaId?: SortOrderInput | SortOrder
+    pixUrl?: SortOrderInput | SortOrder
+    cartaoCobrancaId?: SortOrderInput | SortOrder
+    cartaoUrl?: SortOrderInput | SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    pagoEm?: SortOrderInput | SortOrder
+    _count?: PortalPedidoPagamentoCountOrderByAggregateInput
+    _avg?: PortalPedidoPagamentoAvgOrderByAggregateInput
+    _max?: PortalPedidoPagamentoMaxOrderByAggregateInput
+    _min?: PortalPedidoPagamentoMinOrderByAggregateInput
+    _sum?: PortalPedidoPagamentoSumOrderByAggregateInput
+  }
+
+  export type PortalPedidoPagamentoScalarWhereWithAggregatesInput = {
+    AND?: PortalPedidoPagamentoScalarWhereWithAggregatesInput | PortalPedidoPagamentoScalarWhereWithAggregatesInput[]
+    OR?: PortalPedidoPagamentoScalarWhereWithAggregatesInput[]
+    NOT?: PortalPedidoPagamentoScalarWhereWithAggregatesInput | PortalPedidoPagamentoScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PortalPedidoPagamento"> | string
+    pedidoId?: StringWithAggregatesFilter<"PortalPedidoPagamento"> | string
+    status?: StringWithAggregatesFilter<"PortalPedidoPagamento"> | string
+    total?: DecimalWithAggregatesFilter<"PortalPedidoPagamento"> | Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: StringNullableWithAggregatesFilter<"PortalPedidoPagamento"> | string | null
+    parcelaId?: StringNullableWithAggregatesFilter<"PortalPedidoPagamento"> | string | null
+    pixCobrancaId?: StringNullableWithAggregatesFilter<"PortalPedidoPagamento"> | string | null
+    pixUrl?: StringNullableWithAggregatesFilter<"PortalPedidoPagamento"> | string | null
+    cartaoCobrancaId?: StringNullableWithAggregatesFilter<"PortalPedidoPagamento"> | string | null
+    cartaoUrl?: StringNullableWithAggregatesFilter<"PortalPedidoPagamento"> | string | null
+    criadoEm?: DateTimeWithAggregatesFilter<"PortalPedidoPagamento"> | Date | string
+    atualizadoEm?: DateTimeWithAggregatesFilter<"PortalPedidoPagamento"> | Date | string
+    pagoEm?: DateTimeNullableWithAggregatesFilter<"PortalPedidoPagamento"> | Date | string | null
   }
 
   export type PortalContaWhereInput = {
@@ -54173,6 +55446,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -54211,6 +55485,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -54247,6 +55522,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54285,6 +55561,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54322,6 +55599,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -54350,6 +55628,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54379,6 +55658,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54390,6 +55670,7 @@ export namespace Prisma {
     senhaHash?: string | null
     conviteHash?: string | null
     conviteExpiraEm?: Date | string | null
+    perfil?: $Enums.PortalPerfil
     ativo?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -54403,6 +55684,7 @@ export namespace Prisma {
     senhaHash?: string | null
     conviteHash?: string | null
     conviteExpiraEm?: Date | string | null
+    perfil?: $Enums.PortalPerfil
     ativo?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -54414,6 +55696,7 @@ export namespace Prisma {
     senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    perfil?: EnumPortalPerfilFieldUpdateOperationsInput | $Enums.PortalPerfil
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54427,6 +55710,7 @@ export namespace Prisma {
     senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    perfil?: EnumPortalPerfilFieldUpdateOperationsInput | $Enums.PortalPerfil
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54439,6 +55723,7 @@ export namespace Prisma {
     senhaHash?: string | null
     conviteHash?: string | null
     conviteExpiraEm?: Date | string | null
+    perfil?: $Enums.PortalPerfil
     ativo?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -54450,6 +55735,7 @@ export namespace Prisma {
     senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    perfil?: EnumPortalPerfilFieldUpdateOperationsInput | $Enums.PortalPerfil
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -54462,9 +55748,122 @@ export namespace Prisma {
     senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    perfil?: EnumPortalPerfilFieldUpdateOperationsInput | $Enums.PortalPerfil
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PortalPedidoPagamentoCreateInput = {
+    id?: string
+    pedidoId: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: string | null
+    parcelaId?: string | null
+    pixCobrancaId?: string | null
+    pixUrl?: string | null
+    cartaoCobrancaId?: string | null
+    cartaoUrl?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    pagoEm?: Date | string | null
+  }
+
+  export type PortalPedidoPagamentoUncheckedCreateInput = {
+    id?: string
+    pedidoId: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: string | null
+    parcelaId?: string | null
+    pixCobrancaId?: string | null
+    pixUrl?: string | null
+    cartaoCobrancaId?: string | null
+    cartaoUrl?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    pagoEm?: Date | string | null
+  }
+
+  export type PortalPedidoPagamentoUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: NullableStringFieldUpdateOperationsInput | string | null
+    parcelaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pagoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PortalPedidoPagamentoUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: NullableStringFieldUpdateOperationsInput | string | null
+    parcelaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pagoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PortalPedidoPagamentoCreateManyInput = {
+    id?: string
+    pedidoId: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: string | null
+    parcelaId?: string | null
+    pixCobrancaId?: string | null
+    pixUrl?: string | null
+    cartaoCobrancaId?: string | null
+    cartaoUrl?: string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    pagoEm?: Date | string | null
+  }
+
+  export type PortalPedidoPagamentoUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: NullableStringFieldUpdateOperationsInput | string | null
+    parcelaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pagoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PortalPedidoPagamentoUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    pedidoId?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    contaAzulReceberId?: NullableStringFieldUpdateOperationsInput | string | null
+    parcelaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    pixUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoCobrancaId?: NullableStringFieldUpdateOperationsInput | string | null
+    cartaoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    pagoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type PortalContaCreateInput = {
@@ -58304,6 +59703,7 @@ export namespace Prisma {
     exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrder
     aplicacaoLoja?: SortOrder
+    grupoLoja?: SortOrder
     estoqueLoja?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -58339,6 +59739,7 @@ export namespace Prisma {
     exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrder
     aplicacaoLoja?: SortOrder
+    grupoLoja?: SortOrder
     estoqueLoja?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -58367,6 +59768,7 @@ export namespace Prisma {
     exclusivoPortal?: SortOrder
     descricaoLoja?: SortOrder
     aplicacaoLoja?: SortOrder
+    grupoLoja?: SortOrder
     estoqueLoja?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -58415,6 +59817,13 @@ export namespace Prisma {
     _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
+  export type EnumPortalPerfilFilter<$PrismaModel = never> = {
+    equals?: $Enums.PortalPerfil | EnumPortalPerfilFieldRefInput<$PrismaModel>
+    in?: $Enums.PortalPerfil[]
+    notIn?: $Enums.PortalPerfil[]
+    not?: NestedEnumPortalPerfilFilter<$PrismaModel> | $Enums.PortalPerfil
+  }
+
   export type ClienteScalarRelationFilter = {
     is?: ClienteWhereInput
     isNot?: ClienteWhereInput
@@ -58433,6 +59842,7 @@ export namespace Prisma {
     senhaHash?: SortOrder
     conviteHash?: SortOrder
     conviteExpiraEm?: SortOrder
+    perfil?: SortOrder
     ativo?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -58445,6 +59855,7 @@ export namespace Prisma {
     senhaHash?: SortOrder
     conviteHash?: SortOrder
     conviteExpiraEm?: SortOrder
+    perfil?: SortOrder
     ativo?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -58457,9 +59868,82 @@ export namespace Prisma {
     senhaHash?: SortOrder
     conviteHash?: SortOrder
     conviteExpiraEm?: SortOrder
+    perfil?: SortOrder
     ativo?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
+  }
+
+  export type EnumPortalPerfilWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PortalPerfil | EnumPortalPerfilFieldRefInput<$PrismaModel>
+    in?: $Enums.PortalPerfil[]
+    notIn?: $Enums.PortalPerfil[]
+    not?: NestedEnumPortalPerfilWithAggregatesFilter<$PrismaModel> | $Enums.PortalPerfil
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPortalPerfilFilter<$PrismaModel>
+    _max?: NestedEnumPortalPerfilFilter<$PrismaModel>
+  }
+
+  export type PortalPedidoPagamentoOrderByRelevanceInput = {
+    fields: PortalPedidoPagamentoOrderByRelevanceFieldEnum | PortalPedidoPagamentoOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type PortalPedidoPagamentoCountOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    contaAzulReceberId?: SortOrder
+    parcelaId?: SortOrder
+    pixCobrancaId?: SortOrder
+    pixUrl?: SortOrder
+    cartaoCobrancaId?: SortOrder
+    cartaoUrl?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    pagoEm?: SortOrder
+  }
+
+  export type PortalPedidoPagamentoAvgOrderByAggregateInput = {
+    total?: SortOrder
+  }
+
+  export type PortalPedidoPagamentoMaxOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    contaAzulReceberId?: SortOrder
+    parcelaId?: SortOrder
+    pixCobrancaId?: SortOrder
+    pixUrl?: SortOrder
+    cartaoCobrancaId?: SortOrder
+    cartaoUrl?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    pagoEm?: SortOrder
+  }
+
+  export type PortalPedidoPagamentoMinOrderByAggregateInput = {
+    id?: SortOrder
+    pedidoId?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    contaAzulReceberId?: SortOrder
+    parcelaId?: SortOrder
+    pixCobrancaId?: SortOrder
+    pixUrl?: SortOrder
+    cartaoCobrancaId?: SortOrder
+    cartaoUrl?: SortOrder
+    criadoEm?: SortOrder
+    atualizadoEm?: SortOrder
+    pagoEm?: SortOrder
+  }
+
+  export type PortalPedidoPagamentoSumOrderByAggregateInput = {
+    total?: SortOrder
   }
 
   export type PortalContaOrderByRelevanceInput = {
@@ -62149,6 +63633,10 @@ export namespace Prisma {
     connect?: ClienteWhereUniqueInput
   }
 
+  export type EnumPortalPerfilFieldUpdateOperationsInput = {
+    set?: $Enums.PortalPerfil
+  }
+
   export type ClienteUpdateOneRequiredWithoutPortalAcessoNestedInput = {
     create?: XOR<ClienteCreateWithoutPortalAcessoInput, ClienteUncheckedCreateWithoutPortalAcessoInput>
     connectOrCreate?: ClienteCreateOrConnectWithoutPortalAcessoInput
@@ -63848,6 +65336,23 @@ export namespace Prisma {
     gt?: InputJsonValue
     gte?: InputJsonValue
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedEnumPortalPerfilFilter<$PrismaModel = never> = {
+    equals?: $Enums.PortalPerfil | EnumPortalPerfilFieldRefInput<$PrismaModel>
+    in?: $Enums.PortalPerfil[]
+    notIn?: $Enums.PortalPerfil[]
+    not?: NestedEnumPortalPerfilFilter<$PrismaModel> | $Enums.PortalPerfil
+  }
+
+  export type NestedEnumPortalPerfilWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PortalPerfil | EnumPortalPerfilFieldRefInput<$PrismaModel>
+    in?: $Enums.PortalPerfil[]
+    notIn?: $Enums.PortalPerfil[]
+    not?: NestedEnumPortalPerfilWithAggregatesFilter<$PrismaModel> | $Enums.PortalPerfil
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPortalPerfilFilter<$PrismaModel>
+    _max?: NestedEnumPortalPerfilFilter<$PrismaModel>
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
@@ -65651,6 +67156,7 @@ export namespace Prisma {
     senhaHash?: string | null
     conviteHash?: string | null
     conviteExpiraEm?: Date | string | null
+    perfil?: $Enums.PortalPerfil
     ativo?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -65662,6 +67168,7 @@ export namespace Prisma {
     senhaHash?: string | null
     conviteHash?: string | null
     conviteExpiraEm?: Date | string | null
+    perfil?: $Enums.PortalPerfil
     ativo?: boolean
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66077,6 +67584,7 @@ export namespace Prisma {
     senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    perfil?: EnumPortalPerfilFieldUpdateOperationsInput | $Enums.PortalPerfil
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -66088,6 +67596,7 @@ export namespace Prisma {
     senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteHash?: NullableStringFieldUpdateOperationsInput | string | null
     conviteExpiraEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    perfil?: EnumPortalPerfilFieldUpdateOperationsInput | $Enums.PortalPerfil
     ativo?: BoolFieldUpdateOperationsInput | boolean
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -66217,6 +67726,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66254,6 +67764,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66327,6 +67838,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -66364,6 +67876,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -66450,6 +67963,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66487,6 +68001,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66569,6 +68084,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -66606,6 +68122,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -66778,6 +68295,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66815,6 +68333,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66855,6 +68374,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -66891,6 +68411,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -67124,6 +68645,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -67161,6 +68683,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -67216,6 +68739,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFilter<"ProdutoComercial"> | boolean
     descricaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
+    grupoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
@@ -68214,6 +69738,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -68251,6 +69776,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -68325,6 +69851,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -68362,6 +69889,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -68577,6 +70105,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -68614,6 +70143,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -68665,6 +70195,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -68702,6 +70233,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -69116,6 +70648,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -69153,6 +70686,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -69251,6 +70785,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -69288,6 +70823,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -70817,6 +72353,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -70854,6 +72391,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -70974,6 +72512,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -71011,6 +72550,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -71180,6 +72720,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -71217,6 +72758,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -71457,6 +72999,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -71494,6 +73037,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -74663,6 +76207,7 @@ export namespace Prisma {
     exclusivoPortal?: boolean
     descricaoLoja?: string | null
     aplicacaoLoja?: string | null
+    grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -74829,6 +76374,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -74865,6 +76411,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -74901,6 +76448,7 @@ export namespace Prisma {
     exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
     descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string

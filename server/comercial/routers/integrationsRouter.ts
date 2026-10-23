@@ -54,19 +54,35 @@ export const integrationsRouter = router({
     }),
 
   /** Inicia sync em segundo plano — resposta imediata; acompanhe com statusSyncContaAzul. */
-  sincronizarContaAzul: comercialProcedure.use(syncCA).mutation(async ({ ctx }) => {
-    const r = iniciarSyncContaAzulEmBackground(ctx.prisma!, ctx.comercialEnv!, "manual", {
-      forceFullClientes: true,
-    });
-    if (r.status === "already_running") {
-      throw new TRPCError({
-        code: "CONFLICT",
-        message:
-          "Já existe uma sincronização Conta Azul em andamento. Aguarde terminar antes de iniciar outra.",
+  sincronizarContaAzul: comercialProcedure
+    .use(syncCA)
+    .input(
+      z
+        .object({
+          escopo: z.enum(["vendas", "clientes", "completo"]).optional(),
+          aoAbrirPagina: z.boolean().optional(),
+        })
+        .optional()
+    )
+    .mutation(async ({ ctx, input }) => {
+      const escopo = input?.escopo ?? "completo";
+      const r = iniciarSyncContaAzulEmBackground(ctx.prisma!, ctx.comercialEnv!, "manual", {
+        escopo,
+        aoAbrirPagina: input?.aoAbrirPagina,
+        forceFullClientes: escopo === "completo" && !input?.aoAbrirPagina,
       });
-    }
-    return { ok: true as const, emSegundoPlano: true as const };
-  }),
+      if (r.status === "already_running") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message:
+            "Já existe uma sincronização Conta Azul em andamento. Aguarde terminar antes de iniciar outra.",
+        });
+      }
+      if (r.status === "recent") {
+        return { ok: true as const, emSegundoPlano: false as const, recente: true as const };
+      }
+      return { ok: true as const, emSegundoPlano: true as const, recente: false as const };
+    }),
 
   sincronizarEnderecosContaAzul: comercialProcedure.use(syncCA).mutation(async ({ ctx }) => {
     return runContaAzulClientesSync(ctx.prisma!, ctx.comercialEnv!, {

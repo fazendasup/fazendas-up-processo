@@ -21,7 +21,7 @@ import {
   Sprout,
   Users,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { fmtDataEntrega, isoDataEntrega } from "@/lib/dataEntrega";
 import { trpc } from "@/lib/trpc";
 import {
@@ -323,11 +323,36 @@ type PedidosTab =
 export function Pedidos({
   abaInicial = "operacional",
   somenteCompras = false,
-}: { abaInicial?: PedidosTab; somenteCompras?: boolean } = {}) {
+  diaInicial,
+}: {
+  abaInicial?: PedidosTab;
+  somenteCompras?: boolean;
+  /** Quando embutido no Estoque vivo, alinha o dia com a URL. */
+  diaInicial?: string;
+} = {}) {
   const utils = trpc.useUtils();
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const diaDaUrl = useMemo(() => {
+    const raw = new URLSearchParams(search).get("dia");
+    return raw && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+  }, [search]);
   const [aba, setAba] = useState<PedidosTab>(somenteCompras ? "compras" : abaInicial);
-  const [dia, setDia] = useState(diaOperacionalInicial);
+  const [dia, setDia] = useState(
+    () =>
+      (diaInicial && /^\d{4}-\d{2}-\d{2}$/.test(diaInicial) ? diaInicial : null) ??
+      diaDaUrl ??
+      diaOperacionalInicial(),
+  );
+  useEffect(() => {
+    if (diaInicial && /^\d{4}-\d{2}-\d{2}$/.test(diaInicial) && diaInicial !== dia) {
+      setDia(diaInicial);
+      return;
+    }
+    if (!diaInicial && diaDaUrl && diaDaUrl !== dia) {
+      setDia(diaDaUrl);
+    }
+  }, [diaInicial, diaDaUrl]);
   const [escopoDashboard, setEscopoDashboard] = useState<"dia" | "semana">(
     "dia",
   );
@@ -1484,6 +1509,7 @@ export function Pedidos({
             </Button>
           </div>
           <ComprasArea
+            dia={dia}
             estoque={compras.data}
             produtos={produtos.data ?? []}
             isLoading={compras.isLoading}
@@ -1549,6 +1575,14 @@ export function Pedidos({
           <Button variant="outline" onClick={() => setDia(hojeIso())}>
             Hoje
           </Button>
+          {!somenteCompras && !perfilOperacionalRestrito ? (
+            <Button variant="default" asChild>
+              <Link href={`/comercial/estoque-vivo?dia=${dia}`}>
+                <Sprout className="mr-1.5 h-4 w-4" />
+                Kg a processar
+              </Link>
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             disabled={copiarSemanaAnterior.isPending}
@@ -1847,7 +1881,7 @@ export function Pedidos({
         value={aba}
         onValueChange={value => {
           if (value === "compras") {
-            setLocation("/comercial/estoque-vivo");
+            setLocation(`/comercial/estoque-vivo?dia=${dia}`);
             return;
           }
           setAba(value as PedidosTab);
@@ -2815,6 +2849,7 @@ export function Pedidos({
 
         <TabsContent value="compras">
           <ComprasArea
+            dia={dia}
             estoque={compras.data}
             produtos={produtos.data ?? []}
             isLoading={compras.isLoading}
@@ -4699,6 +4734,7 @@ function ProdutosArea({
 }
 
 function ComprasArea({
+  dia,
   estoque,
   produtos,
   isLoading,
@@ -4735,13 +4771,15 @@ function ComprasArea({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
         <p className="text-sm text-muted-foreground">
-          Receitas de mixes (Crocante, Mix KFC…) ficam na aba{" "}
-          <strong>Receitas / Mixes</strong>.
+          O volume em <strong>kg a processar</strong> por ingrediente fica em{" "}
+          <strong>Produção / Mixes</strong> (ligado aos pedidos do dia).
         </p>
-        <Button asChild size="sm" variant="secondary">
-          <Link href="/comercial/estoque-vivo/mixes">Abrir receitas / mixes</Link>
+        <Button asChild size="sm" variant="default">
+          <Link href={`/comercial/estoque-vivo?dia=${dia}`}>
+            Ver kg a processar
+          </Link>
         </Button>
       </div>
       <Card>

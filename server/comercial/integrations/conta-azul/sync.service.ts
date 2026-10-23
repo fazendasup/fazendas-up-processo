@@ -35,6 +35,7 @@ import {
 import type { AxiosInstance } from "axios";
 import {
   contaAzulSyncDetailBudget,
+  type ContaAzulSyncEscopo,
   type ContaAzulSyncMode,
 } from "./conta-azul-sync-detail-budget";
 
@@ -455,7 +456,7 @@ type ResolveComposicaoResult = {
   itens?: ContaAzulPedidoItemPayload[];
 };
 
-export type { ContaAzulSyncMode } from "./conta-azul-sync-detail-budget";
+export type { ContaAzulSyncEscopo, ContaAzulSyncMode } from "./conta-azul-sync-detail-budget";
 
 async function fetchComposicaoDetalheVenda(
   http: AxiosInstance,
@@ -720,6 +721,17 @@ export type ContaAzulSyncResult = {
 
 let syncEmAndamento: Promise<ContaAzulSyncResult> | null = null;
 
+/** Evita repetir o mesmo recorte se a página montar de novo em seguida. */
+const ESCOPO_PAGINA_COOLDOWN_MS = 2 * 60_000;
+const ultimoEscopoConcluido = new Map<ContaAzulSyncEscopo, number>();
+
+export type ContaAzulSyncOptions = {
+  forceFullClientes?: boolean;
+  escopo?: ContaAzulSyncEscopo;
+  /** Aberto da página: respeita o intervalo curto e não varre o cadastro inteiro. */
+  aoAbrirPagina?: boolean;
+};
+
 /**
  * Sincronização: GET /v1/pessoas e GET /v1/venda/busca (janela CONTA_AZUL_VENDAS_SYNC_DIAS, páginas completas) — grava clientes e pedidos.
  */
@@ -729,21 +741,31 @@ export function isContaAzulSyncEmAndamento(): boolean {
 
 export type IniciarSyncContaAzulResult =
   | { status: "started" }
-  | { status: "already_running" };
+  | { status: "already_running" }
+  | { status: "recent" };
 
 /** Dispara sync sem bloquear a requisição HTTP (evita timeout do navegador/proxy). */
 export function iniciarSyncContaAzulEmBackground(
   prisma: PrismaClient,
   env: Env,
   mode: ContaAzulSyncMode = "manual",
-  options?: { forceFullClientes?: boolean }
+  options?: ContaAzulSyncOptions
 ): IniciarSyncContaAzulResult {
   if (syncEmAndamento) return { status: "already_running" };
+  const escopo = options?.escopo ?? "completo";
+  if (options?.aoAbrirPagina) {
+    const last = ultimoEscopoConcluido.get(escopo) ?? 0;
+    if (Date.now() - last < ESCOPO_PAGINA_COOLDOWN_MS) return { status: "recent" };
+  }
   const execucao = executarContaAzulSync(prisma, env, mode, options);
   syncEmAndamento = execucao;
-  void execucao.finally(() => {
-    if (syncEmAndamento === execucao) syncEmAndamento = null;
-  });
+  void execucao
+    .then(() => {
+      ultimoEscopoConcluido.set(escopo, Date.now());
+    })
+    .finally(() => {
+      if (syncEmAndamento === execucao) syncEmAndamento = null;
+    });
   return { status: "started" };
 }
 
@@ -839,7 +861,7 @@ export async function runContaAzulClientesSync(
 export async function runContaAzulSync(
   prisma: PrismaClient,
   env: Env,
-  options?: { mode?: ContaAzulSyncMode; skipIfBusy?: boolean; forceFullClientes?: boolean }
+  options?: { mode?: ContaAzulSyncMode; skipIfBusy?: boolean } & ContaAzulSyncOptions
 ): Promise<ContaAzulSyncResult> {
   if (syncEmAndamento) {
     if (options?.skipIfBusy) {
@@ -860,9 +882,7 @@ export async function runContaAzulSync(
   }
 
   const mode = options?.mode ?? "manual";
-  const execucao = executarContaAzulSync(prisma, env, mode, {
-    forceFullClientes: options?.forceFullClientes,
-  });
+  const execucao = executarContaAzulSync(prisma, env, mode, options);
   syncEmAndamento = execucao;
   try {
     return await execucao;
@@ -875,11 +895,12 @@ async function executarContaAzulSync(
   prisma: PrismaClient,
   env: Env,
   mode: ContaAzulSyncMode,
-  options?: { forceFullClientes?: boolean }
+  options?: ContaAzulSyncOptions
 ): Promise<ContaAzulSyncResult> {
   const started = Date.now();
+  const escopo = options?.escopo ?? "completo";
   const composicaoCtx: ResolveComposicaoCtx = {
-    detailBudget: { remaining: contaAzulSyncDetailBudget(mode) },
+    detailBudget: { remaining: contaAzulSyncDetailBudget(mode, escopo) },
     deadlineAt: started + SYNC_DETALHE_DEADLINE_MS,
   };
   const cred = await ensureValidAccessToken(prisma, env);
@@ -908,22 +929,33 @@ async function executarContaAzulSync(
       update: {},
     });
 
-    const cursor = options?.forceFullClientes ? null : syncState.cursor;
-    const pessoasRes = await fetchTodasPessoas(http, cursor);
-    const rawItems = pessoasRes.items ?? [];
+    const syncClientes = escopo !== "vendas";
+    const syncVendas = escopo !== "clientes";
 
-    let nextCursor: string | null = cursor ?? null;
-    const clientesSync = await upsertClientesContaAzul(prisma, rawItems);
-    const { clientesComEndereco } = clientesSync;
+    let nextCursor: string | null = syncState.cursor ?? null;
+    let rawItems: NonNullable<ContaAzulPessoasListResponse["items"]> = [];
+    let pessoasTotal = 0;
+    let clientesComEndereco = 0;
 
-    if (clientesSync.maxAlteracao) nextCursor = clientesSync.maxAlteracao;
+    if (syncClientes) {
+      const cursor = options?.forceFullClientes ? null : syncState.cursor;
+      const pessoasRes = await fetchTodasPessoas(http, cursor);
+      rawItems = pessoasRes.items ?? [];
+      pessoasTotal = pessoasRes.totalItems ?? rawItems.length;
+      const clientesSync = await upsertClientesContaAzul(prisma, rawItems);
+      clientesComEndereco = clientesSync.clientesComEndereco;
+      if (clientesSync.maxAlteracao) nextCursor = clientesSync.maxAlteracao;
+    }
 
-    const vendasItens = await fetchTodasVendasBusca(http, env);
+    const vendasItens = syncVendas ? await fetchTodasVendasBusca(http, env) : [];
     const vendaIdsAtuais = new Set<string>();
-    const catalogoProdutos = await prisma.produtoComercial.findMany({
-      where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
-      select: { nome: true, categoria: true },
-    });
+    const catalogoProdutos =
+      syncVendas || escopo === "completo"
+        ? await prisma.produtoComercial.findMany({
+            where: { contaAzulProdutoId: { not: null }, ativo: true, importadoOperacao: true },
+            select: { nome: true, categoria: true },
+          })
+        : [];
 
     let pedidosGravados = 0;
     let conciliacaoSugestoes = 0;
@@ -1029,20 +1061,19 @@ async function executarContaAzulSync(
       env,
       vendaIdsAtuais
     );
-    const orcamentosSync = await sincronizarOrcamentosContaAzul(
-      prisma,
-      http,
-      env,
-      catalogoProdutos,
-    );
-    const composicaoEnriquecidos = await enriquecerComposicaoPedidosPendentes(
-      prisma,
-      http,
-      composicaoCtx,
-      catalogoProdutos
-    );
+    const orcamentosSync =
+      escopo === "completo"
+        ? await sincronizarOrcamentosContaAzul(prisma, http, env, catalogoProdutos)
+        : { recebidos: 0, gravados: 0 };
+    const composicaoEnriquecidos =
+      escopo === "completo"
+        ? await enriquecerComposicaoPedidosPendentes(prisma, http, composicaoCtx, catalogoProdutos)
+        : 0;
 
-    const intel = await runInteligenciaComercial(prisma);
+    const intel =
+      escopo === "completo"
+        ? await runInteligenciaComercial(prisma)
+        : { oportunidadesCriadas: 0, clientesAtualizados: 0 };
 
     await prisma.syncState.update({
       where: { provider: "CONTA_AZUL" },
@@ -1054,9 +1085,10 @@ async function executarContaAzulSync(
         acaoApi: AcaoApi.SYNC_CA,
         statusExecucao: StatusExecucaoApi.SUCESSO,
         detalhesExecucao: {
+          escopo,
           clientesProcessados: rawItems.length,
           clientesComEndereco,
-          totalPessoasContaAzul: pessoasRes.totalItems ?? rawItems.length,
+          totalPessoasContaAzul: pessoasTotal,
           vendasRecebidas: vendasItens.length,
           pedidosGravados,
           inteligenciaOportunidades: intel.oportunidadesCriadas,

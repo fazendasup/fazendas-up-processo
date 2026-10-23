@@ -191,7 +191,7 @@ export default function TerceirosAdminPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Terceiros</h1>
             <p className="text-sm text-muted-foreground">
-              Prestação de serviços · pagamento por hora
+              Diária de R$ 90 em 8 horas. Cada hora conta pelo mesmo valor.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
@@ -286,11 +286,16 @@ export default function TerceirosAdminPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs uppercase text-muted-foreground">
-                Horas extras
+                Horas
               </p>
               <p className="mt-1 text-2xl font-semibold tabular-nums">
                 {data
-                  ? formatarHorasDecimais(data.totais.horasExtras)
+                  ? formatarHorasDecimais(
+                      data.porPrestador.reduce(
+                        (soma, p) => soma + p.horasTrabalhadas,
+                        0,
+                      ),
+                    )
                   : "—"}
               </p>
             </CardContent>
@@ -335,7 +340,6 @@ export default function TerceirosAdminPage() {
                       <th className="px-3 py-2">CPF</th>
                       <th className="px-3 py-2 text-right">Dias</th>
                       <th className="px-3 py-2 text-right">Horas</th>
-                      <th className="px-3 py-2 text-right">Extras</th>
                       <th className="px-3 py-2 text-right">Total</th>
                       <th className="px-3 py-2 text-right">Em aberto</th>
                     </tr>
@@ -364,9 +368,6 @@ export default function TerceirosAdminPage() {
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">
                           {formatarHorasDecimais(p.horasTrabalhadas)}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums">
-                          {formatarHorasDecimais(p.horasExtras)}
                         </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {fmtMoney(p.valorTotal)}
@@ -401,7 +402,6 @@ export default function TerceirosAdminPage() {
                       <th className="px-3 py-2">Entrada</th>
                       <th className="px-3 py-2">Saída</th>
                       <th className="px-3 py-2 text-right">Horas</th>
-                      <th className="px-3 py-2 text-right">Extra</th>
                       <th className="px-3 py-2">Almoço e descanso</th>
                       <th className="px-3 py-2 text-right">Total</th>
                       <th className="px-3 py-2">Status</th>
@@ -436,11 +436,6 @@ export default function TerceirosAdminPage() {
                         <td className="px-3 py-2 text-right tabular-nums">
                           {r.pagamento
                             ? formatarHorasDecimais(r.pagamento.horasTrabalhadas)
-                            : "—"}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums">
-                          {r.pagamento
-                            ? formatarHorasDecimais(r.pagamento.horasExtras)
                             : "—"}
                         </td>
                         <td className="px-3 py-2">

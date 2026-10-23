@@ -215,6 +215,7 @@ exports.Prisma.ProdutoComercialScalarFieldEnum = {
   exclusivoPortal: 'exclusivoPortal',
   descricaoLoja: 'descricaoLoja',
   aplicacaoLoja: 'aplicacaoLoja',
+  grupoLoja: 'grupoLoja',
   estoqueLoja: 'estoqueLoja',
   criadoEm: 'criadoEm',
   atualizadoEm: 'atualizadoEm'
@@ -227,9 +228,26 @@ exports.Prisma.PortalAcessoScalarFieldEnum = {
   senhaHash: 'senhaHash',
   conviteHash: 'conviteHash',
   conviteExpiraEm: 'conviteExpiraEm',
+  perfil: 'perfil',
   ativo: 'ativo',
   criadoEm: 'criadoEm',
   atualizadoEm: 'atualizadoEm'
+};
+
+exports.Prisma.PortalPedidoPagamentoScalarFieldEnum = {
+  id: 'id',
+  pedidoId: 'pedidoId',
+  status: 'status',
+  total: 'total',
+  contaAzulReceberId: 'contaAzulReceberId',
+  parcelaId: 'parcelaId',
+  pixCobrancaId: 'pixCobrancaId',
+  pixUrl: 'pixUrl',
+  cartaoCobrancaId: 'cartaoCobrancaId',
+  cartaoUrl: 'cartaoUrl',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm',
+  pagoEm: 'pagoEm'
 };
 
 exports.Prisma.PortalContaScalarFieldEnum = {
@@ -738,7 +756,8 @@ exports.Prisma.ProdutoComercialOrderByRelevanceFieldEnum = {
   mixProdutoReferenciaId: 'mixProdutoReferenciaId',
   imagemUrl: 'imagemUrl',
   descricaoLoja: 'descricaoLoja',
-  aplicacaoLoja: 'aplicacaoLoja'
+  aplicacaoLoja: 'aplicacaoLoja',
+  grupoLoja: 'grupoLoja'
 };
 
 exports.Prisma.PortalAcessoOrderByRelevanceFieldEnum = {
@@ -747,6 +766,18 @@ exports.Prisma.PortalAcessoOrderByRelevanceFieldEnum = {
   email: 'email',
   senhaHash: 'senhaHash',
   conviteHash: 'conviteHash'
+};
+
+exports.Prisma.PortalPedidoPagamentoOrderByRelevanceFieldEnum = {
+  id: 'id',
+  pedidoId: 'pedidoId',
+  status: 'status',
+  contaAzulReceberId: 'contaAzulReceberId',
+  parcelaId: 'parcelaId',
+  pixCobrancaId: 'pixCobrancaId',
+  pixUrl: 'pixUrl',
+  cartaoCobrancaId: 'cartaoCobrancaId',
+  cartaoUrl: 'cartaoUrl'
 };
 
 exports.Prisma.PortalContaOrderByRelevanceFieldEnum = {
@@ -1061,6 +1092,11 @@ exports.ModoCompraProduto = exports.$Enums.ModoCompraProduto = {
   KG: 'KG'
 };
 
+exports.PortalPerfil = exports.$Enums.PortalPerfil = {
+  EMPRESA: 'EMPRESA',
+  PESSOA: 'PESSOA'
+};
+
 exports.TipoVendaPedido = exports.$Enums.TipoVendaPedido = {
   RECORRENTE_SEMANAL: 'RECORRENTE_SEMANAL',
   RECORRENTE_QUINZENAL: 'RECORRENTE_QUINZENAL',
@@ -1197,6 +1233,7 @@ exports.Prisma.ModelName = {
   EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
   ProdutoComercial: 'ProdutoComercial',
   PortalAcesso: 'PortalAcesso',
+  PortalPedidoPagamento: 'PortalPedidoPagamento',
   PortalConta: 'PortalConta',
   PortalContrato: 'PortalContrato',
   PortalContratoAceite: 'PortalContratoAceite',

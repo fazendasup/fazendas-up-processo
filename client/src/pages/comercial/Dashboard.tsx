@@ -58,7 +58,7 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { comercialPath } from "@/lib/comercial/routes";
 import { hojeIsoLocal, intervaloDoPreset, primeiroDiaMesIso, type PeriodoPreset } from "@/lib/comercial/periodo";
-import { useSyncContaAzul } from "@/hooks/useSyncContaAzul";
+import { useSyncContaAzulNaPagina } from "@/hooks/useSyncContaAzul";
 import { trpc } from "@/lib/trpc";
 
 const ORDEM_TIPO_OPORTUNIDADE = ["UPSELL", "CROSS_SELL", "REATIVACAO", "NOVO_PRODUTO"] as const;
@@ -108,7 +108,7 @@ export function Dashboard() {
   );
   const { Tour, startTour } = useDashboardTour();
 
-  const { sync, busy: syncBusy } = useSyncContaAzul();
+  const { iniciar: sincronizarVendas, busy: syncBusy } = useSyncContaAzulNaPagina("vendas");
 
   const resumo = trpc.comercial.dashboard.resumo.useQuery(
     { inicio, fim },
@@ -225,11 +225,11 @@ export function Dashboard() {
             <button
               type="button"
               disabled={syncBusy}
-              onClick={() => sync.mutate()}
+              onClick={() => sincronizarVendas({ escopo: "vendas" })}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_24px_-4px_rgba(16,185,129,0.5)] transition hover:brightness-110 disabled:opacity-60"
             >
               {syncBusy ? <Spinner /> : <RefreshCw className="h-4 w-4" />}
-              Sync Conta Azul
+              Atualizar vendas
             </button>
           </motion.div>
         </motion.div>
