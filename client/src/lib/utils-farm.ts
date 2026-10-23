@@ -488,8 +488,8 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao, dataReferencia?: Date):
 }
 
 /**
- * Bio não aparece no dia em que Infinito ou Cercobin estão pendentes.
- * O protocolo manda não misturar esses produtos no mesmo dia.
+ * Bio (legado) não aparece no dia em que Infinito ou Cercobin estão pendentes.
+ * Thyper/Peróxido e sistêmicos já se excluem pela folga em `cicloSequencia`.
  */
 export function cicloPendenteNoProtocolo(
   ciclo: CicloAplicacao,

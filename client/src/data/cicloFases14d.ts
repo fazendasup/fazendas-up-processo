@@ -84,7 +84,13 @@ export function caldasNoMesmoDia(
   });
 }
 
-export type ProdutoSolucaoId = "koh" | "peroxido" | "bio" | "infinito" | "cercobin";
+export type ProdutoSolucaoId =
+  | "koh"
+  | "peroxido"
+  | "thyper"
+  | "bio"
+  | "infinito"
+  | "cercobin";
 
 export type CartaoSolucao = {
   id: ProdutoSolucaoId;
@@ -133,36 +139,20 @@ export function cartoesSolucao(): CartaoSolucao[] {
       dosagemAgenda: `Estoque ${protocolo.koh.estoque}. Até pH ${protocolo.ph}.`,
     },
     {
-      id: "peroxido",
-      nome: "Peróxido",
-      produto: protocolo.h2o2.produto,
+      id: "thyper",
+      nome: "Thyper S-50",
+      produto: "Thyper S-50",
       frequencia: "personalizada",
       intervaloDias: 2,
-      frequenciaLabel: protocolo.h2o2.rotina,
+      frequenciaLabel: "Substitui o peróxido. A cada 2 dias, em todas as fases.",
       fases: FASES_TODAS,
       linhas: [
-        { rotulo: "310 L", valor: tanque310.h2o2 },
-        { rotulo: "500 L", valor: tanque500.h2o2 },
+        { rotulo: "310 L", valor: "Conforme SOP" },
+        { rotulo: "500 L", valor: "Conforme SOP" },
       ],
       notas: [],
-      aviso: "Nesse dia não entra Infinito, Cercobin nem bio.",
-      dosagemAgenda: `310 L: ${tanque310.h2o2}. 500 L: ${tanque500.h2o2}.`,
-    },
-    {
-      id: "bio",
-      nome: "Bio",
-      produto: "Bio",
-      frequencia: "personalizada",
-      intervaloDias: 2,
-      frequenciaLabel: "Nos dias sem peróxido.",
-      fases: FASES_TODAS,
-      linhas: [
-        { rotulo: "310 L", valor: tanque310.bio },
-        { rotulo: "500 L", valor: tanque500.bio },
-      ],
-      notas: [],
-      aviso: `${protocolo.bioNota}. Nos dias sem H₂O₂. No dia de Infinito ou Cercobin, o bio fica de fora.`,
-      dosagemAgenda: `310 L: ${tanque310.bio}. 500 L: ${tanque500.bio}. Dias sem peróxido.`,
+      aviso: "Nesse dia não entra Infinito nem Cercobin. Folga mínima 1 dia com sistêmicos.",
+      dosagemAgenda: "Substitui o peróxido. A cada 2 dias. Conforme SOP.",
     },
     {
       id: "infinito",
@@ -176,7 +166,7 @@ export function cartoesSolucao(): CartaoSolucao[] {
         { rotulo: "500 L", valor: tanque500.infinito },
       ],
       notas: notasDoProduto("Infinito"),
-      aviso: "Infinito com menos de 12 h após H₂O₂. Preferir 24 h.",
+      aviso: "Folga 1 dia após Thyper. Preferir 24 h.",
       dosagemAgenda: `310 L: ${tanque310.infinito}. 500 L: ${tanque500.infinito}. Máx. 1 por fase.`,
     },
     {
@@ -191,7 +181,7 @@ export function cartoesSolucao(): CartaoSolucao[] {
         { rotulo: "500 L", valor: tanque500.cercobin },
       ],
       notas: notasDoProduto("Cercobin"),
-      aviso: "Pelo menos 3 dias depois do Infinito, em dia sem H₂O₂.",
+      aviso: "Pelo menos 3 dias depois do Infinito, em dia sem Thyper.",
       dosagemAgenda: `310 L: ${tanque310.cercobin}. 500 L: ${tanque500.cercobin}. Máx. 1 por fase.`,
     },
   ];
@@ -217,6 +207,13 @@ export function produtoSolucaoDoNome(nome: string): ProdutoSolucaoId | null {
   }
   if (normalizado.includes("cercobin")) return "cercobin";
   if (normalizado.includes("infinito")) return "infinito";
+  if (
+    normalizado.includes("thyper") ||
+    normalizado.includes("s-50") ||
+    normalizado.includes("s50")
+  ) {
+    return "thyper";
+  }
   if (
     normalizado.includes("peroxido") ||
     normalizado.includes("h2o2") ||
@@ -244,10 +241,12 @@ type CicloRegraSolucao = {
 };
 
 const MESMO_DIA: Array<[ProdutoSolucaoId, ProdutoSolucaoId, string]> = [
+  ["thyper", "infinito", "Infinito com menos de 12 h após Thyper. Preferir 24 h."],
+  ["thyper", "cercobin", "Cercobin no mesmo dia de Thyper ou de Infinito."],
   ["peroxido", "infinito", "Infinito com menos de 12 h após H₂O₂. Preferir 24 h."],
   ["peroxido", "cercobin", "Cercobin no mesmo dia de H₂O₂ ou de Infinito."],
   ["peroxido", "bio", "Bio nos dias sem H₂O₂."],
-  ["infinito", "cercobin", "Cercobin no mesmo dia de H₂O₂ ou de Infinito."],
+  ["infinito", "cercobin", "Cercobin no mesmo dia de Thyper/H₂O₂ ou de Infinito."],
 ];
 
 function inicioYmd(valor?: string | null): string | null {
@@ -414,42 +413,29 @@ function proximoDiaSemana(hoje: string, dia: number): string {
 }
 
 /**
- * Agenda a partir de hoje: peróxido nos dias pares da semana, bio nos ímpares,
- * Infinito na quinta (24 h depois do peróxido) e Cercobin fora do peróxido,
- * pelo menos 3 dias depois. Calda A na sexta, Calda B na segunda.
- * KOH não entra: só quando o pH estiver abaixo da faixa.
+ * Agenda a partir de hoje: Thyper (substitui peróxido) nos dias pares da
+ * semana, Infinito na quinta (24 h depois do Thyper) e Cercobin fora do
+ * Thyper, pelo menos 3 dias depois. Calda A na sexta, Calda B na segunda.
+ * KOH não entra: só quando o pH estiver abaixo da faixa. Bio fica de fora.
  */
 export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
   const segunda = segundaDaSemana(hojeYmd);
-  const peroxido = cartaoSolucao("peroxido");
-  const bio = cartaoSolucao("bio");
+  const thyper = cartaoSolucao("thyper");
   const infinito = cartaoSolucao("infinito");
   const cercobin = cartaoSolucao("cercobin");
   const caldaA = caldaFoliar("A");
   const caldaB = caldaFoliar("B");
   return [
     {
-      chave: "peroxido",
-      nome: peroxido.nome,
-      produto: peroxido.produto,
+      chave: "thyper",
+      nome: thyper.nome,
+      produto: thyper.produto,
       tipo: "Solução",
       frequencia: "personalizada",
       intervaloDias: 2,
-      fases: peroxido.fases,
-      dosagem: peroxido.dosagemAgenda,
+      fases: thyper.fases,
+      dosagem: thyper.dosagemAgenda,
       dataInicio: proximoOffset(segunda, hojeYmd, [0, 2, 4, 6, 8, 10, 12]),
-      caixas: "todas",
-    },
-    {
-      chave: "bio",
-      nome: bio.nome,
-      produto: bio.produto,
-      tipo: "Solução",
-      frequencia: "personalizada",
-      intervaloDias: 2,
-      fases: bio.fases,
-      dosagem: bio.dosagemAgenda,
-      dataInicio: proximoOffset(segunda, hojeYmd, [1, 3, 5, 7, 9, 11, 13]),
       caixas: "todas",
     },
     {

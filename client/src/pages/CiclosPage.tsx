@@ -10,7 +10,12 @@ type FrequenciaCiclo = "diaria" | "semanal" | "quinzenal" | "mensal" | "personal
 type AlvoCiclo = "ambos" | "caixa" | "andar";
 
 import { cicloPendenteNoProtocolo, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
-import { hojeYmdSaoPaulo } from '@shared/cicloSequencia';
+import {
+  adicionarDiasYmd,
+  dataPrevistaCicloYmd,
+  hojeYmdSaoPaulo,
+  ymdCalendario,
+} from '@shared/cicloSequencia';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
@@ -1011,14 +1016,82 @@ export default function CiclosPage() {
   );
 }
 
-function proximaDataAgenda(ciclo: CicloAplicacao): string | null {
-  const datas = (ciclo.execucoesCaixa ?? [])
-    .map((execucao) => execucao.dataAgenda)
-    .filter((data): data is string => Boolean(data))
-    .sort();
-  const primeira = datas[0];
-  if (!primeira) return null;
-  return primeira.split("-").reverse().join("/");
+/** Próxima ocorrência: agenda deslocada, senão cadência (última + intervalo / dias da semana). */
+function proximaDataAgenda(ciclo: CicloAplicacao, hojeYmd = hojeYmdSaoPaulo()): string | null {
+  const ymd = proximaYmdCiclo(ciclo, hojeYmd);
+  if (!ymd) return null;
+  return ymd.split("-").reverse().join("/");
+}
+
+function proximaYmdCiclo(ciclo: CicloAplicacao, hojeYmd: string): string | null {
+  if (!ciclo.ativo) return null;
+
+  const caixas = ciclo.caixaIds ?? [];
+  if (ciclo.alvo !== "andar" && caixas.length > 0) {
+    const passo = {
+      id: Number(ciclo.id) || 0,
+      ativo: ciclo.ativo,
+      alvo: ciclo.alvo,
+      frequencia: ciclo.frequencia,
+      diasSemana: ciclo.diasSemana,
+      intervaloDias: ciclo.intervaloDias,
+      dataInicio: ciclo.dataInicio,
+      nome: ciclo.nome,
+      produto: ciclo.produto,
+      caixaIds: caixas,
+      execucoes: (ciclo.execucoesCaixa ?? []).map((e) => ({
+        caixaId: e.caixaId,
+        ultimaExecucao: e.ultimaExecucao,
+        dataAgenda: e.dataAgenda,
+      })),
+    };
+    const previstas = caixas
+      .map((caixaId) => dataPrevistaCicloYmd(passo, caixaId, hojeYmd))
+      .filter((d): d is string => Boolean(d))
+      .sort();
+    if (previstas[0]) return previstas[0];
+  }
+
+  const agenda = ymdCalendario(ciclo.dataAgenda);
+  const ultima = ymdCalendario(ciclo.ultimaExecucao);
+  if (agenda && (!ultima || agenda > ultima)) return agenda;
+
+  if (ciclo.frequencia === "semanal" && ciclo.diasSemana && ciclo.diasSemana.length > 0) {
+    const inicio = ymdCalendario(ciclo.dataInicio);
+    const feitoHoje = ultima === hojeYmd;
+    if (!feitoHoje && (!inicio || inicio <= hojeYmd) && ciclo.diasSemana.includes(diaSemanaLocal(hojeYmd))) {
+      return hojeYmd;
+    }
+    const aPartirDe = inicio && inicio > hojeYmd ? inicio : adicionarDiasYmd(hojeYmd, 1);
+    for (let i = 0; i < 21; i++) {
+      const ymd = adicionarDiasYmd(aPartirDe, i);
+      if (ciclo.diasSemana.includes(diaSemanaLocal(ymd))) return ymd;
+    }
+    return null;
+  }
+
+  if (ciclo.frequencia === "diaria") {
+    if (ultima === hojeYmd) return adicionarDiasYmd(hojeYmd, 1);
+    const inicio = ymdCalendario(ciclo.dataInicio);
+    return inicio && inicio > hojeYmd ? inicio : hojeYmd;
+  }
+
+  const intervalo =
+    ciclo.intervaloDias && ciclo.intervaloDias > 0
+      ? ciclo.intervaloDias
+      : ciclo.frequencia === "quinzenal"
+        ? 14
+        : ciclo.frequencia === "mensal"
+          ? 30
+          : null;
+  if (!intervalo) return null;
+  if (ultima) return adicionarDiasYmd(ultima, intervalo);
+  return ymdCalendario(ciclo.dataInicio) ?? hojeYmd;
+}
+
+function diaSemanaLocal(ymd: string): number {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
 function CicloItem({
@@ -1098,9 +1171,10 @@ function CicloItem({
           {ciclo.dataInicio && (
             <span>Início: {ciclo.dataInicio.split('-').reverse().join('/')}</span>
           )}
-          {proximaDataAgenda(ciclo) && (
-            <span>Próxima: {proximaDataAgenda(ciclo)}</span>
-          )}
+          {(() => {
+            const proxima = proximaDataAgenda(ciclo);
+            return proxima ? <span>Próxima: {proxima}</span> : null;
+          })()}
           {ciclo.ultimaExecucao && (
             <span>Última execução: {formatarDataHora(ciclo.ultimaExecucao)}</span>
           )}

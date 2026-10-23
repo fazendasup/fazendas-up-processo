@@ -77,22 +77,23 @@ describe("protocolo fases 14 dias", () => {
     ).toBe(false);
   });
 
-  it("copia a dose do tanque para peróxido, Infinito e Cercobin", () => {
-    expect(cartaoSolucao("peroxido").linhas.map((linha) => linha.valor)).toEqual([
-      dosesDaVariante("310").h2o2,
-      dosesDaVariante("500").h2o2,
-    ]);
+  it("expõe Thyper no lugar do peróxido e reconhece o nome", () => {
+    expect(cartaoSolucao("thyper")).toMatchObject({
+      frequencia: "personalizada",
+      intervaloDias: 2,
+    });
     expect(cartaoSolucao("infinito").fases).toEqual(["vegetativa", "maturacao"]);
     expect(cartaoSolucao("cercobin").linhas.map((linha) => linha.valor)).toEqual(["6 g", "10 g"]);
     expect(cartaoSolucao("koh").dosagemAgenda.length).toBeLessThanOrEqual(128);
     expect(produtoSolucaoDoNome("Biozenith")).toBeNull();
+    expect(produtoSolucaoDoNome("Thyper S-50")).toBe("thyper");
     expect(produtoSolucaoDoNome("H₂O₂ 200V (~50%)")).toBe("peroxido");
   });
 
   it("aplica os bloqueios do protocolo ao agendar a solução", () => {
-    const peroxido = {
-      id: "p",
-      nome: "Peróxido",
+    const thyper = {
+      id: "t",
+      nome: "Thyper S-50",
       ativo: true,
       frequencia: "personalizada",
       intervaloDias: 2,
@@ -100,7 +101,7 @@ describe("protocolo fases 14 dias", () => {
       fasesAplicaveis: ["mudas", "vegetativa", "maturacao"],
     };
     expect(
-      mensagemRegraSolucao([peroxido], {
+      mensagemRegraSolucao([thyper], {
         id: "i",
         nome: "Infinito",
         ativo: true,
@@ -108,18 +109,7 @@ describe("protocolo fases 14 dias", () => {
         dataInicio: "2026-10-01",
         fasesAplicaveis: ["vegetativa", "maturacao"],
       }),
-    ).toMatch(/12 h/);
-    expect(
-      mensagemRegraSolucao([peroxido], {
-        id: "b",
-        nome: "Bio",
-        ativo: true,
-        frequencia: "personalizada",
-        intervaloDias: 2,
-        dataInicio: "2026-10-02",
-        fasesAplicaveis: ["mudas", "vegetativa", "maturacao"],
-      }),
-    ).toBeNull();
+    ).toMatch(/Thyper/);
     expect(
       mensagemRegraSolucao([], {
         id: "m",
@@ -165,15 +155,16 @@ describe("protocolo fases 14 dias", () => {
     ).toMatch(/10 dias/);
   });
 
-  it("programa a semana sem juntar peróxido, Infinito e Cercobin", () => {
+  it("programa a semana com Thyper, Infinito e Cercobin sem Bio", () => {
     const agenda = programacaoCiclos("2026-10-02");
     const porChave = Object.fromEntries(agenda.map((item) => [item.chave, item]));
-    expect(porChave.peroxido).toMatchObject({
+    expect(porChave.thyper).toMatchObject({
       frequencia: "personalizada",
       intervaloDias: 2,
       dataInicio: "2026-10-02",
     });
-    expect(porChave.bio.dataInicio).toBe("2026-10-03");
+    expect(porChave.bio).toBeUndefined();
+    expect(porChave.peroxido).toBeUndefined();
     expect(porChave.infinito).toMatchObject({
       frequencia: "quinzenal",
       intervaloDias: 14,
@@ -192,7 +183,7 @@ describe("protocolo fases 14 dias", () => {
       const outros = agenda
         .filter((ciclo) => ciclo.chave !== item.chave && ciclo.tipo === "Solução")
         .map((ciclo) => ({
-          id: ciclo.chave,
+          id: String(ciclo.chave),
           nome: ciclo.nome,
           produto: ciclo.produto,
           ativo: true,
@@ -204,7 +195,7 @@ describe("protocolo fases 14 dias", () => {
         }));
       expect(
         mensagemRegraSolucao(outros, {
-          id: item.chave,
+          id: String(item.chave),
           nome: item.nome,
           produto: item.produto,
           ativo: true,
@@ -218,12 +209,12 @@ describe("protocolo fases 14 dias", () => {
     }
   });
 
-  it("recomeça em 7 de outubro sem KOH na agenda", () => {
+  it("recomeça em 7 de outubro sem KOH nem Bio na agenda", () => {
     const agenda = programacaoCiclos("2026-10-07");
     const porChave = Object.fromEntries(agenda.map((item) => [item.chave, item]));
     expect(porChave.koh).toBeUndefined();
-    expect(porChave.peroxido.dataInicio).toBe("2026-10-07");
-    expect(porChave.bio.dataInicio).toBe("2026-10-08");
+    expect(porChave.bio).toBeUndefined();
+    expect(porChave.thyper.dataInicio).toBe("2026-10-07");
     expect(porChave.infinito).toMatchObject({
       dataInicio: "2026-10-08",
       fases: ["vegetativa", "maturacao"],

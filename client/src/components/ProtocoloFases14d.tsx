@@ -66,10 +66,20 @@ export default function ProtocoloFases14d() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <DoseCard icon={<Droplet className="h-3.5 w-3.5" />} nome="H₂O₂" valor={doses.h2o2} nota={protocolo.h2o2.rotina} />
+            <DoseCard
+              icon={<Droplet className="h-3.5 w-3.5" />}
+              nome="Thyper S-50"
+              valor="SOP"
+              nota="Substitui H₂O₂ · a cada 2 dias"
+            />
             <DoseCard icon={<FlaskConical className="h-3.5 w-3.5" />} nome="Infinito" valor={doses.infinito} nota="Máx. 1 por fase" />
             <DoseCard icon={<FlaskConical className="h-3.5 w-3.5" />} nome="Cercobin" valor={doses.cercobin} nota="Máx. 1 por fase" />
-            <DoseCard icon={<Layers className="h-3.5 w-3.5" />} nome="Bio" valor={doses.bio} nota={protocolo.bioNota} />
+            <DoseCard
+              icon={<Layers className="h-3.5 w-3.5" />}
+              nome="H₂O₂ (legado)"
+              valor={doses.h2o2}
+              nota="Desativado — usar Thyper"
+            />
           </div>
           <p className="text-xs text-muted-foreground">
             KOH estoque: {protocolo.koh.estoque}. {protocolo.koh.rotina} {protocolo.koh.aviso}
