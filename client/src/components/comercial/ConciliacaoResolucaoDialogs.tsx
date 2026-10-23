@@ -48,6 +48,7 @@ export function AcoesPedidoConciliacao({
   const cancelado = pedido.status === "CANCELADO";
   const utils = trpc.useUtils();
   const [confirmarFechamentoAberto, setConfirmarFechamentoAberto] = useState(false);
+  const [confirmarEnvioAberto, setConfirmarEnvioAberto] = useState(false);
   const validacao = trpc.comercial.pedidos.validarEnvioContaAzul.useQuery(
     { pedidoOperacionalId: pedido.id },
     {
@@ -145,6 +146,27 @@ export function AcoesPedidoConciliacao({
         : "Enviar orçamento CA"
       : "Enviar venda CA";
 
+  const nomeCliente = String(pedido.cliente?.nome ?? pedido.contaAzulCustomerId ?? "cliente");
+  const textoConfirmacaoEnvio =
+    modo === "ORCAMENTO"
+      ? podeReenviar || jaOrcamento
+        ? `Já havia orçamento marcado como enviado para ${nomeCliente}. Confirma reenviar? Use isso se você excluiu ou corrigiu o orçamento no Conta Azul.`
+        : `Confirma criar orçamento no Conta Azul para ${nomeCliente}?`
+      : `Confirma criar venda no Conta Azul para ${nomeCliente}? Esta ação registra o documento no Conta Azul.`;
+
+  function solicitarEnvioContaAzul() {
+    if (validacao.data && !validacao.data.ok) {
+      toast.error(validacao.data.erros.join(" "));
+      return;
+    }
+    setConfirmarEnvioAberto(true);
+  }
+
+  function confirmarEnvioContaAzul() {
+    setConfirmarEnvioAberto(false);
+    enviar.mutate({ pedidoOperacionalId: pedido.id });
+  }
+
   function fmtMoney(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
@@ -173,9 +195,9 @@ export function AcoesPedidoConciliacao({
 
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
-      {!somenteEnvio && onEditar && !cancelado ? (
+      {onEditar && !cancelado ? (
         <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={disabled} onClick={onEditar}>
-          Editar itens/preços
+          {somenteEnvio ? "Editar pedido" : "Editar itens/preços"}
         </Button>
       ) : null}
       {!somenteEnvio && onMarcarEntregue && !cancelado && pedido.status !== "ENTREGUE" ? (
@@ -195,21 +217,7 @@ export function AcoesPedidoConciliacao({
               ? validacao.data.erros.join(" ")
               : validacao.data?.avisos?.join(" ") || undefined
           }
-          onClick={() => {
-            if (validacao.data && !validacao.data.ok) {
-              toast.error(validacao.data.erros.join(" "));
-              return;
-            }
-            if (
-              (podeReenviar || jaOrcamento) &&
-              !confirm(
-                "Já havia orçamento marcado como enviado. Confirma reenviar? Use isso se você excluiu ou corrigiu o orçamento no Conta Azul.",
-              )
-            ) {
-              return;
-            }
-            enviar.mutate({ pedidoOperacionalId: pedido.id });
-          }}
+          onClick={solicitarEnvioContaAzul}
         >
           {enviar.isPending ? "Enviando…" : labelEnviar}
         </Button>
@@ -255,6 +263,35 @@ export function AcoesPedidoConciliacao({
           Reativar
         </Button>
       ) : null}
+
+      <Dialog open={confirmarEnvioAberto} onOpenChange={setConfirmarEnvioAberto}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar envio ao Conta Azul</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{textoConfirmacaoEnvio}</p>
+          {validacao.data?.avisos && validacao.data.avisos.length > 0 ? (
+            <ul className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+              {validacao.data.avisos.map((aviso) => (
+                <li key={aviso}>{aviso}</li>
+              ))}
+            </ul>
+          ) : null}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={enviar.isPending}
+              onClick={() => setConfirmarEnvioAberto(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="button" disabled={enviar.isPending} onClick={confirmarEnvioContaAzul}>
+              {enviar.isPending ? "Enviando…" : "Confirmar envio"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmarFechamentoAberto} onOpenChange={setConfirmarFechamentoAberto}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto sm:max-w-xl">

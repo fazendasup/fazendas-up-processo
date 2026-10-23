@@ -1018,9 +1018,22 @@ export function Pedidos({
         <CardContent className="space-y-1.5 p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-1.5">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-              <p className="truncate text-sm font-bold leading-tight">
-                {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
-              </p>
+              {canEditarComercial &&
+              grupo.status !== "CANCELADO" &&
+              (grupo.pedidos?.length ?? 0) > 0 ? (
+                <button
+                  type="button"
+                  className="truncate text-left text-sm font-bold leading-tight text-primary underline-offset-2 hover:underline"
+                  title="Abrir edição do pedido"
+                  onClick={() => abrirEdicaoPedido((grupo.pedidos as any[])[0])}
+                >
+                  {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
+                </button>
+              ) : (
+                <p className="truncate text-sm font-bold leading-tight">
+                  {grupo.cliente?.nome ?? grupo.contaAzulCustomerId}
+                </p>
+              )}
               <InadimplenciaClienteBadge
                 contaAzulCustomerId={String(grupo.contaAzulCustomerId)}
                 clienteNome={grupo.cliente?.nome}
@@ -1207,6 +1220,7 @@ export function Pedidos({
                   key={pedido.id}
                   pedido={pedido}
                   somenteEnvio
+                  onEditar={() => abrirEdicaoPedido(pedido)}
                   onEnviadoContaAzul={() => {
                     void invalidarVisaoOperacionalDia();
                   }}
@@ -1344,6 +1358,40 @@ export function Pedidos({
     );
     if (!ok) return;
     copiarSemanaAnterior.mutate({ dia: diaDate });
+  }
+
+  /** Preenche o formulário de emissão e abre a aba Agenda. */
+  function abrirEdicaoPedido(pedido: any) {
+    if (!pedido?.id) return;
+    setPedidoEditId(pedido.id);
+    setClienteId(String(pedido.contaAzulCustomerId ?? ""));
+    setClienteBusca(String(pedido.cliente?.nome ?? ""));
+    setTipoVenda(pedido.tipoVenda ?? "");
+    setObsPedido(pedido.observacoes ?? "");
+    setFreteCortesia(Boolean(pedido.freteCortesia));
+    setLinhas(
+      (pedido.itens ?? []).length > 0
+        ? pedido.itens.map((i: any) => ({
+            produtoId: i.produtoId,
+            quantidade: String(Number(i.quantidade)),
+            observacoes: i.observacoes ?? "",
+          }))
+        : [{ produtoId: "", quantidade: "1", observacoes: "" }],
+    );
+    setAvarias(
+      (pedido.avarias ?? []).map((a: any) => ({
+        produtoId: a.produtoId,
+        quantidade: String(Number(a.quantidade)),
+        observacoes: a.observacoes ?? "",
+      })),
+    );
+    setAba("agenda");
+    requestAnimationFrame(() => {
+      document.getElementById("form-emissao-pedido")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
   }
 
   function confirmarCancelamentoPedido(pedido: any) {
@@ -1941,7 +1989,7 @@ export function Pedidos({
                             Sem pendências neste dia.
                           </p>
                         ) : (
-                          <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                          <div className="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">
                             {diaBloco.grupos.map((grupo: any) =>
                               renderGrupoDashboardCard(grupo),
                             )}
@@ -1972,7 +2020,7 @@ export function Pedidos({
                           Nenhum pedido {labelStatus(bloco.status)}.
                         </p>
                       ) : (
-                        <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                        <div className="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">
                           {bloco.grupos.map((grupo: any) =>
                             renderGrupoDashboardCard(grupo),
                           )}
@@ -2075,7 +2123,7 @@ export function Pedidos({
           value="agenda"
           className="grid gap-4 xl:grid-cols-[minmax(360px,0.9fr)_1.1fr]"
         >
-          <Card>
+          <Card id="form-emissao-pedido">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Plus className="h-4 w-4" /> Emitir / agendar pedido
@@ -2608,27 +2656,7 @@ export function Pedidos({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  setPedidoEditId(p.id);
-                                  setClienteId(p.contaAzulCustomerId);
-                                  setTipoVenda(p.tipoVenda);
-                                  setObsPedido(p.observacoes ?? "");
-                                  setFreteCortesia(Boolean(p.freteCortesia));
-                                  setLinhas(
-                                    p.itens.map((i: any) => ({
-                                      produtoId: i.produtoId,
-                                      quantidade: String(Number(i.quantidade)),
-                                      observacoes: i.observacoes ?? "",
-                                    }))
-                                  );
-                                  setAvarias(
-                                    (p.avarias ?? []).map((a: any) => ({
-                                      produtoId: a.produtoId,
-                                      quantidade: String(Number(a.quantidade)),
-                                      observacoes: a.observacoes ?? "",
-                                    }))
-                                  );
-                                }}
+                                onClick={() => abrirEdicaoPedido(p)}
                               >
                                 Editar pedido
                               </Button>
