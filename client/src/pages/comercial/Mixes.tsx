@@ -318,42 +318,6 @@ export function Mixes({
                 </span>
               </div>
 
-              {(proc?.mixesUsados.length ?? 0) > 0 ? (
-                <div className="overflow-x-auto rounded-lg border bg-background">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                        <th className="px-3 py-2">Receita / pedido</th>
-                        <th className="px-3 py-2">Unidades</th>
-                        <th className="px-3 py-2">Detalhe</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {proc!.mixesUsados.map(m => (
-                        <tr key={m.mixId} className="border-b">
-                          <td className="px-3 py-2">
-                            <p className="font-medium">{m.mixNome}</p>
-                            <p className="text-xs text-muted-foreground">{m.produtoPedidoNome}</p>
-                          </td>
-                          <td className="px-3 py-2 tabular-nums font-semibold">{m.unidades}</td>
-                          <td className="px-3 py-2 text-xs text-muted-foreground">
-                            {m.ingredientes
-                              .map(i => `${i.nome} ${fmtKg(i.kgProcessar)} kg`)
-                              .join(" · ")}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="rounded-lg border border-dashed bg-background px-3 py-4 text-sm text-muted-foreground">
-                  Nenhum mix encontrado nos pedidos deste dia. Cadastre a receita e vincule o{" "}
-                  <strong>produto de referência</strong> (o mesmo item vendido no pedido), ou use o
-                  mesmo nome da receita no pedido (ex.: «Mix Clássico» ↔ «Mix Clássico - 500g»).
-                </p>
-              )}
-
               {(proc?.ingredientes.length ?? 0) > 0 ? (
                 <div>
                   <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -364,38 +328,90 @@ export function Mixes({
                       <thead>
                         <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
                           <th className="px-3 py-2">Ingrediente</th>
-                          <th className="px-3 py-2">Origem</th>
-                          <th className="px-3 py-2">Processar</th>
+                          <th className="px-3 py-2 w-28 text-right">Processar</th>
+                          <th className="px-3 py-2 w-36 text-right">De onde</th>
                         </tr>
                       </thead>
                       <tbody>
                         {proc!.ingredientes.map(ing => (
-                          <tr key={ing.produtoId || ing.nome} className="border-b">
-                            <td className="px-3 py-2 font-medium">{ing.nome}</td>
-                            <td className="px-3 py-2 text-xs text-muted-foreground">
-                              {ing.fontes
-                                .map(f => `${f.mixNome} (${f.unidades} un. → ${fmtKg(f.kg)} kg)`)
-                                .join(" · ")}
-                            </td>
-                            <td className="px-3 py-2 text-base font-bold tabular-nums text-primary">
+                          <tr key={ing.produtoId || ing.nome} className="border-b align-top">
+                            <td className="px-3 py-2.5 font-medium leading-snug">{ing.nome}</td>
+                            <td className="px-3 py-2.5 text-right text-base font-bold tabular-nums text-primary whitespace-nowrap">
                               {fmtKg(ing.kgProcessar)} kg
+                            </td>
+                            <td className="px-3 py-2.5 text-right">
+                              <details className="group text-left">
+                                <summary className="cursor-pointer list-none text-xs text-muted-foreground underline-offset-2 hover:underline [&::-webkit-details-marker]:hidden">
+                                  {ing.fontes.length}{" "}
+                                  {ing.fontes.length === 1 ? "receita" : "receitas"}
+                                </summary>
+                                <ul className="mt-1.5 space-y-1 border-t pt-1.5 text-xs text-muted-foreground">
+                                  {ing.fontes.map((f, idx) => (
+                                    <li key={`${f.mixNome}-${idx}`} className="flex justify-between gap-2">
+                                      <span className="min-w-0 truncate" title={f.mixNome}>
+                                        {f.mixNome}
+                                      </span>
+                                      <span className="shrink-0 tabular-nums text-foreground">
+                                        {f.unidades} un · {fmtKg(f.kg)} kg
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </details>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot>
                         <tr className="bg-muted/30 text-sm font-semibold">
-                          <td className="px-3 py-2" colSpan={2}>
-                            Total
-                          </td>
-                          <td className="px-3 py-2 tabular-nums">
+                          <td className="px-3 py-2">Total</td>
+                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
                             {fmtKg(proc!.totais.kgTotal)} kg
                           </td>
+                          <td />
                         </tr>
                       </tfoot>
                     </table>
                   </div>
                 </div>
+              ) : null}
+
+              {(proc?.mixesUsados.length ?? 0) > 0 ? (
+                <details className="rounded-lg border bg-background px-3 py-2">
+                  <summary className="cursor-pointer text-sm font-medium">
+                    Mixes vendidos no dia ({proc!.mixesUsados.length})
+                  </summary>
+                  <div className="mt-2 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                          <th className="py-1.5 pr-3">Receita</th>
+                          <th className="py-1.5 pr-3">No pedido</th>
+                          <th className="py-1.5 text-right">Un.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {proc!.mixesUsados.map(m => (
+                          <tr key={m.mixId} className="border-b last:border-0">
+                            <td className="py-1.5 pr-3 font-medium">{m.mixNome}</td>
+                            <td className="py-1.5 pr-3 text-xs text-muted-foreground">
+                              {m.produtoPedidoNome}
+                            </td>
+                            <td className="py-1.5 text-right tabular-nums font-semibold">
+                              {m.unidades}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              ) : (proc?.ingredientes.length ?? 0) === 0 ? (
+                <p className="rounded-lg border border-dashed bg-background px-3 py-4 text-sm text-muted-foreground">
+                  Nenhum mix encontrado nos pedidos deste dia. Cadastre a receita e vincule o{" "}
+                  <strong>produto de referência</strong> (o mesmo item vendido no pedido), ou use o
+                  mesmo nome da receita no pedido (ex.: «Mix Clássico» ↔ «Mix Clássico - 500g»).
+                </p>
               ) : null}
 
               {(proc?.pedidosSemMix.length ?? 0) > 0 ? (
