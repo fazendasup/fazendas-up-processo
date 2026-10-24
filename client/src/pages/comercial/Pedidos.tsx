@@ -2155,9 +2155,9 @@ export function Pedidos({
 
         <TabsContent
           value="agenda"
-          className="grid gap-4 xl:grid-cols-[minmax(360px,0.9fr)_1.1fr]"
+          className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
         >
-          <Card id="form-emissao-pedido">
+          <Card id="form-emissao-pedido" className="min-w-0 overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Plus className="h-4 w-4" /> Emitir / agendar pedido
@@ -2169,7 +2169,7 @@ export function Pedidos({
                 </p>
               )}
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="min-w-0 space-y-3 overflow-x-hidden">
               <ClientePicker
                 busca={clienteBusca}
                 setBusca={setClienteBusca}
@@ -2273,10 +2273,10 @@ export function Pedidos({
                   return (
                     <div
                       key={idx}
-                      className="grid gap-2 rounded-lg border p-2 sm:grid-cols-[1fr_7rem_auto]"
+                      className="grid min-w-0 gap-2 rounded-lg border p-2 sm:grid-cols-[minmax(0,1fr)_6.5rem_auto]"
                     >
                       <select
-                        className="h-9 rounded-md border bg-background px-2 text-sm"
+                        className="h-9 min-w-0 w-full rounded-md border bg-background px-2 text-sm"
                         value={linha.produtoId}
                         onChange={e =>
                           setLinhas(prev =>
@@ -2302,6 +2302,7 @@ export function Pedidos({
                         type="number"
                         min="0.001"
                         step="0.001"
+                        className="min-w-0"
                         value={linha.quantidade}
                         onChange={e =>
                           setLinhas(prev =>
@@ -2315,6 +2316,7 @@ export function Pedidos({
                       />
                       <Button
                         variant="ghost"
+                        className="shrink-0"
                         onClick={() =>
                           setLinhas(prev => prev.filter((_, i) => i !== idx))
                         }
@@ -2322,7 +2324,7 @@ export function Pedidos({
                         Remover
                       </Button>
                       <Input
-                        className="sm:col-span-3"
+                        className="min-w-0 sm:col-span-3"
                         value={linha.observacoes}
                         onChange={e =>
                           setLinhas(prev =>
@@ -2389,10 +2391,10 @@ export function Pedidos({
                   avarias.map((linha, idx) => (
                     <div
                       key={idx}
-                      className="grid gap-2 rounded-lg border bg-background/70 p-2 sm:grid-cols-[minmax(0,1fr)_7rem_auto]"
+                      className="grid min-w-0 gap-2 rounded-lg border bg-background/70 p-2 sm:grid-cols-[minmax(0,1fr)_6.5rem_auto]"
                     >
                       <select
-                        className="h-9 rounded-md border bg-background px-2 text-sm"
+                        className="h-9 min-w-0 w-full rounded-md border bg-background px-2 text-sm"
                         value={linha.produtoId}
                         onChange={e =>
                           setAvarias(prev =>
@@ -2418,6 +2420,7 @@ export function Pedidos({
                         type="number"
                         min="0.001"
                         step="0.001"
+                        className="min-w-0"
                         value={linha.quantidade}
                         onChange={e =>
                           setAvarias(prev =>
@@ -2431,6 +2434,7 @@ export function Pedidos({
                       />
                       <Button
                         variant="ghost"
+                        className="shrink-0"
                         onClick={() =>
                           setAvarias(prev => prev.filter((_, i) => i !== idx))
                         }
@@ -2438,7 +2442,7 @@ export function Pedidos({
                         Remover
                       </Button>
                       <Input
-                        className="sm:col-span-3"
+                        className="min-w-0 sm:col-span-3"
                         value={linha.observacoes}
                         onChange={e =>
                           setAvarias(prev =>
@@ -2484,14 +2488,14 @@ export function Pedidos({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="min-w-0 overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Search className="h-4 w-4" /> Agenda
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-2 md:grid-cols-[1fr_1fr]">
+            <CardContent className="min-w-0 space-y-3">
+              <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <Input
                   placeholder="Buscar cliente/produto/observação"
                   value={busca}
