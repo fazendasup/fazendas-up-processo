@@ -39,8 +39,8 @@ export function EstoqueVivo() {
     <div className="space-y-4">
       <PageHeader
         kicker="Comercial"
-        title="Estoque vivo"
-        subtitle="Receitas de mixes ligadas aos pedidos do dia — kg a processar por ingrediente."
+        title="Kg a processar"
+        subtitle="Receitas de mixes ligadas aos pedidos do dia — volume por ingrediente."
       />
 
       <Tabs
