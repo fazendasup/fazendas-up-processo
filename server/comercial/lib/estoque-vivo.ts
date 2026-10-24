@@ -226,6 +226,25 @@ export type PedidoItemProcessamento = {
   quantidade: number;
 };
 
+/**
+ * Unidades ainda a processar: desconta o que já está marcado como pronto
+ * (`pronto` ou `quantidadePronta`).
+ */
+export function quantidadePendenteProcessar(item: {
+  quantidade: unknown;
+  pronto?: boolean | null;
+  quantidadePronta?: unknown;
+}): number {
+  const qtd = Number(item.quantidade) || 0;
+  if (qtd <= 0) return 0;
+  if (item.pronto) return 0;
+  const pronta = Math.min(
+    qtd,
+    Math.max(0, Number(item.quantidadePronta ?? 0) || 0),
+  );
+  return Math.max(0, Math.round((qtd - pronta) * 1000) / 1000);
+}
+
 export type MixUsadoDia = {
   mixId: string;
   mixNome: string;

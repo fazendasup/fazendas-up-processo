@@ -8,6 +8,7 @@ import {
   kgComprarPorRendimento,
   kgProcessarIngredienteMix,
   normalizeEstoqueMixFolhaLeve,
+  quantidadePendenteProcessar,
   unidadesAjustadasMixEstoque,
   type ConfigProdutoEstoque,
   type EstoqueVivoMixCfg,
@@ -143,5 +144,46 @@ describe("estoque-vivo", () => {
     );
     expect(out.mixesUsados[0]?.unidades).toBe(100);
     expect(out.ingredientes[0]?.kgProcessar).toBeCloseTo(3.334, 3);
+  });
+
+  it("desconta unidades já marcadas como prontas", () => {
+    expect(quantidadePendenteProcessar({ quantidade: 10, pronto: true })).toBe(0);
+    expect(
+      quantidadePendenteProcessar({
+        quantidade: 10,
+        pronto: false,
+        quantidadePronta: 4,
+      }),
+    ).toBe(6);
+    expect(
+      quantidadePendenteProcessar({
+        quantidade: 10,
+        pronto: false,
+        quantidadePronta: 0,
+      }),
+    ).toBe(10);
+  });
+
+  it("processamento do dia usa só o volume ainda pendente", () => {
+    const mix: EstoqueVivoMixCfg = {
+      id: "mc",
+      nome: "Mix Clássico",
+      produtoReferenciaId: "prod-mix",
+      produtoReferenciaNome: null,
+      perdaPercentual: 0,
+      ativo: true,
+      componentes: [
+        { produtoId: "a", produtoNome: "Alface", quantidade: 100 },
+      ],
+    };
+    const out = calcularProcessamentoDoDia(
+      [
+        { produtoId: "prod-mix", nome: "Mix Clássico", quantidade: 10 },
+        // já pronto → não entra (quantidade pendente 0)
+      ],
+      [mix],
+    );
+    expect(out.mixesUsados[0]?.unidades).toBe(10);
+    expect(out.ingredientes[0]?.kgProcessar).toBe(1);
   });
 });

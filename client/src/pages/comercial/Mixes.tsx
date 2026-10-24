@@ -336,9 +336,10 @@ export function Mixes({
                 <Calculator className="h-4 w-4" /> Processamento do dia
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Calculado automaticamente pelos pedidos de{" "}
-                <strong>{fmtDataBr(dia)}</strong> e pelas receitas cadastradas.
-                Cada ingrediente mostra quantos <strong>kg</strong> processar.
+                Calculado pelos pedidos de <strong>{fmtDataBr(dia)}</strong> ainda
+                pendentes — o que já está marcado como <strong>pronto</strong> é
+                descontado. Cada ingrediente mostra quantos <strong>kg</strong>{" "}
+                processar.
               </p>
             </div>
             <div className="flex flex-wrap items-end gap-2">

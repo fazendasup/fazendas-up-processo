@@ -13,6 +13,7 @@ import {
   calcularProcessamentoDoDia,
   normalizeEstoqueMixFolhaLeve,
   previewMixEstoqueVivo,
+  quantidadePendenteProcessar,
   type ConfigProdutoEstoque,
   type EstoqueVivoMixCfg,
   type LinhaPedidoEstoque,
@@ -2815,10 +2816,13 @@ export const pedidosRouter = router({
               gte: inicioComCortePedidos(input.dia),
               lte: fimDia(input.dia),
             },
-            status: { not: "CANCELADO" },
+            // ENTREGUE/CANCELADO não entram; PRONTO/parcial descontam via item.pronto.
+            status: { notIn: ["CANCELADO", "ENTREGUE"] },
           },
           include: {
-            itens: { include: { produto: { select: { id: true, nome: true } } } },
+            itens: {
+              include: { produto: { select: { id: true, nome: true } } },
+            },
           },
         }),
         ctx.prisma!.estoqueVivoMix.findMany({
@@ -2831,10 +2835,16 @@ export const pedidosRouter = router({
       const pedidosLinhas: PedidoItemProcessamento[] = [];
       for (const pedido of pedidosDb) {
         for (const item of pedido.itens) {
+          const quantidade = quantidadePendenteProcessar({
+            quantidade: item.quantidade,
+            pronto: item.pronto,
+            quantidadePronta: item.quantidadePronta,
+          });
+          if (quantidade <= 0) continue;
           pedidosLinhas.push({
             produtoId: item.produtoId,
             nome: item.produto?.nome ?? item.produtoNome,
-            quantidade: Number(item.quantidade ?? 0) || 0,
+            quantidade,
           });
         }
       }
