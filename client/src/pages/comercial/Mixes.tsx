@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
-import { Calculator, ChevronsDownUp, ChevronsUpDown, ExternalLink, Plus, Save, Trash2 } from "lucide-react";
+import {
+  Calculator,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  ExternalLink,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -116,9 +127,54 @@ export function Mixes({
   const [perdasCalc, setPerdasCalc] = useState<Record<string, string>>({});
   /** Esconde cadastro/simulação — fica só o processamento do dia. */
   const [cadastroMinimizado, setCadastroMinimizado] = useState(true);
-  /** Esconde o detalhe por receita; mantém só kg por ingrediente. */
+  /** Esconde o bloco por receita; mantém só kg por ingrediente. */
   const [porReceitaMinimizado, setPorReceitaMinimizado] = useState(false);
+  const [filtroProcessamento, setFiltroProcessamento] = useState("");
+  /** Mixes com ingredientes expandidos (padrão: todos minimizados). */
+  const [receitasExpandidas, setReceitasExpandidas] = useState<Set<string>>(
+    () => new Set(),
+  );
   const formRef = useRef<HTMLDivElement | null>(null);
+
+  const filtroNorm = filtroProcessamento.trim().toLowerCase();
+
+  const mixesUsadosFiltrados = useMemo(() => {
+    const lista = processamento.data?.mixesUsados ?? [];
+    if (!filtroNorm) return lista;
+    return lista.filter(
+      m =>
+        m.mixNome.toLowerCase().includes(filtroNorm) ||
+        m.produtoPedidoNome.toLowerCase().includes(filtroNorm) ||
+        m.ingredientes.some(i => i.nome.toLowerCase().includes(filtroNorm)),
+    );
+  }, [processamento.data?.mixesUsados, filtroNorm]);
+
+  const ingredientesFiltrados = useMemo(() => {
+    const lista = processamento.data?.ingredientes ?? [];
+    if (!filtroNorm) return lista;
+    return lista.filter(
+      i =>
+        i.nome.toLowerCase().includes(filtroNorm) ||
+        i.fontes.some(f => f.mixNome.toLowerCase().includes(filtroNorm)),
+    );
+  }, [processamento.data?.ingredientes, filtroNorm]);
+
+  function toggleReceitaExpandida(mixId: string) {
+    setReceitasExpandidas(prev => {
+      const next = new Set(prev);
+      if (next.has(mixId)) next.delete(mixId);
+      else next.add(mixId);
+      return next;
+    });
+  }
+
+  function minimizarTodasReceitas() {
+    setReceitasExpandidas(new Set());
+  }
+
+  function expandirTodasReceitas() {
+    setReceitasExpandidas(new Set(mixesUsadosFiltrados.map(m => m.mixId)));
+  }
 
   function abrirFormulario(proximo: MixForm) {
     setCadastroMinimizado(false);
@@ -373,10 +429,28 @@ export function Mixes({
                 </div>
               </div>
 
-              {(proc?.ingredientes.length ?? 0) > 0 ? (
+              {(proc?.ingredientes.length ?? 0) > 0 ||
+              (proc?.mixesUsados.length ?? 0) > 0 ? (
+                <div className="relative max-w-md">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="h-9 pl-8"
+                    placeholder="Filtrar receita ou ingrediente…"
+                    value={filtroProcessamento}
+                    onChange={e => setFiltroProcessamento(e.target.value)}
+                  />
+                </div>
+              ) : null}
+
+              {ingredientesFiltrados.length > 0 ? (
                 <div>
                   <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Kg a processar por ingrediente
+                    {filtroNorm ? (
+                      <span className="ml-1 font-normal normal-case">
+                        ({ingredientesFiltrados.length})
+                      </span>
+                    ) : null}
                   </p>
                   <div className="overflow-x-auto rounded-lg border bg-background">
                     <table className="w-full text-sm">
@@ -388,7 +462,7 @@ export function Mixes({
                         </tr>
                       </thead>
                       <tbody>
-                        {proc!.ingredientes.map(ing => (
+                        {ingredientesFiltrados.map(ing => (
                           <tr key={ing.produtoId || ing.nome} className="border-b align-top">
                             <td className="px-3 py-2.5 font-medium leading-snug">{ing.nome}</td>
                             <td className="px-3 py-2.5 text-right text-base font-bold tabular-nums text-primary whitespace-nowrap">
@@ -422,9 +496,17 @@ export function Mixes({
                       </tbody>
                       <tfoot>
                         <tr className="bg-muted/30 text-sm font-semibold">
-                          <td className="px-3 py-2">Total</td>
+                          <td className="px-3 py-2">
+                            {filtroNorm ? "Total filtrado" : "Total"}
+                          </td>
                           <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
-                            {fmtKg(proc!.totais.kgTotal)} kg
+                            {fmtKg(
+                              ingredientesFiltrados.reduce(
+                                (s, i) => s + i.kgProcessar,
+                                0,
+                              ),
+                            )}{" "}
+                            kg
                           </td>
                           <td />
                         </tr>
@@ -432,63 +514,116 @@ export function Mixes({
                     </table>
                   </div>
                 </div>
+              ) : (proc?.ingredientes.length ?? 0) > 0 && filtroNorm ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum ingrediente com «{filtroProcessamento}».
+                </p>
               ) : null}
 
               {(proc?.mixesUsados.length ?? 0) > 0 && !porReceitaMinimizado ? (
                 <div>
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                    Por receita (volume do dia)
-                  </p>
-                  <div className="space-y-2">
-                    {proc!.mixesUsados.map(m => {
-                      const kgReceita = m.ingredientes.reduce(
-                        (s, i) => s + (Number(i.kgProcessar) || 0),
-                        0,
-                      );
-                      return (
-                        <details
-                          key={m.mixId}
-                          open
-                          className="rounded-lg border bg-background px-3 py-2"
-                        >
-                          <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-2 [&::-webkit-details-marker]:hidden">
-                            <span>
-                              <span className="font-medium">{m.mixNome}</span>
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                {m.produtoPedidoNome}
-                              </span>
-                            </span>
-                            <span className="text-sm tabular-nums">
-                              <strong>{m.unidades}</strong> un
-                              <span className="text-muted-foreground"> · </span>
-                              <strong className="text-primary">{fmtKg(kgReceita)} kg</strong>
-                            </span>
-                          </summary>
-                          <table className="mt-2 w-full text-sm">
-                            <thead>
-                              <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                                <th className="py-1 pr-2">Ingrediente</th>
-                                <th className="py-1 text-right">Processar</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {m.ingredientes.map(i => (
-                                <tr
-                                  key={i.produtoId || i.nome}
-                                  className="border-b last:border-0"
-                                >
-                                  <td className="py-1.5 pr-2">{i.nome}</td>
-                                  <td className="py-1.5 text-right font-semibold tabular-nums whitespace-nowrap">
-                                    {fmtKg(i.kgProcessar)} kg
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </details>
-                      );
-                    })}
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      Por receita (volume do dia)
+                      {filtroNorm ? (
+                        <span className="ml-1 font-normal normal-case">
+                          ({mixesUsadosFiltrados.length})
+                        </span>
+                      ) : null}
+                    </p>
+                    <div className="ml-auto flex flex-wrap gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={minimizarTodasReceitas}
+                      >
+                        Minimizar todas
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={expandirTodasReceitas}
+                      >
+                        Expandir todas
+                      </Button>
+                    </div>
                   </div>
+                  {mixesUsadosFiltrados.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma receita com «{filtroProcessamento}».
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {mixesUsadosFiltrados.map(m => {
+                        const kgReceita = m.ingredientes.reduce(
+                          (s, i) => s + (Number(i.kgProcessar) || 0),
+                          0,
+                        );
+                        const expandida = receitasExpandidas.has(m.mixId);
+                        return (
+                          <div
+                            key={m.mixId}
+                            className="rounded-lg border bg-background px-3 py-2"
+                          >
+                            <button
+                              type="button"
+                              className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
+                              onClick={() => toggleReceitaExpandida(m.mixId)}
+                              aria-expanded={expandida}
+                            >
+                              <span className="flex min-w-0 items-center gap-1.5">
+                                {expandida ? (
+                                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                )}
+                                <span className="min-w-0">
+                                  <span className="font-medium">{m.mixNome}</span>
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    {m.produtoPedidoNome}
+                                  </span>
+                                </span>
+                              </span>
+                              <span className="shrink-0 text-sm tabular-nums">
+                                <strong>{m.unidades}</strong> un
+                                <span className="text-muted-foreground"> · </span>
+                                <strong className="text-primary">
+                                  {fmtKg(kgReceita)} kg
+                                </strong>
+                              </span>
+                            </button>
+                            {expandida ? (
+                              <table className="mt-2 w-full text-sm">
+                                <thead>
+                                  <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                                    <th className="py-1 pr-2">Ingrediente</th>
+                                    <th className="py-1 text-right">Processar</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {m.ingredientes.map(i => (
+                                    <tr
+                                      key={i.produtoId || i.nome}
+                                      className="border-b last:border-0"
+                                    >
+                                      <td className="py-1.5 pr-2">{i.nome}</td>
+                                      <td className="py-1.5 text-right font-semibold tabular-nums whitespace-nowrap">
+                                        {fmtKg(i.kgProcessar)} kg
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ) : null}
 
