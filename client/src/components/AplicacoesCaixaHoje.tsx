@@ -5,12 +5,34 @@ import { useFazenda } from "@/contexts/FazendaContext";
 import { useDbIdResolver } from "@/hooks/useDbIdResolver";
 import { Button } from "@/components/ui/button";
 import type { CicloAplicacao, Fase } from "@/lib/types";
+import { produtoSolucaoDoNome } from "@/data/cicloFases14d";
 import { cicloPendenteNoProtocolo } from "@/lib/utils-farm";
 import {
   hojeYmdSaoPaulo,
   passosDevidosDaCaixa,
   type PassoCicloAgenda,
 } from "@shared/cicloSequencia";
+
+/** Agrupa Thyper/peróxido/etc. duplicados — um card por solução. */
+function chaveProdutoLinha(produto: string): string {
+  const solucao = produtoSolucaoDoNome(produto);
+  if (solucao) return solucao;
+  return produto.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function deduparLinhasAplicacao(linhas: LinhaAplicacao[]): LinhaAplicacao[] {
+  const porChave = new Map<string, LinhaAplicacao>();
+  for (const linha of linhas) {
+    const chave = `${linha.acao.tipo}:${chaveProdutoLinha(linha.produto)}`;
+    const atual = porChave.get(chave);
+    if (!atual || linha.diasAtraso > atual.diasAtraso) {
+      porChave.set(chave, linha);
+    }
+  }
+  return Array.from(porChave.values()).sort(
+    (a, b) => b.diasAtraso - a.diasAtraso || a.produto.localeCompare(b.produto),
+  );
+}
 
 function passosAgenda(ciclos: CicloAplicacao[]): PassoCicloAgenda<string>[] {
   const out: PassoCicloAgenda<string>[] = [];
@@ -122,7 +144,7 @@ export function AplicacaoPendenteNaTorre({
         });
       }
     }
-    return saida;
+    return deduparLinhasAplicacao(saida);
   }, [caixaId, data.ciclos, fase, resolver.caixaSlugToId]);
 
   if (linhas.length === 0) return null;

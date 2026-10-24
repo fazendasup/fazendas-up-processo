@@ -230,7 +230,7 @@ export default function TorreCard({ torre }: TorreCardProps) {
       >
         <Link
           href={hrefTorre}
-          className="flex min-h-0 shrink-0 flex-col items-center gap-1.5 border-r border-border/60 bg-muted/15 px-2 py-2.5"
+          className="flex min-h-0 shrink-0 flex-col items-center gap-1.5 self-stretch border-r border-border/60 bg-muted/15 px-2 py-2.5"
         >
           <span className="select-none text-center text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
             Andares
