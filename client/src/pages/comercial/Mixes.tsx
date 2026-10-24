@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
-import { Calculator, ExternalLink, Plus, Save, Trash2 } from "lucide-react";
+import { Calculator, ChevronsDownUp, ChevronsUpDown, ExternalLink, Plus, Save, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { PageHeader } from "@/components/comercial/ui/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -114,6 +114,19 @@ export function Mixes({
   const [mixCalcId, setMixCalcId] = useState("");
   const [qtdMixes, setQtdMixes] = useState("100");
   const [perdasCalc, setPerdasCalc] = useState<Record<string, string>>({});
+  /** Esconde cadastro/simulação — fica só o processamento do dia. */
+  const [cadastroMinimizado, setCadastroMinimizado] = useState(true);
+  /** Esconde o detalhe por receita; mantém só kg por ingrediente. */
+  const [porReceitaMinimizado, setPorReceitaMinimizado] = useState(false);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  function abrirFormulario(proximo: MixForm) {
+    setCadastroMinimizado(false);
+    setForm(proximo);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }
 
   const salvar = trpc.comercial.pedidos.salvarMixEstoqueVivo.useMutation({
     onSuccess: data => {
@@ -222,7 +235,7 @@ export function Mixes({
   }) => {
     setMixCalcId(mix.id);
     setPerdasCalc({});
-    setForm({
+    abrirFormulario({
       id: mix.id,
       nome: mix.nome,
       produtoReferenciaId: mix.produtoReferenciaId ?? "",
@@ -303,7 +316,7 @@ export function Mixes({
             </p>
           ) : (
             <>
-              <div className="flex flex-wrap gap-3 text-sm">
+              <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="rounded-lg border bg-background px-3 py-1.5">
                   <span className="text-muted-foreground">Mixes no dia · </span>
                   <strong>{proc?.totais.mixes ?? 0}</strong>
@@ -316,6 +329,48 @@ export function Mixes({
                   <span className="text-muted-foreground">Total a processar · </span>
                   <strong>{fmtKg(proc?.totais.kgTotal ?? 0)} kg</strong>
                 </span>
+                <div className="ml-auto flex flex-wrap gap-2">
+                  {(proc?.mixesUsados.length ?? 0) > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8"
+                      onClick={() => setPorReceitaMinimizado(v => !v)}
+                    >
+                      {porReceitaMinimizado ? (
+                        <>
+                          <ChevronsUpDown className="mr-1 h-3.5 w-3.5" />
+                          Ver por receita
+                        </>
+                      ) : (
+                        <>
+                          <ChevronsDownUp className="mr-1 h-3.5 w-3.5" />
+                          Só kg por ingrediente
+                        </>
+                      )}
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    onClick={() => setCadastroMinimizado(v => !v)}
+                  >
+                    {cadastroMinimizado ? (
+                      <>
+                        <ChevronsUpDown className="mr-1 h-3.5 w-3.5" />
+                        Cadastro
+                      </>
+                    ) : (
+                      <>
+                        <ChevronsDownUp className="mr-1 h-3.5 w-3.5" />
+                        Minimizar cadastro
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {(proc?.ingredientes.length ?? 0) > 0 ? (
@@ -347,7 +402,10 @@ export function Mixes({
                                 </summary>
                                 <ul className="mt-1.5 space-y-1 border-t pt-1.5 text-xs text-muted-foreground">
                                   {ing.fontes.map((f, idx) => (
-                                    <li key={`${f.mixNome}-${idx}`} className="flex justify-between gap-2">
+                                    <li
+                                      key={`${f.mixNome}-${idx}`}
+                                      className="flex justify-between gap-2"
+                                    >
                                       <span className="min-w-0 truncate" title={f.mixNome}>
                                         {f.mixNome}
                                       </span>
@@ -376,37 +434,66 @@ export function Mixes({
                 </div>
               ) : null}
 
-              {(proc?.mixesUsados.length ?? 0) > 0 ? (
-                <details className="rounded-lg border bg-background px-3 py-2">
-                  <summary className="cursor-pointer text-sm font-medium">
-                    Mixes vendidos no dia ({proc!.mixesUsados.length})
-                  </summary>
-                  <div className="mt-2 overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                          <th className="py-1.5 pr-3">Receita</th>
-                          <th className="py-1.5 pr-3">No pedido</th>
-                          <th className="py-1.5 text-right">Un.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {proc!.mixesUsados.map(m => (
-                          <tr key={m.mixId} className="border-b last:border-0">
-                            <td className="py-1.5 pr-3 font-medium">{m.mixNome}</td>
-                            <td className="py-1.5 pr-3 text-xs text-muted-foreground">
-                              {m.produtoPedidoNome}
-                            </td>
-                            <td className="py-1.5 text-right tabular-nums font-semibold">
-                              {m.unidades}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              {(proc?.mixesUsados.length ?? 0) > 0 && !porReceitaMinimizado ? (
+                <div>
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Por receita (volume do dia)
+                  </p>
+                  <div className="space-y-2">
+                    {proc!.mixesUsados.map(m => {
+                      const kgReceita = m.ingredientes.reduce(
+                        (s, i) => s + (Number(i.kgProcessar) || 0),
+                        0,
+                      );
+                      return (
+                        <details
+                          key={m.mixId}
+                          open
+                          className="rounded-lg border bg-background px-3 py-2"
+                        >
+                          <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                            <span>
+                              <span className="font-medium">{m.mixNome}</span>
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {m.produtoPedidoNome}
+                              </span>
+                            </span>
+                            <span className="text-sm tabular-nums">
+                              <strong>{m.unidades}</strong> un
+                              <span className="text-muted-foreground"> · </span>
+                              <strong className="text-primary">{fmtKg(kgReceita)} kg</strong>
+                            </span>
+                          </summary>
+                          <table className="mt-2 w-full text-sm">
+                            <thead>
+                              <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                                <th className="py-1 pr-2">Ingrediente</th>
+                                <th className="py-1 text-right">Processar</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {m.ingredientes.map(i => (
+                                <tr
+                                  key={i.produtoId || i.nome}
+                                  className="border-b last:border-0"
+                                >
+                                  <td className="py-1.5 pr-2">{i.nome}</td>
+                                  <td className="py-1.5 text-right font-semibold tabular-nums whitespace-nowrap">
+                                    {fmtKg(i.kgProcessar)} kg
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </details>
+                      );
+                    })}
                   </div>
-                </details>
-              ) : (proc?.ingredientes.length ?? 0) === 0 ? (
+                </div>
+              ) : null}
+
+              {(proc?.mixesUsados.length ?? 0) === 0 &&
+              (proc?.ingredientes.length ?? 0) === 0 ? (
                 <p className="rounded-lg border border-dashed bg-background px-3 py-4 text-sm text-muted-foreground">
                   Nenhum mix encontrado nos pedidos deste dia. Cadastre a receita e vincule o{" "}
                   <strong>produto de referência</strong> (o mesmo item vendido no pedido), ou use o
@@ -443,337 +530,358 @@ export function Mixes({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-base">Receitas cadastradas</CardTitle>
-              {canEdit ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setMixCalcId("");
-                    setPerdasCalc({});
-                    setForm(emptyForm());
-                  }}
-                >
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Novo mix
-                </Button>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(mixes.data ?? []).length === 0 ? (
-              <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-                Nenhum mix ainda. Crie o primeiro (ex.: Mix Clássico, Crocante 1).
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {(mixes.data ?? []).map(mix => (
-                  <li
-                    key={mix.id}
-                    className={`rounded-lg border px-3 py-2 ${
-                      mixCalcId === mix.id ? "border-primary bg-primary/5" : ""
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <button
-                        type="button"
-                        className="min-w-0 flex-1 text-left"
-                        onClick={() => {
-                          setMixCalcId(mix.id);
-                          setPerdasCalc({});
-                          setForm(null);
-                        }}
-                      >
-                        <p className="font-medium">{mix.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {mix.produtoReferenciaNome
-                            ? `Pedido: ${mix.produtoReferenciaNome} · `
-                            : "Sem produto de referência · "}
-                          {mix.componentes
-                            .map(c => `${c.produtoNome} ${c.quantidade}g`)
-                            .join(" · ")}
-                          {mix.perdaPercentual > 0
-                            ? ` · perda ${mix.perdaPercentual}%`
-                            : ""}
-                        </p>
-                      </button>
-                      {canEdit ? (
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="outline" onClick={() => editar(mix)}>
-                            Editar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={() => {
-                              if (confirm(`Remover «${mix.nome}»?`)) {
-                                excluir.mutate({ id: mix.id });
-                                if (mixCalcId === mix.id) setMixCalcId("");
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calculator className="h-4 w-4" /> Simular receita
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Mix</Label>
-                <select
-                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-                  value={mixCalcId}
-                  onChange={e => {
-                    setMixCalcId(e.target.value);
-                    setPerdasCalc({});
-                    setForm(null);
-                  }}
-                >
-                  <option value="">
-                    {form ? "(editando no formulário)" : "Selecione um mix…"}
-                  </option>
-                  {(mixes.data ?? []).map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Quantidade de mixes (simulação)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={qtdMixes}
-                  onChange={e => setQtdMixes(e.target.value)}
-                  placeholder="100"
-                />
-              </div>
-            </div>
-
-            {linhasCalc.length > 0 ? (
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                      <th className="px-3 py-2">Ingrediente</th>
-                      <th className="px-3 py-2">g / mix</th>
-                      <th className="px-3 py-2">Perda %</th>
-                      <th className="px-3 py-2">Processar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {linhasCalc.map(l => (
-                      <tr key={l.produtoId} className="border-b">
-                        <td className="px-3 py-2 font-medium">{l.nome}</td>
-                        <td className="px-3 py-2 tabular-nums">
-                          {l.gramas.toLocaleString("pt-BR")}g
-                        </td>
-                        <td className="px-3 py-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={99.99}
-                            step={0.1}
-                            className="h-8 w-20 tabular-nums"
-                            value={perdasCalc[l.produtoId] ?? "0"}
-                            onChange={e =>
-                              setPerdasCalc(prev => ({
-                                ...prev,
-                                [l.produtoId]: e.target.value,
-                              }))
-                            }
-                          />
-                        </td>
-                        <td className="px-3 py-2 font-semibold tabular-nums">
-                          {fmtKg(l.kg)} kg
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Selecione um mix para simular outra quantidade, ou use o painel do dia acima.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {canEdit && form ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">
-              {form.id ? `Editar «${form.nome || "mix"}»` : "Novo mix"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-1 sm:col-span-1">
-                <Label className="text-xs">Nome da receita</Label>
-                <Input
-                  value={form.nome}
-                  onChange={e => setForm({ ...form, nome: e.target.value })}
-                  placeholder="Ex.: Mix Clássico"
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-1">
-                <Label className="text-xs">Produto no pedido (referência)</Label>
-                <select
-                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-                  value={form.produtoReferenciaId}
-                  onChange={e =>
-                    setForm({ ...form, produtoReferenciaId: e.target.value })
-                  }
-                >
-                  <option value="">Casar só pelo nome da receita…</option>
-                  {produtoOptions.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-muted-foreground">
-                  Item vendido no dashboard/pedidos que dispara esta receita.
-                </p>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Perda no processamento (%)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={99.99}
-                  step={0.1}
-                  value={form.perdaPercentual}
-                  onChange={e =>
-                    setForm({ ...form, perdaPercentual: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
+      {cadastroMinimizado ? (
+        <p className="text-sm text-muted-foreground">
+          Cadastro minimizado.{" "}
+          <button
+            type="button"
+            className="font-medium text-foreground underline-offset-2 hover:underline"
+            onClick={() => setCadastroMinimizado(false)}
+          >
+            Abrir cadastro
+          </button>{" "}
+          para editar ou criar mixes.
+        </p>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+          <Card>
+            <CardHeader className="pb-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label className="text-xs">Ingredientes (gramas por 1 mix)</Label>
-                <span className="text-xs text-muted-foreground">
-                  Soma: {gramasTotaisForm.toLocaleString("pt-BR")} g / mix
-                </span>
-              </div>
-              {form.componentes.map((comp, idx) => (
-                <div key={idx} className="flex flex-wrap items-center gap-2">
-                  <select
-                    className="h-9 min-w-[220px] flex-1 rounded-md border bg-background px-2 text-sm"
-                    value={comp.produtoId}
-                    onChange={e => {
-                      const next = [...form.componentes];
-                      next[idx] = { ...next[idx], produtoId: e.target.value };
-                      setForm({ ...form, componentes: next });
+                <CardTitle className="text-base">Receitas cadastradas</CardTitle>
+                {canEdit ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setMixCalcId("");
+                      setPerdasCalc({});
+                      abrirFormulario(emptyForm());
                     }}
                   >
-                    <option value="">Selecione o produto…</option>
-                    {produtoOptions.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.nome}
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Novo mix
+                  </Button>
+                ) : null}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {canEdit && form ? (
+                <div
+                  ref={formRef}
+                  className="space-y-4 rounded-lg border border-primary/30 bg-primary/5 p-3"
+                >
+                  <p className="text-sm font-semibold">
+                    {form.id ? `Editar «${form.nome || "mix"}»` : "Novo mix"}
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nome da receita</Label>
+                      <Input
+                        value={form.nome}
+                        onChange={e => setForm({ ...form, nome: e.target.value })}
+                        placeholder="Ex.: Mix Clássico"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Produto no pedido (referência)</Label>
+                      <select
+                        className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                        value={form.produtoReferenciaId}
+                        onChange={e =>
+                          setForm({ ...form, produtoReferenciaId: e.target.value })
+                        }
+                      >
+                        <option value="">Casar só pelo nome da receita…</option>
+                        {produtoOptions.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Perda no processamento (%)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={99.99}
+                        step={0.1}
+                        value={form.perdaPercentual}
+                        onChange={e =>
+                          setForm({ ...form, perdaPercentual: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Label className="text-xs">Ingredientes (gramas por 1 mix)</Label>
+                      <span className="text-xs text-muted-foreground">
+                        Soma: {gramasTotaisForm.toLocaleString("pt-BR")} g / mix
+                      </span>
+                    </div>
+                    {form.componentes.map((comp, idx) => (
+                      <div key={idx} className="flex flex-wrap items-center gap-2">
+                        <select
+                          className="h-9 min-w-[180px] flex-1 rounded-md border bg-background px-2 text-sm"
+                          value={comp.produtoId}
+                          onChange={e => {
+                            const next = [...form.componentes];
+                            next[idx] = { ...next[idx], produtoId: e.target.value };
+                            setForm({ ...form, componentes: next });
+                          }}
+                        >
+                          <option value="">Selecione o produto…</option>
+                          {produtoOptions.map(p => (
+                            <option key={p.id} value={p.id}>
+                              {p.nome}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            min={0.01}
+                            step={1}
+                            className="h-9 w-24"
+                            value={comp.quantidade}
+                            onChange={e => {
+                              const next = [...form.componentes];
+                              next[idx] = {
+                                ...next[idx],
+                                quantidade: e.target.value,
+                              };
+                              setForm({ ...form, componentes: next });
+                            }}
+                            placeholder="30"
+                          />
+                          <span className="text-xs text-muted-foreground">g</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive"
+                          disabled={form.componentes.length <= 1}
+                          onClick={() =>
+                            setForm({
+                              ...form,
+                              componentes: form.componentes.filter((_, i) => i !== idx),
+                            })
+                          }
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          componentes: [
+                            ...form.componentes,
+                            { produtoId: "", quantidade: "" },
+                          ],
+                        })
+                      }
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Ingrediente
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      disabled={!formValid || salvar.isPending}
+                      onClick={() =>
+                        salvar.mutate({
+                          id: form.id,
+                          nome: form.nome.trim(),
+                          produtoReferenciaId: form.produtoReferenciaId || null,
+                          perdaPercentual:
+                            Number(String(form.perdaPercentual).replace(",", ".")) ||
+                            0,
+                          ativo: true,
+                          componentes: form.componentes.map(c => ({
+                            produtoId: c.produtoId,
+                            quantidade: Number(
+                              String(c.quantidade).replace(",", "."),
+                            ),
+                          })),
+                        })
+                      }
+                    >
+                      <Save className="mr-1 h-3.5 w-3.5" /> Salvar receita
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setForm(null)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              {(mixes.data ?? []).length === 0 ? (
+                <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                  Nenhum mix ainda. Crie o primeiro (ex.: Mix Clássico, Crocante 1).
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {(mixes.data ?? []).map(mix => (
+                    <li
+                      key={mix.id}
+                      className={`rounded-lg border px-3 py-2 ${
+                        mixCalcId === mix.id ? "border-primary bg-primary/5" : ""
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => {
+                            setMixCalcId(mix.id);
+                            setPerdasCalc({});
+                            setForm(null);
+                          }}
+                        >
+                          <p className="font-medium">{mix.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {mix.produtoReferenciaNome
+                              ? `Pedido: ${mix.produtoReferenciaNome}`
+                              : "Sem produto de referência"}
+                            {" · "}
+                            {mix.componentes.length} ingrediente
+                            {mix.componentes.length === 1 ? "" : "s"}
+                            {mix.perdaPercentual > 0
+                              ? ` · perda ${mix.perdaPercentual}%`
+                              : ""}
+                          </p>
+                        </button>
+                        {canEdit ? (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => editar(mix)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => {
+                                if (confirm(`Remover «${mix.nome}»?`)) {
+                                  excluir.mutate({ id: mix.id });
+                                  if (mixCalcId === mix.id) setMixCalcId("");
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Calculator className="h-4 w-4" /> Simular receita
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Mix</Label>
+                  <select
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                    value={mixCalcId}
+                    onChange={e => {
+                      setMixCalcId(e.target.value);
+                      setPerdasCalc({});
+                      setForm(null);
+                    }}
+                  >
+                    <option value="">
+                      {form ? "(editando no formulário)" : "Selecione um mix…"}
+                    </option>
+                    {(mixes.data ?? []).map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.nome}
                       </option>
                     ))}
                   </select>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min={0.01}
-                      step={1}
-                      className="h-9 w-24"
-                      value={comp.quantidade}
-                      onChange={e => {
-                        const next = [...form.componentes];
-                        next[idx] = { ...next[idx], quantidade: e.target.value };
-                        setForm({ ...form, componentes: next });
-                      }}
-                      placeholder="30"
-                    />
-                    <span className="text-xs text-muted-foreground">g</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive"
-                    disabled={form.componentes.length <= 1}
-                    onClick={() =>
-                      setForm({
-                        ...form,
-                        componentes: form.componentes.filter((_, i) => i !== idx),
-                      })
-                    }
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
-              ))}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setForm({
-                    ...form,
-                    componentes: [
-                      ...form.componentes,
-                      { produtoId: "", quantidade: "" },
-                    ],
-                  })
-                }
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" /> Ingrediente
-              </Button>
-            </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Quantidade de mixes (simulação)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={qtdMixes}
+                    onChange={e => setQtdMixes(e.target.value)}
+                    placeholder="100"
+                  />
+                </div>
+              </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                disabled={!formValid || salvar.isPending}
-                onClick={() =>
-                  salvar.mutate({
-                    id: form.id,
-                    nome: form.nome.trim(),
-                    produtoReferenciaId: form.produtoReferenciaId || null,
-                    perdaPercentual:
-                      Number(String(form.perdaPercentual).replace(",", ".")) || 0,
-                    ativo: true,
-                    componentes: form.componentes.map(c => ({
-                      produtoId: c.produtoId,
-                      quantidade: Number(String(c.quantidade).replace(",", ".")),
-                    })),
-                  })
-                }
-              >
-                <Save className="mr-1 h-3.5 w-3.5" /> Salvar receita
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setForm(null)}>
-                Cancelar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+              {linhasCalc.length > 0 ? (
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                        <th className="px-3 py-2">Ingrediente</th>
+                        <th className="px-3 py-2">g / mix</th>
+                        <th className="px-3 py-2">Perda %</th>
+                        <th className="px-3 py-2">Processar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {linhasCalc.map(l => (
+                        <tr key={l.produtoId} className="border-b">
+                          <td className="px-3 py-2 font-medium">{l.nome}</td>
+                          <td className="px-3 py-2 tabular-nums">
+                            {l.gramas.toLocaleString("pt-BR")}g
+                          </td>
+                          <td className="px-3 py-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={99.99}
+                              step={0.1}
+                              className="h-8 w-20 tabular-nums"
+                              value={perdasCalc[l.produtoId] ?? "0"}
+                              onChange={e =>
+                                setPerdasCalc(prev => ({
+                                  ...prev,
+                                  [l.produtoId]: e.target.value,
+                                }))
+                              }
+                            />
+                          </td>
+                          <td className="px-3 py-2 font-semibold tabular-nums">
+                            {fmtKg(l.kg)} kg
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Selecione um mix para simular outra quantidade, ou use o painel do dia
+                  acima.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
