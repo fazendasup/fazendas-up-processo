@@ -307,45 +307,72 @@ export default function CiclosPage() {
       return;
     }
 
-    if (
-      caldasNoMesmoDia(data.ciclos, {
-        id: editingId,
-        nome,
-        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
-        diasSemana: diasSelecionados,
-      })
-    ) {
-      toast.error('Calda A e Calda B ficam em dias diferentes.');
-      return;
-    }
+    // Conflito de data só importa se a agenda mudou (ou for ciclo novo).
+    // Editar só dosagem/aplicação não deve bloquear por regra já existente.
+    const cicloOriginal = editingId
+      ? data.ciclos.find((c) => c.id === editingId)
+      : undefined;
+    const freqDraft =
+      modoData === 'frequencia' ? frequencia : ('personalizada' as FrequenciaCiclo | '');
+    const diasOrig = [...(cicloOriginal?.diasSemana ?? [])].sort((a, b) => a - b);
+    const diasDraft = [...diasSelecionados].sort((a, b) => a - b);
+    const fasesOrig = [...(cicloOriginal?.fasesAplicaveis ?? [])].sort();
+    const fasesDraft = [...fasesSelecionadas].sort();
+    const dataInicioOrig = cicloOriginal?.dataInicio
+      ? isoToYmdLocal(cicloOriginal.dataInicio)
+      : '';
+    const agendaMudou =
+      !cicloOriginal ||
+      cicloOriginal.nome.trim() !== nome ||
+      (cicloOriginal.produto || '') !== produto ||
+      cicloOriginal.frequencia !== freqDraft ||
+      (cicloOriginal.intervaloDias ?? undefined) !== intervaloDias ||
+      dataInicioOrig !== dataInicio ||
+      dataInicioTouched ||
+      diasOrig.join(',') !== diasDraft.join(',') ||
+      fasesOrig.join(',') !== fasesDraft.join(',');
 
-    const regraSolucao = mensagemRegraSolucao(
-      data.ciclos.map((ciclo) => ({
-        id: ciclo.id,
-        nome: ciclo.nome,
-        produto: ciclo.produto,
-        ativo: ciclo.ativo,
-        frequencia: ciclo.frequencia,
-        diasSemana: ciclo.diasSemana,
-        intervaloDias: ciclo.intervaloDias,
-        dataInicio: ciclo.dataInicio ? isoToYmdLocal(ciclo.dataInicio) : null,
-        fasesAplicaveis: ciclo.fasesAplicaveis,
-      })),
-      {
-        id: editingId ?? 'novo',
-        nome,
-        produto,
-        ativo: true,
-        frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
-        diasSemana: diasSelecionados,
-        intervaloDias,
-        dataInicio,
-        fasesAplicaveis: fasesSelecionadas,
-      },
-    );
-    if (regraSolucao) {
-      toast.error(regraSolucao);
-      return;
+    if (agendaMudou) {
+      if (
+        caldasNoMesmoDia(data.ciclos, {
+          id: editingId,
+          nome,
+          frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
+          diasSemana: diasSelecionados,
+        })
+      ) {
+        toast.error('Calda A e Calda B ficam em dias diferentes.');
+        return;
+      }
+
+      const regraSolucao = mensagemRegraSolucao(
+        data.ciclos.map((ciclo) => ({
+          id: ciclo.id,
+          nome: ciclo.nome,
+          produto: ciclo.produto,
+          ativo: ciclo.ativo,
+          frequencia: ciclo.frequencia,
+          diasSemana: ciclo.diasSemana,
+          intervaloDias: ciclo.intervaloDias,
+          dataInicio: ciclo.dataInicio ? isoToYmdLocal(ciclo.dataInicio) : null,
+          fasesAplicaveis: ciclo.fasesAplicaveis,
+        })),
+        {
+          id: editingId ?? 'novo',
+          nome,
+          produto,
+          ativo: true,
+          frequencia: modoData === 'frequencia' ? frequencia : 'personalizada',
+          diasSemana: diasSelecionados,
+          intervaloDias,
+          dataInicio,
+          fasesAplicaveis: fasesSelecionadas,
+        },
+      );
+      if (regraSolucao) {
+        toast.error(regraSolucao);
+        return;
+      }
     }
 
     if (
