@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { programacaoCiclos, type CicloProgramado } from "../../client/src/data/cicloFases14d";
 import { caixasAgua, cicloCaixaExecucoes, ciclos, projetos } from "../../drizzle/schema";
 import { closeDb, getDb } from "../db";
@@ -158,16 +158,28 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
         cicloCasaComChave(ciclo, item.chave),
       );
       const ja = preferirCicloAtivo(mesmos);
-      // Desliga duplicatas ativas da mesma chave (ex.: vários Thyper / Peróxido).
-      for (const extra of mesmos) {
-        if (!extra.ativo || !ja || extra.id === ja.id) continue;
-        await db
-          .update(ciclos)
-          .set({ ativo: false })
-          .where(and(eq(ciclos.id, extra.id), eq(ciclos.projetoId, fazenda.id)));
-        extra.ativo = false;
+      // Apaga duplicatas da mesma chave (ativos ou inativos), mantém só o escolhido.
+      const idsRemovidos = new Set<number>();
+      if (ja) {
+        const idsLixo = mesmos.filter(c => c.id !== ja.id).map(c => c.id);
+        if (idsLixo.length > 0) {
+          await db
+            .delete(cicloCaixaExecucoes)
+            .where(inArray(cicloCaixaExecucoes.cicloId, idsLixo));
+          await db
+            .delete(ciclos)
+            .where(
+              and(inArray(ciclos.id, idsLixo), eq(ciclos.projetoId, fazenda.id)),
+            );
+          for (const idLixo of idsLixo) idsRemovidos.add(idLixo);
+          for (let i = existentes.length - 1; i >= 0; i--) {
+            if (idsLixo.includes(existentes[i]!.id)) existentes.splice(i, 1);
+          }
+        }
       }
-      const temInativo = mesmos.some((ciclo) => !ciclo.ativo);
+      const temInativo = mesmos.some(
+        (ciclo) => !ciclo.ativo && !idsRemovidos.has(ciclo.id),
+      );
       if (!ja && temInativo) continue;
       if (
         ja &&
