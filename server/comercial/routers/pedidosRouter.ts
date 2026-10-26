@@ -4259,6 +4259,33 @@ export const pedidosRouter = router({
       }
     }),
 
+  /**
+   * Limpa marca «venda enviada» / vínculo antigo para permitir criar venda nova no Conta Azul
+   * (ex.: venda da semana passada puxada pelo sync).
+   */
+  liberarReenvioVendaContaAzul: comercialProcedure
+    .use(podeConfigurarEstoqueVivo)
+    .input(z.object({ pedidoOperacionalId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const { liberarReenvioVendaContaAzul } = await import(
+        "../integrations/conta-azul/venda-outbound.service.js"
+      );
+      try {
+        return await liberarReenvioVendaContaAzul(
+          ctx.prisma!,
+          input.pedidoOperacionalId,
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao liberar reenvio da venda.",
+        });
+      }
+    }),
+
   /** Prévia do período de acúmulo (histórico) antes de fechar → venda. */
   previewPeriodoAcumuloContaAzul: comercialProcedure
     .use(podeConfigurarEstoqueVivo)

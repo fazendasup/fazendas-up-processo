@@ -9,6 +9,7 @@ import {
   isoDataCivil,
   periodoAcumuloContendo,
 } from "../../lib/periodo-acumulo";
+import { inicioSemana } from "../../lib/semana";
 import {
   contaAzulGet,
   contaAzulPost,
@@ -33,6 +34,11 @@ export type ValidacaoEnvioCa = {
   modoSugerido: ModoEnvioContaAzul;
   /** True quando já houve orçamento marcado e o usuário pode reenviar (ex.: excluiu no CA). */
   podeReenviarOrcamento: boolean;
+  /**
+   * True quando já há marca de venda enviada, mas o usuário pode liberar e criar
+   * uma venda nova (ex.: vínculo com venda da semana passada / documento excluído no CA).
+   */
+  podeReenviarVenda: boolean;
   periodo?: { inicio: string; fim: string; ehUltimoDiaDoPeriodo: boolean };
 };
 
@@ -381,11 +387,38 @@ export async function validarEnvioOperacionalContaAzul(
   if (pedido.itens.length === 0) {
     erros.push("Pedido sem itens.");
   }
-  if (
-    pedido.statusEnvioContaAzul === "ENVIADO_VENDA" ||
-    (pedido.pedidoContaAzulId && pedido.statusEnvioContaAzul === "ENVIADO_VENDA")
-  ) {
-    erros.push("Pedido já enviado como venda ao Conta Azul.");
+  const jaMarcadoVenda = pedido.statusEnvioContaAzul === "ENVIADO_VENDA";
+  let podeReenviarVenda = false;
+  if (jaMarcadoVenda) {
+    // Vínculo/espelho antigo (semana passada, venda apagada no CA, etc.) não deve
+    // impedir a venda nova desta entrega — libera com confirmação na UI.
+    podeReenviarVenda = true;
+    const vinculo = pedido.pedidoContaAzulId
+      ? await prisma.pedido.findUnique({
+          where: { id: pedido.pedidoContaAzulId },
+          select: { id: true, dataPedido: true, externalId: true, numeroVenda: true },
+        })
+      : null;
+    if (!vinculo) {
+      avisos.push(
+        "Há marca de venda enviada, mas o documento local não foi encontrado. Você pode liberar e criar uma venda nova no Conta Azul.",
+      );
+    } else {
+      const mesmaSemana =
+        inicioSemana(pedido.dataEntrega).getTime() ===
+        inicioSemana(vinculo.dataPedido).getTime();
+      if (!mesmaSemana) {
+        avisos.push(
+          `Vínculo com venda de outra semana (${isoDataCivil(vinculo.dataPedido)}${
+            vinculo.numeroVenda ? ` · nº ${vinculo.numeroVenda}` : ""
+          }). Libere para enviar a venda desta entrega.`,
+        );
+      } else {
+        avisos.push(
+          "Já há venda marcada como enviada. Liberar e reenviar cria um novo documento no Conta Azul (use se a venda antiga foi da semana passada, excluída ou precisa ser refeita).",
+        );
+      }
+    }
   }
 
   const podeReenviarOrcamento = pedido.statusEnvioContaAzul === "ENVIADO_ORCAMENTO";
@@ -430,6 +463,7 @@ export async function validarEnvioOperacionalContaAzul(
     avisos,
     modoSugerido,
     podeReenviarOrcamento,
+    podeReenviarVenda,
     periodo: periodo
       ? {
           inicio: isoDataCivil(periodo.inicio),
@@ -438,6 +472,53 @@ export async function validarEnvioOperacionalContaAzul(
         }
       : undefined,
   };
+}
+
+/**
+ * Limpa marca de envio/venda para permitir criar documento novo no Conta Azul.
+ * Arquiva o espelho local antigo (não apaga a venda no Conta Azul).
+ */
+export async function liberarReenvioVendaContaAzul(
+  prisma: PrismaClient,
+  pedidoId: string,
+): Promise<{ ok: true }> {
+  const pedido = await prisma.pedidoOperacional.findUnique({
+    where: { id: pedidoId },
+    select: {
+      id: true,
+      statusEnvioContaAzul: true,
+      pedidoContaAzulId: true,
+      contaAzulEnvioExternalId: true,
+    },
+  });
+  if (!pedido) throw new Error("Pedido operacional não encontrado.");
+
+  await prisma.$transaction(async (tx) => {
+    if (pedido.pedidoContaAzulId) {
+      await tx.pedido.update({
+        where: { id: pedido.pedidoContaAzulId },
+        data: {
+          statusConciliacao: "IGNORADA",
+          sugestaoPedidoOperacionalId: null,
+        },
+      });
+    }
+    await tx.pedidoOperacional.update({
+      where: { id: pedidoId },
+      data: {
+        statusEnvioContaAzul: "NAO_ENVIADO",
+        contaAzulEnvioExternalId: null,
+        enviadoContaAzulEm: null,
+        ultimoErroEnvioCa: null,
+        pedidoContaAzulId: null,
+        sugestaoPedidoContaAzulId: null,
+        statusConciliacao: "PLANEJADO",
+        snapshotConciliacao: Prisma.DbNull,
+      },
+    });
+  });
+
+  return { ok: true };
 }
 
 async function criarOrcamentoCa(
@@ -874,11 +955,13 @@ export async function enviarOperacionalContaAzul(
   boleto?: BoletoEmitidoCa | null;
   boletoErro?: string | null;
   reenvioOrcamento?: boolean;
+  reenvioVenda?: boolean;
 }> {
   const validacao = await validarEnvioOperacionalContaAzul(prisma, pedidoId);
   const modo = opts?.forcarModo ?? validacao.modoSugerido;
   const reenvioOrcamento =
     modo === "ORCAMENTO" && validacao.podeReenviarOrcamento;
+  const reenvioVenda = modo === "VENDA" && validacao.podeReenviarVenda;
 
   if (modo === "VENDA") {
     const pedido = await carregarPedido(prisma, pedidoId);
@@ -897,6 +980,10 @@ export async function enviarOperacionalContaAzul(
   }
   if (!validacao.ok && modo === "ORCAMENTO") {
     throw new Error(validacao.erros.join(" "));
+  }
+
+  if (reenvioVenda) {
+    await liberarReenvioVendaContaAzul(prisma, pedidoId);
   }
 
   await prisma.pedidoOperacional.update({
@@ -1063,6 +1150,7 @@ export async function enviarOperacionalContaAzul(
           externalId,
           modo,
           reenvioOrcamento: Boolean(reenvioOrcamento),
+          reenvioVenda: Boolean(reenvioVenda),
           boleto: boleto ?? undefined,
           boletoErro: boletoErro ?? undefined,
         },
@@ -1079,6 +1167,7 @@ export async function enviarOperacionalContaAzul(
           externalId,
           boletoId: boleto?.id,
           boletoErro: boletoErro ?? undefined,
+          reenvioVenda: Boolean(reenvioVenda),
         },
       },
     });
@@ -1090,6 +1179,7 @@ export async function enviarOperacionalContaAzul(
       boleto,
       boletoErro,
       reenvioOrcamento: Boolean(reenvioOrcamento),
+      reenvioVenda: Boolean(reenvioVenda),
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

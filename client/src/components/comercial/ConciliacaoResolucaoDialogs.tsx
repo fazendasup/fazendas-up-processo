@@ -89,7 +89,11 @@ export function AcoesPedidoConciliacao({
             : "Orçamento criado no Conta Azul.",
         );
       } else {
-        toast.success("Venda criada no Conta Azul.");
+        toast.success(
+          r.reenvioVenda
+            ? "Nova venda criada no Conta Azul (vínculo antigo liberado)."
+            : "Venda criada no Conta Azul.",
+        );
         if (r.boleto?.url) {
           toast.success("Boleto emitido.", {
             action: {
@@ -103,6 +107,14 @@ export function AcoesPedidoConciliacao({
           toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
         }
       }
+      void utils.comercial.pedidos.invalidate();
+      onEnviadoContaAzul?.();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const liberarVenda = trpc.comercial.pedidos.liberarReenvioVendaContaAzul.useMutation({
+    onSuccess: () => {
+      toast.success("Pedido liberado — pode enviar uma venda nova ao Conta Azul.");
       void utils.comercial.pedidos.invalidate();
       onEnviadoContaAzul?.();
     },
@@ -136,15 +148,19 @@ export function AcoesPedidoConciliacao({
   const jaVenda = statusEnvio === "ENVIADO_VENDA";
   const jaOrcamento = statusEnvio === "ENVIADO_ORCAMENTO";
   const modo = validacao.data?.modoSugerido;
-  const busy = enviar.isPending || fecharPeriodo.isPending;
+  const busy =
+    enviar.isPending || fecharPeriodo.isPending || liberarVenda.isPending;
   const podeReenviar = Boolean(validacao.data?.podeReenviarOrcamento);
+  const podeReenviarVenda = Boolean(validacao.data?.podeReenviarVenda) || jaVenda;
 
   const labelEnviar =
     modo === "ORCAMENTO"
       ? podeReenviar || jaOrcamento
         ? "Reenviar orçamento CA"
         : "Enviar orçamento CA"
-      : "Enviar venda CA";
+      : podeReenviarVenda
+        ? "Enviar nova venda CA"
+        : "Enviar venda CA";
 
   const nomeCliente = String(pedido.cliente?.nome ?? pedido.contaAzulCustomerId ?? "cliente");
   const textoConfirmacaoEnvio =
@@ -152,7 +168,9 @@ export function AcoesPedidoConciliacao({
       ? podeReenviar || jaOrcamento
         ? `Já havia orçamento marcado como enviado para ${nomeCliente}. Confirma reenviar? Use isso se você excluiu ou corrigiu o orçamento no Conta Azul.`
         : `Confirma criar orçamento no Conta Azul para ${nomeCliente}?`
-      : `Confirma criar venda no Conta Azul para ${nomeCliente}? Esta ação registra o documento no Conta Azul.`;
+      : podeReenviarVenda
+        ? `Há marca/vínculo de venda antiga (ex.: semana passada) para ${nomeCliente}. Confirma liberar e criar uma venda NOVA no Conta Azul? A venda antiga no Conta Azul não é apagada.`
+        : `Confirma criar venda no Conta Azul para ${nomeCliente}? Esta ação registra o documento no Conta Azul.`;
 
   function solicitarEnvioContaAzul() {
     if (validacao.data && !validacao.data.ok) {
@@ -205,21 +223,34 @@ export function AcoesPedidoConciliacao({
           Marcar entregue
         </Button>
       ) : null}
-      {!cancelado && !jaVenda ? (
+      {!cancelado ? (
         <Button
           type="button"
           size="sm"
           variant="secondary"
           className="h-7 px-2 text-xs"
-          disabled={disabled || busy || validacao.isLoading || (validacao.data && !validacao.data.ok)}
+          disabled={disabled || busy || validacao.isLoading || (validacao.data && !validacao.data.ok && !podeReenviarVenda)}
           title={
-            validacao.data?.erros?.length
+            validacao.data?.erros?.length && !podeReenviarVenda
               ? validacao.data.erros.join(" ")
               : validacao.data?.avisos?.join(" ") || undefined
           }
           onClick={solicitarEnvioContaAzul}
         >
           {enviar.isPending ? "Enviando…" : labelEnviar}
+        </Button>
+      ) : null}
+      {!cancelado && jaVenda ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-7 px-2 text-xs"
+          disabled={disabled || busy}
+          title="Remove a marca de venda enviada e o vínculo local antigo, sem apagar nada no Conta Azul"
+          onClick={() => liberarVenda.mutate({ pedidoOperacionalId: pedido.id })}
+        >
+          {liberarVenda.isPending ? "Liberando…" : "Só liberar vínculo"}
         </Button>
       ) : null}
       {!cancelado && modo === "ORCAMENTO" && !jaVenda && periodo ? (
@@ -241,8 +272,8 @@ export function AcoesPedidoConciliacao({
         </span>
       ) : null}
       {jaVenda ? (
-        <span className="self-center text-[10px] font-medium text-emerald-700">
-          Venda CA enviada
+        <span className="self-center text-[10px] font-medium text-amber-700">
+          Venda CA marcada · pode enviar nova
         </span>
       ) : null}
       {statusEnvio === "ERRO" && pedido.ultimoErroEnvioCa ? (
