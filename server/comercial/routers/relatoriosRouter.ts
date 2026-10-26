@@ -7,6 +7,11 @@ import {
 } from "../lib/pedido-status.js";
 import { composicaoGerencialDoPedido, mapDescontoBoletoPorClienteId } from "../lib/valor-gerencial.js";
 import { mesIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
+import {
+  categoriaOperacaoDoProduto,
+  ordemCategoriaOperacao,
+  type CategoriaOperacaoOuOutros,
+} from "@shared/produtoCategoriaOperacao";
 import { router, comercialProcedure } from "../../_core/trpc";
 import {
   addMap,
@@ -507,6 +512,83 @@ export const relatoriosRouter = router({
         }))
       );
 
+      /** Folhas, legumes (In natura), mixes, ervas, etc. */
+      const porClasse = new Map<
+        CategoriaOperacaoOuOutros,
+        {
+          classe: CategoriaOperacaoOuOutros;
+          quantidade: number;
+          valorBruto: number;
+          produtos: number;
+          itens: number;
+        }
+      >();
+      const produtosPorClasse: Array<{
+        classe: CategoriaOperacaoOuOutros;
+        produto: string;
+        categoriaCadastro: string | null;
+        quantidade: number;
+        valorBruto: number;
+        valorUnitarioMedio: number;
+        participacaoClasse: number;
+      }> = [];
+      for (const row of cmvRows) {
+        const classe = categoriaOperacaoDoProduto(row.produto, row.categoria);
+        const agg = addMap(porClasse, classe, () => ({
+          classe,
+          quantidade: 0,
+          valorBruto: 0,
+          produtos: 0,
+          itens: 0,
+        }));
+        agg.quantidade += row.quantidade;
+        agg.valorBruto += row.valorBruto;
+        agg.produtos += 1;
+        agg.itens += row.vendas;
+        produtosPorClasse.push({
+          classe,
+          produto: row.produto,
+          categoriaCadastro: row.categoria,
+          quantidade: row.quantidade,
+          valorBruto: row.valorBruto,
+          valorUnitarioMedio: row.valorUnitarioMedio,
+          participacaoClasse: 0,
+        });
+      }
+      const totalBrutoClasses = Array.from(porClasse.values()).reduce(
+        (s, c) => s + c.valorBruto,
+        0,
+      );
+      const vendasPorClasse = Array.from(porClasse.values())
+        .map(c => ({
+          classe: c.classe,
+          quantidade: round2(c.quantidade),
+          valorBruto: round2(c.valorBruto),
+          produtos: c.produtos,
+          itens: c.itens,
+          participacao:
+            totalBrutoClasses > 0
+              ? round2(c.valorBruto / totalBrutoClasses)
+              : 0,
+        }))
+        .sort(
+          (a, b) =>
+            ordemCategoriaOperacao(a.classe) - ordemCategoriaOperacao(b.classe),
+        );
+      for (const p of produtosPorClasse) {
+        const totalClasse = porClasse.get(p.classe)?.valorBruto ?? 0;
+        p.participacaoClasse =
+          totalClasse > 0 ? round2(p.valorBruto / totalClasse) : 0;
+        p.quantidade = round2(p.quantidade);
+        p.valorBruto = round2(p.valorBruto);
+        p.valorUnitarioMedio = round2(p.valorUnitarioMedio);
+      }
+      produtosPorClasse.sort(
+        (a, b) =>
+          ordemCategoriaOperacao(a.classe) - ordemCategoriaOperacao(b.classe) ||
+          b.valorBruto - a.valorBruto,
+      );
+
       const projecaoVolume = montarProjecaoVolumeBase({
         inicio: input.inicio,
         fim: input.fim,
@@ -713,6 +795,8 @@ export const relatoriosRouter = router({
         produtosVendidosDetalhados: produtosVendidosDetalhados.sort(
           (a, b) => b.dataVenda.getTime() - a.dataVenda.getTime()
         ),
+        vendasPorClasse,
+        produtosPorClasse,
         servicosPrestados: {
           linhas: [],
           observacao:

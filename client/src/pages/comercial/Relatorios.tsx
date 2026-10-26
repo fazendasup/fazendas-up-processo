@@ -74,6 +74,7 @@ const REPORTS = [
   { id: "clientes", label: "Relação de clientes" },
   { id: "vendas-detalhadas", label: "Vendas detalhadas" },
   { id: "produtos-vendidos", label: "Produtos vendidos" },
+  { id: "vendas-por-classe", label: "Vendas por classe" },
   { id: "orcamentos", label: "Orçamentos" },
   { id: "vendas-mes", label: "Vendas por mês" },
   { id: "projecao-volume", label: "Projeção de volume" },
@@ -794,6 +795,16 @@ export function Relatorios() {
       })),
     [data?.cmv.linhas]
   );
+  const chartVendasPorClasse = useMemo(
+    () =>
+      (data?.vendasPorClasse ?? []).map((r: any) => ({
+        name: r.classe,
+        value: Number(r.valorBruto ?? 0),
+        quantidade: Number(r.quantidade ?? 0),
+        participacao: Number(r.participacao ?? 0),
+      })),
+    [data?.vendasPorClasse]
+  );
 
   const nMesesProjecao = Math.min(Math.max(mesesProjecao, 1), 12);
   const projecaoVolumeView = useMemo(() => {
@@ -1332,6 +1343,23 @@ export function Relatorios() {
     { key: "valorTotal", label: "Valor total", value: r => r.valorTotal },
     { key: "desconto", label: "Desconto", value: r => r.descontoAplicado },
   ];
+  const vendasPorClasseColumns: ColumnFilterDef<any>[] = [
+    { key: "classe", label: "Classe", value: r => r.classe },
+    { key: "produtos", label: "Produtos", value: r => r.produtos },
+    { key: "itens", label: "Itens", value: r => r.itens },
+    { key: "quantidade", label: "Qtd.", value: r => r.quantidade },
+    { key: "valorBruto", label: "Valor bruto", value: r => r.valorBruto },
+    { key: "participacao", label: "Participação", value: r => fmtPct(r.participacao) },
+  ];
+  const produtosPorClasseColumns: ColumnFilterDef<any>[] = [
+    { key: "classe", label: "Classe", value: r => r.classe },
+    { key: "produto", label: "Produto", value: r => r.produto },
+    { key: "categoria", label: "Categoria cadastro", value: r => r.categoriaCadastro ?? "" },
+    { key: "quantidade", label: "Qtd.", value: r => r.quantidade },
+    { key: "valorBruto", label: "Valor bruto", value: r => r.valorBruto },
+    { key: "valorUnitario", label: "Valor unit. médio", value: r => r.valorUnitarioMedio },
+    { key: "participacao", label: "% na classe", value: r => fmtPct(r.participacaoClasse) },
+  ];
   const vendasMesColumns: ColumnFilterDef<any>[] = [
     { key: "mes", label: "Mês", value: r => r.mes },
     { key: "vendas", label: "Vendas", value: r => r.vendas },
@@ -1385,6 +1413,8 @@ export function Relatorios() {
     clientes: clientesColumns,
     "vendas-detalhadas": vendasDetalhadasColumns,
     "produtos-vendidos": produtosVendidosColumns,
+    "vendas-por-classe": vendasPorClasseColumns,
+    "produtos-por-classe": produtosPorClasseColumns,
     "vendas-mes": vendasMesColumns,
     "projecao-volume": projecaoVolumeColumns,
     orcamentos: orcamentosColumns,
@@ -1404,6 +1434,8 @@ export function Relatorios() {
         clientes: data.clientes,
         "vendas-detalhadas": data.vendasDetalhadas,
         "produtos-vendidos": data.produtosVendidosDetalhados,
+        "vendas-por-classe": data.vendasPorClasse ?? [],
+        "produtos-por-classe": data.produtosPorClasse ?? [],
         "vendas-mes": data.vendasPorMes,
         "projecao-volume": projecaoVolumeView.produtos,
         orcamentos: data.orcamentos,
@@ -1453,6 +1485,24 @@ export function Relatorios() {
           "produtos-vendidos",
           data.produtosVendidosDetalhados
         ),
+        "vendas-por-classe": filterRowsDrill(
+          "vendas-por-classe",
+          data.vendasPorClasse ?? [],
+          (r: any) => r.classe
+        ),
+        "produtos-por-classe": (() => {
+          let rows = filterRows(
+            "produtos-por-classe",
+            data.produtosPorClasse ?? []
+          );
+          if (drill?.report === "vendas-por-classe" && drill.value) {
+            const v = drill.value.toLowerCase();
+            rows = rows.filter(
+              (r: any) => String(r.classe ?? "").toLowerCase() === v
+            );
+          }
+          return sortRows("produtos-por-classe", rows);
+        })(),
         "vendas-mes": filterRows("vendas-mes", data.vendasPorMes),
         "projecao-volume": filterRows(
           "projecao-volume",
@@ -1615,6 +1665,26 @@ export function Relatorios() {
         key: "desconto",
         label: "desconto",
         value: r => r.descontoAplicado,
+        format: fmtMoney,
+      },
+    ],
+    "vendas-por-classe": [
+      { key: "produtos", label: "produtos", value: r => r.produtos },
+      { key: "itens", label: "itens", value: r => r.itens },
+      { key: "quantidade", label: "quantidade", value: r => r.quantidade },
+      {
+        key: "valorBruto",
+        label: "valor bruto",
+        value: r => r.valorBruto,
+        format: fmtMoney,
+      },
+    ],
+    "produtos-por-classe": [
+      { key: "quantidade", label: "quantidade", value: r => r.quantidade },
+      {
+        key: "valorBruto",
+        label: "valor bruto",
+        value: r => r.valorBruto,
         format: fmtMoney,
       },
     ],
@@ -3165,6 +3235,239 @@ export function Relatorios() {
                   </tbody>
                 </table>
               </Table>
+            </ReportSection>
+          ) : null}
+
+          {active === "vendas-por-classe" ? (
+            <ReportSection
+              title="Vendas por classe"
+              description="Separação operacional: Folhas (folhosas), In natura (legumes), mixes, ervas, microverdes, flores e processados. Clique na classe para filtrar os produtos."
+              rows={(totalRowsByReport["vendas-por-classe"] ?? []).map((r: any) => ({
+                classe: r.classe,
+                produtos: r.produtos,
+                itens: r.itens,
+                quantidade: r.quantidade,
+                valorBruto: r.valorBruto,
+                participacao: r.participacao,
+              }))}
+            >
+              <div className="mb-4 grid gap-4 lg:grid-cols-2">
+                <ChartCard
+                  title="Participação por classe"
+                  description="Receita bruta no período."
+                >
+                  {chartVendasPorClasse.length ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartVendasPorClasse}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius={70}
+                          outerRadius={110}
+                          label={({ name, percent }: any) =>
+                            `${name} ${Math.round((percent ?? 0) * 100)}%`
+                          }
+                          onClick={(entry: any) => {
+                            if (entry?.name) setDrillFor("vendas-por-classe", entry.name);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          {chartVendasPorClasse.map((_, idx) => (
+                            <Cell
+                              key={`classe-${idx}`}
+                              fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(v: any) => fmtMoney(Number(v))} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChart message="Sem vendas classificadas no período." />
+                  )}
+                </ChartCard>
+                <ChartCard
+                  title="Valor e quantidade por classe"
+                  description="Barras de receita com linha de quantidade."
+                >
+                  {chartVendasPorClasse.length ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={chartVendasPorClasse}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis
+                          yAxisId="left"
+                          tickFormatter={v => fmtMoney(Number(v), 0)}
+                        />
+                        <YAxis yAxisId="right" orientation="right" />
+                        <Tooltip
+                          formatter={(v: any, name) =>
+                            String(name).includes("Qtd")
+                              ? fmtNumber(v)
+                              : fmtMoney(v)
+                          }
+                        />
+                        <Legend />
+                        <Bar
+                          yAxisId="left"
+                          dataKey="value"
+                          name="Valor bruto"
+                          fill="#059669"
+                          cursor="pointer"
+                          onClick={(entry: any) => {
+                            if (entry?.name) setDrillFor("vendas-por-classe", entry.name);
+                          }}
+                        />
+                        <Line
+                          yAxisId="right"
+                          dataKey="quantidade"
+                          name="Qtd."
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChart message="Sem vendas classificadas no período." />
+                  )}
+                </ChartCard>
+              </div>
+
+              {drill?.report === "vendas-por-classe" ? (
+                <DrillBanner
+                  label={drill.value}
+                  onClear={() => setDrill(null)}
+                />
+              ) : null}
+
+              {renderTableFilter(
+                "vendas-por-classe",
+                (data.vendasPorClasse ?? []).length,
+                (totalRowsByReport["vendas-por-classe"] ?? []).length
+              )}
+              <Table>
+                <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                  <thead className="bg-slate-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-3 py-2 text-left">
+                        {columnHeader("vendas-por-classe", "classe", "Classe")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-por-classe", "produtos", "Produtos", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-por-classe", "itens", "Itens", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-por-classe", "quantidade", "Qtd.", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-por-classe", "valorBruto", "Valor bruto", "right")}
+                      </th>
+                      <th className="px-3 py-2 text-right">
+                        {columnHeader("vendas-por-classe", "participacao", "Participação", "right")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {(totalRowsByReport["vendas-por-classe"] ?? []).map((r: any) => (
+                      <tr
+                        key={r.classe}
+                        className="cursor-pointer hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20"
+                        onClick={() => setDrillFor("vendas-por-classe", r.classe)}
+                      >
+                        <td className="px-3 py-2 font-semibold">{r.classe}</td>
+                        <td className="px-3 py-2 text-right">{fmtNumber(r.produtos)}</td>
+                        <td className="px-3 py-2 text-right">{fmtNumber(r.itens)}</td>
+                        <td className="px-3 py-2 text-right">{fmtNumber(r.quantidade)}</td>
+                        <td className="px-3 py-2 text-right">{fmtMoney(r.valorBruto)}</td>
+                        <td className="px-3 py-2 text-right">{fmtPct(r.participacao)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
+
+              <div className="mt-6">
+                <h3 className="mb-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Produtos por classe
+                  {drill?.report === "vendas-por-classe" && drill.value
+                    ? ` — ${drill.value}`
+                    : ""}
+                </h3>
+                {renderTableFilter(
+                  "produtos-por-classe",
+                  (data.produtosPorClasse ?? []).length,
+                  (totalRowsByReport["produtos-por-classe"] ?? []).length
+                )}
+                <TableCapNotice
+                  total={(totalRowsByReport["produtos-por-classe"] ?? []).length}
+                  cap={200}
+                  showingAll={mostrarTodasLinhas}
+                  onShowAll={() => setMostrarTodasLinhas(true)}
+                />
+                <Table>
+                  <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
+                    <thead className="bg-slate-50 dark:bg-white/5">
+                      <tr>
+                        <th className="px-3 py-2 text-left">
+                          {columnHeader("produtos-por-classe", "classe", "Classe")}
+                        </th>
+                        <th className="px-3 py-2 text-left">
+                          {columnHeader("produtos-por-classe", "produto", "Produto")}
+                        </th>
+                        <th className="px-3 py-2 text-left">
+                          {columnHeader("produtos-por-classe", "categoria", "Categoria cadastro")}
+                        </th>
+                        <th className="px-3 py-2 text-right">
+                          {columnHeader("produtos-por-classe", "quantidade", "Qtd.", "right")}
+                        </th>
+                        <th className="px-3 py-2 text-right">
+                          {columnHeader("produtos-por-classe", "valorBruto", "Valor bruto", "right")}
+                        </th>
+                        <th className="px-3 py-2 text-right">
+                          {columnHeader(
+                            "produtos-por-classe",
+                            "valorUnitario",
+                            "Valor unit. médio",
+                            "right"
+                          )}
+                        </th>
+                        <th className="px-3 py-2 text-right">
+                          {columnHeader(
+                            "produtos-por-classe",
+                            "participacao",
+                            "% na classe",
+                            "right"
+                          )}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                      {(mostrarTodasLinhas
+                        ? totalRowsByReport["produtos-por-classe"] ?? []
+                        : (totalRowsByReport["produtos-por-classe"] ?? []).slice(0, 200)
+                      ).map((r: any, idx: number) => (
+                        <tr key={`${r.classe}-${r.produto}-${idx}`}>
+                          <td className="px-3 py-2">{r.classe}</td>
+                          <td className="px-3 py-2 font-semibold">{r.produto}</td>
+                          <td className="px-3 py-2">{r.categoriaCadastro ?? "—"}</td>
+                          <td className="px-3 py-2 text-right">{fmtNumber(r.quantidade)}</td>
+                          <td className="px-3 py-2 text-right">{fmtMoney(r.valorBruto)}</td>
+                          <td className="px-3 py-2 text-right">
+                            {fmtMoney(r.valorUnitarioMedio)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {fmtPct(r.participacaoClasse)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Table>
+              </div>
             </ReportSection>
           ) : null}
 
