@@ -4786,10 +4786,15 @@ function ComprasArea({
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
         <p className="text-sm text-muted-foreground">
           O volume em <strong>kg a processar</strong> por ingrediente fica em{" "}
-          <strong>Produção / Mixes</strong> (ligado aos pedidos do dia).
+          <strong>Produção / Mixes</strong> (ligado aos pedidos do dia ou da
+          semana).
         </p>
         <Button asChild size="sm" variant="default">
-          <Link href={`/comercial/estoque-vivo?dia=${dia}`}>
+          <Link
+            href={`/comercial/estoque-vivo?dia=${dia}${
+              escopoDashboard === "semana" ? "&escopo=semana" : ""
+            }`}
+          >
             Ver kg a processar
           </Link>
         </Button>
