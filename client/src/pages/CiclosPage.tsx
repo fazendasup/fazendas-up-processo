@@ -23,6 +23,7 @@ import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
 import ProtocoloFases14d from '@/components/ProtocoloFases14d';
 import QuadroAplicacoesProtocolo from '@/components/QuadroAplicacoesProtocolo';
+import ApontamentoOperadorCiclos from '@/components/ApontamentoOperadorCiclos';
 import {
   caldaFoliar,
   caldasNoMesmoDia,
@@ -636,13 +637,20 @@ export default function CiclosPage() {
       <Header />
 
       <main className="container py-6 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+        <ApontamentoOperadorCiclos />
+
+        <details className="mb-8 rounded-xl border bg-card">
+          <summary className="cursor-pointer list-none px-4 py-3 font-display text-sm font-bold text-muted-foreground hover:text-foreground">
+            Configuração avançada (ciclos, protocolo, quadro)
+          </summary>
+          <div className="space-y-6 border-t px-4 py-4">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="font-display text-2xl font-bold">Ciclos de Aplicação</h1>
+            <h2 className="font-display text-lg font-bold">Cadastro de ciclos</h2>
             <p className="text-sm text-muted-foreground">
               {isHidroponia
-                ? 'Configure ciclos recorrentes de aplicação nas bancadas'
-                : "Configure ciclos recorrentes para caixas d'água e andares"}
+                ? 'Para responsável técnico: criar e editar ciclos'
+                : "Para responsável técnico: criar e editar ciclos da fazenda"}
             </p>
           </div>
           <Dialog open={showForm} onOpenChange={(open) => { setShowForm(open); if (!open) resetForm(); }}>
@@ -1128,6 +1136,8 @@ export default function CiclosPage() {
             </div>
           )}
         </section>
+          </div>
+        </details>
       </main>
     </div>
   );

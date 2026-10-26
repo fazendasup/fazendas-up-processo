@@ -162,6 +162,15 @@ export function AplicacaoPendenteNaTorre({
           );
           if (!ciclo) continue;
           const solucao = produtoSolucaoDoNome(ciclo.nome) ?? produtoSolucaoDoNome(ciclo.produto);
+          // Tratamento de raiz: apontamento manual na página Ciclos (não auto na torre).
+          if (
+            solucao === "thyper" ||
+            solucao === "peroxido" ||
+            solucao === "infinito" ||
+            solucao === "cercobin"
+          ) {
+            continue;
+          }
           // Planta trouxe Infinito da fase anterior: não liberar Cercobin antes da folga.
           if (
             solucao === "cercobin" &&
