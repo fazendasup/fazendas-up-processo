@@ -33,6 +33,7 @@ import {
   dataSaidaServico,
   formatarHorasDecimais,
   normalizarHora24h,
+  rotuloPausaMinutos,
 } from "@shared/terceirosPagamento";
 
 function hojeIsoSp(): string {
@@ -74,7 +75,8 @@ function fmtDataBr(iso: string): string {
 
 type ModoFiltro = "dia" | "semana" | "periodo";
 type AlimModo = "auto" | "empresa" | "vale";
-type DescModo = "sim" | "nao";
+/** padrao = cadastro do prestador; 0 = não descontar; 30 | 60 = forçar */
+type DescModo = "padrao" | "0" | "30" | "60";
 
 type RegistroEditavel = {
   id: number;
@@ -83,7 +85,8 @@ type RegistroEditavel = {
   horaEntrada: string;
   horaSaida: string;
   almocouNaEmpresaOverride: boolean | null;
-  descontaDescansoOverride: boolean | null;
+  minutosDescansoOverride: 0 | 30 | 60 | null;
+  pausaMinutosPadrao: 30 | 60;
 };
 
 function modoAlmoco(
@@ -95,9 +98,22 @@ function modoAlmoco(
 }
 
 function modoDescanso(
-  override: boolean | null | undefined,
+  minutos: number | null | undefined,
+  descontaLegado?: boolean | null,
 ): DescModo {
-  return override === false ? "nao" : "sim";
+  if (minutos === 0 || minutos === 30 || minutos === 60) {
+    return String(minutos) as DescModo;
+  }
+  if (descontaLegado === false) return "0";
+  if (descontaLegado === true) return "60";
+  return "padrao";
+}
+
+function minutosFromModo(modo: DescModo): 0 | 30 | 60 | null {
+  if (modo === "padrao") return null;
+  if (modo === "0") return 0;
+  if (modo === "30") return 30;
+  return 60;
 }
 
 export default function TerceirosAdminPage() {
@@ -111,7 +127,7 @@ export default function TerceirosAdminPage() {
   const [editEntrada, setEditEntrada] = useState("07:00");
   const [editSaida, setEditSaida] = useState("16:00");
   const [editAlim, setEditAlim] = useState<AlimModo>("auto");
-  const [editDescanso, setEditDescanso] = useState<DescModo>("sim");
+  const [editDescanso, setEditDescanso] = useState<DescModo>("padrao");
 
   const periodo = useMemo(() => {
     if (modo === "dia") return { inicio: refDia, fim: refDia };
@@ -142,8 +158,19 @@ export default function TerceirosAdminPage() {
           ? "vale"
           : "auto",
     );
-    setEditDescanso(modoDescanso(editando.descontaDescansoOverride));
+    setEditDescanso(modoDescanso(editando.minutosDescansoOverride));
   }, [editando]);
+
+  const atualizarPrestador = trpc.terceiros.atualizarPrestador.useMutation({
+    onSuccess: async () => {
+      toast.success("Pausa do prestador atualizada");
+      await Promise.all([
+        utils.terceiros.listPrestadores.invalidate(),
+        utils.terceiros.listRegistros.invalidate(),
+      ]);
+    },
+    onError: err => toast.error(err.message),
+  });
 
   const excluirPrestador = trpc.terceiros.excluirPrestador.useMutation({
     onSuccess: async () => {
@@ -467,13 +494,17 @@ export default function TerceirosAdminPage() {
                               </SelectContent>
                             </Select>
                             <Select
-                              value={modoDescanso(r.descontaDescansoOverride)}
+                              value={modoDescanso(
+                                r.minutosDescansoOverride,
+                                r.descontaDescansoOverride,
+                              )}
                               disabled={ajustar.isPending}
                               onValueChange={v => {
                                 ajustar.mutate({
                                   id: r.id,
-                                  descontaDescansoOverride:
-                                    v === "nao" ? false : null,
+                                  minutosDescansoOverride: minutosFromModo(
+                                    v as DescModo,
+                                  ),
                                 });
                               }}
                             >
@@ -481,19 +512,26 @@ export default function TerceirosAdminPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="sim">
+                                <SelectItem value="padrao">
+                                  Pausa: padrão (
+                                  {rotuloPausaMinutos(r.pausaMinutos ?? 60)})
+                                </SelectItem>
+                                <SelectItem value="30">
+                                  Descontar 30 min
+                                </SelectItem>
+                                <SelectItem value="60">
                                   Descontar 1h
                                 </SelectItem>
-                                <SelectItem value="nao">
-                                  Não descontar 1h
+                                <SelectItem value="0">
+                                  Não descontar pausa
                                 </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
                             {r.pagamento?.descontaDescanso
-                              ? "desconta 1h"
-                              : "sem 1h"}
+                              ? `desconta ${rotuloPausaMinutos(r.pagamento.minutosDescanso ?? 60)}`
+                              : "sem pausa"}
                             {" · "}
                             {r.pagamento?.almocouNaEmpresa
                               ? "sem R$ 25"
@@ -543,8 +581,14 @@ export default function TerceirosAdminPage() {
                                 horaSaida: r.horaSaida,
                                 almocouNaEmpresaOverride:
                                   r.almocouNaEmpresaOverride ?? null,
-                                descontaDescansoOverride:
-                                  r.descontaDescansoOverride ?? null,
+                                minutosDescansoOverride:
+                                  r.minutosDescansoOverride === 0 ||
+                                  r.minutosDescansoOverride === 30 ||
+                                  r.minutosDescansoOverride === 60
+                                    ? r.minutosDescansoOverride
+                                    : null,
+                                pausaMinutosPadrao:
+                                  r.pausaMinutos === 30 ? 30 : 60,
                               })
                             }
                           >
@@ -586,9 +630,9 @@ export default function TerceirosAdminPage() {
                 {prestadores.data!.map(p => (
                   <li
                     key={p.id}
-                    className="flex items-start justify-between gap-2 px-3 py-2 text-sm"
+                    className="flex flex-wrap items-start justify-between gap-3 px-3 py-2 text-sm"
                   >
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium">{p.nomeCompleto}</p>
                       <p className="text-xs text-muted-foreground">
                         {p.cpfMascarado}
@@ -601,6 +645,29 @@ export default function TerceirosAdminPage() {
                           {p.observacao}
                         </p>
                       ) : null}
+                      <div className="mt-2 max-w-[16rem]">
+                        <Label className="text-[11px] text-muted-foreground">
+                          Pausa padrão (descontada)
+                        </Label>
+                        <Select
+                          value={String(p.pausaMinutos === 30 ? 30 : 60)}
+                          disabled={atualizarPrestador.isPending}
+                          onValueChange={v => {
+                            atualizarPrestador.mutate({
+                              id: p.id,
+                              pausaMinutos: v === "30" ? 30 : 60,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="mt-1 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="30">30 minutos</SelectItem>
+                            <SelectItem value="60">1 hora</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <Button
                       size="sm"
@@ -680,7 +747,7 @@ export default function TerceirosAdminPage() {
                 </Select>
               </div>
               <div>
-                <Label>1h de descanso</Label>
+                <Label>Pausa (desconto de horas)</Label>
                 <Select
                   value={editDescanso}
                   onValueChange={v => setEditDescanso(v as DescModo)}
@@ -689,14 +756,19 @@ export default function TerceirosAdminPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sim">Descontar 1h</SelectItem>
-                    <SelectItem value="nao">Não descontar 1h</SelectItem>
+                    <SelectItem value="padrao">
+                      Padrão do prestador (
+                      {rotuloPausaMinutos(editando.pausaMinutosPadrao)})
+                    </SelectItem>
+                    <SelectItem value="30">Descontar 30 min</SelectItem>
+                    <SelectItem value="60">Descontar 1h</SelectItem>
+                    <SelectItem value="0">Não descontar pausa</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  A 1h de descanso sai por padrão. Marque «Não descontar 1h» no dia
-                  em que a hora deve ser paga. Quem almoça na empresa (11h–13h)
-                  não recebe os R$ 25. Nos outros horários os R$ 25 ficam.
+                  A pausa sai das horas pagas (30 min ou 1h). O cadastro do
+                  prestador define o padrão; aqui você pode mudar só neste dia.
+                  Quem almoça na empresa (11h–13h) não recebe os R$ 25.
                 </p>
               </div>
             </div>
@@ -723,12 +795,7 @@ export default function TerceirosAdminPage() {
                     editAlim === "auto"
                       ? null
                       : editAlim === "empresa",
-                  descontaDescansoOverride:
-                    editDescanso === "nao"
-                      ? false
-                      : editando.descontaDescansoOverride === true
-                        ? true
-                        : null,
+                  minutosDescansoOverride: minutosFromModo(editDescanso),
                 });
               }}
             >

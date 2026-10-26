@@ -102,6 +102,17 @@ function mapAjuste(a: {
   };
 }
 
+function parseMinutosDescansoOverride(
+  v: unknown,
+): 0 | 30 | 60 | null {
+  if (v === 0 || v === 30 || v === 60) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    if (n === 0 || n === 30 || n === 60) return n;
+  }
+  return null;
+}
+
 function registroComPagamento(
   r: {
     id: number;
@@ -110,10 +121,14 @@ function registroComPagamento(
     horaSaida: string;
     almocouNaEmpresaOverride?: boolean | null;
     descontaDescansoOverride?: boolean | null;
+    minutosDescansoOverride?: number | null;
     pagoAt: Date | null;
     createdAt: Date;
   },
-  diariaBase?: number | null,
+  opts: {
+    diariaBase?: number | null;
+    pausaMinutos?: number | null;
+  } = {},
   ajustes: Array<{
     id: number;
     registroId: number;
@@ -124,11 +139,14 @@ function registroComPagamento(
 ) {
   const override = parseAlmocoOverride(r.almocouNaEmpresaOverride);
   const descanso = parseAlmocoOverride(r.descontaDescansoOverride);
+  const minutosOv = parseMinutosDescansoOverride(r.minutosDescansoOverride);
   const pagamento = calcularPagamentoDiaTerceiro({
     horaEntrada: r.horaEntrada,
     horaSaida: r.horaSaida,
-    diariaBase,
+    diariaBase: opts.diariaBase,
     almocouNaEmpresaOverride: override,
+    pausaMinutosPadrao: opts.pausaMinutos,
+    minutosDescansoOverride: minutosOv,
     descontaDescansoOverride: descanso,
   });
   const pago = r.pagoAt != null;
@@ -139,6 +157,8 @@ function registroComPagamento(
     horaSaida: r.horaSaida,
     almocouNaEmpresaOverride: override,
     descontaDescansoOverride: descanso,
+    minutosDescansoOverride: minutosOv,
+    pausaMinutosPadrao: opts.pausaMinutos === 30 ? 30 : 60,
     pago,
     pagoAt: r.pagoAt,
     createdAt: r.createdAt,
@@ -195,7 +215,11 @@ export const terceirosRouter = router({
         porReg.set(a.registroId, list);
       }
       const registros = regs.map(r =>
-        registroComPagamento(r, diaria, porReg.get(r.id) ?? []),
+        registroComPagamento(
+          r,
+          { diariaBase: diaria, pausaMinutos: p.pausaMinutos },
+          porReg.get(r.id) ?? [],
+        ),
       );
       const emAberto = Math.round(
         registros
@@ -213,6 +237,7 @@ export const terceirosRouter = router({
           nomeCompleto: p.nomeCompleto,
           cpfMascarado: formatarCpf(p.cpf),
           diariaBase: diaria,
+          pausaMinutos: p.pausaMinutos === 30 ? 30 : 60,
           observacao: p.observacao,
         },
         registros,
@@ -269,7 +294,10 @@ export const terceirosRouter = router({
       const ajustes = await listAjustesPorRegistroIds([row.id]);
       return registroComPagamento(
         row,
-        parseDiariaBase(p.diariaBase),
+        {
+          diariaBase: parseDiariaBase(p.diariaBase),
+          pausaMinutos: p.pausaMinutos,
+        },
         ajustes,
       );
     }),
@@ -306,7 +334,10 @@ export const terceirosRouter = router({
         const ajustes = await listAjustesPorRegistroIds([registro.id]);
         return registroComPagamento(
           registro,
-          parseDiariaBase(p.diariaBase),
+          {
+            diariaBase: parseDiariaBase(p.diariaBase),
+            pausaMinutos: p.pausaMinutos,
+          },
           ajustes,
         );
       } catch (e) {
@@ -353,6 +384,7 @@ export const terceirosRouter = router({
       cpf: p.cpf,
       nomeCompleto: p.nomeCompleto,
       diariaBase: parseDiariaBase(p.diariaBase),
+      pausaMinutos: p.pausaMinutos === 30 ? 30 : 60,
       observacao: p.observacao,
       createdAt: p.createdAt,
     }));
@@ -364,6 +396,7 @@ export const terceirosRouter = router({
         id: z.number().int().positive(),
         diariaBase: z.number().positive().max(10_000).nullable().optional(),
         observacao: z.string().max(2000).nullable().optional(),
+        pausaMinutos: z.union([z.literal(30), z.literal(60)]).optional(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -374,6 +407,7 @@ export const terceirosRouter = router({
         cpf: p.cpf,
         nomeCompleto: p.nomeCompleto,
         diariaBase: parseDiariaBase(p.diariaBase),
+        pausaMinutos: p.pausaMinutos === 30 ? 30 : 60,
         observacao: p.observacao,
       };
     }),
@@ -409,13 +443,19 @@ export const terceirosRouter = router({
 
       const itens = rows.map(r => {
         const diaria = parseDiariaBase(r.diariaBase);
-        const base = registroComPagamento(r, diaria, porReg.get(r.id) ?? []);
+        const pausaMinutos = r.pausaMinutos === 30 ? 30 : 60;
+        const base = registroComPagamento(
+          r,
+          { diariaBase: diaria, pausaMinutos },
+          porReg.get(r.id) ?? [],
+        );
         return {
           ...base,
           prestadorId: r.prestadorId,
           nomeCompleto: r.nomeCompleto,
           cpfMascarado: formatarCpf(r.cpf),
           diariaBase: diaria,
+          pausaMinutos,
           observacao: r.observacao,
         };
       });
@@ -498,8 +538,13 @@ export const terceirosRouter = router({
         horaSaida: horaHm.optional(),
         /** null = automático; true = almoço na empresa (sem R$ 25); false = mantém os R$ 25 */
         almocouNaEmpresaOverride: z.boolean().nullable().optional(),
-        /** null ou true = desconta 1h; false = não desconta neste dia */
+        /** Legado: null/true/false — preferir minutosDescansoOverride */
         descontaDescansoOverride: z.boolean().nullable().optional(),
+        /** null = padrão do prestador; 0 = não descontar; 30 | 60 = forçar */
+        minutosDescansoOverride: z
+          .union([z.literal(0), z.literal(30), z.literal(60)])
+          .nullable()
+          .optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -518,13 +563,17 @@ export const terceirosRouter = router({
           horaSaida: input.horaSaida,
           almocouNaEmpresaOverride: input.almocouNaEmpresaOverride,
           descontaDescansoOverride: input.descontaDescansoOverride,
+          minutosDescansoOverride: input.minutosDescansoOverride,
           adminUserId: ctx.user?.id ?? null,
         });
         assertHorarios(registro.horaEntrada, registro.horaSaida);
         const p = await getPrestadorById(registro.prestadorId);
         return registroComPagamento(
           registro,
-          parseDiariaBase(p?.diariaBase),
+          {
+            diariaBase: parseDiariaBase(p?.diariaBase),
+            pausaMinutos: p?.pausaMinutos,
+          },
           ajustes,
         );
       } catch (e) {
@@ -548,7 +597,10 @@ export const terceirosRouter = router({
       const ajustes = await listAjustesPorRegistroIds([row.id]);
       return registroComPagamento(
         row,
-        parseDiariaBase(p?.diariaBase),
+        {
+          diariaBase: parseDiariaBase(p?.diariaBase),
+          pausaMinutos: p?.pausaMinutos,
+        },
         ajustes,
       );
     }),

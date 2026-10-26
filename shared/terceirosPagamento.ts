@@ -2,13 +2,13 @@
  * Prestação de serviços de terceiros — pagamento por hora.
  *
  * Valor/hora = R$ 90 ÷ 8.
- * Horas pagas = tempo presente − 1h de descanso. A 1h sai por padrão;
- * o admin pode marcar o dia para não descontar.
+ * Horas pagas = tempo presente − pausa (30 min ou 1h). Padrão da pessoa: 1h;
+ * o admin pode escolher 30 min no cadastro ou no dia, ou não descontar.
  * Quem está na empresa das 11h às 13h pode almoçar na empresa: nesse caso
  * não recebe os R$ 25. Em qualquer outro horário os R$ 25 ficam.
  * + R$ 10 vale-transporte por dia (um registro = um VT, mesmo em jornada noturna).
  * + R$ 25 alimentação se não almoçou na empresa e esteve pelo menos 6h.
- *   Abaixo de 6h conta só a hora (e o VT). A 1h de descanso não tira os R$ 25.
+ *   Abaixo de 6h conta só a hora (e o VT). A pausa não tira os R$ 25.
  *
  * Jornada que cruza meia-noite: saída menor que entrada (ex.: 18:00 → 08:00)
  * conta como um único dia (data da entrada), com um VT e uma alimentação.
@@ -20,7 +20,12 @@ export const TERCEIROS_ALIMENTACAO = 25;
 /** Abaixo disto não há vale refeição — só hora (e VT). */
 export const TERCEIROS_HORAS_MIN_ALIMENTACAO = 6;
 export const TERCEIROS_HORAS_JORNADA = 8;
+/** @deprecated use TERCEIROS_PAUSA_MINUTOS_1H — mantido para compat. */
 export const TERCEIROS_HORAS_ALMOCO = 1;
+export const TERCEIROS_PAUSA_MINUTOS_30 = 30;
+export const TERCEIROS_PAUSA_MINUTOS_1H = 60;
+/** Pausa padrão quando o prestador não tem preferência. */
+export const TERCEIROS_PAUSA_MINUTOS_PADRAO = TERCEIROS_PAUSA_MINUTOS_1H;
 /** Entrada estritamente antes deste horário para considerar almoço na empresa. */
 export const TERCEIROS_ALMOCO_ENTRADA_ANTES_MIN = 11 * 60;
 /** Saída estritamente depois deste horário (mesmo dia) para considerar almoço na empresa. */
@@ -30,6 +35,42 @@ export const TERCEIROS_VALOR_HORA =
   TERCEIROS_DIARIA_BASE / TERCEIROS_HORAS_JORNADA;
 /** @deprecated use TERCEIROS_VALOR_HORA */
 export const TERCEIROS_VALOR_HORA_EXTRA = TERCEIROS_VALOR_HORA;
+
+export type TerceirosPausaMinutos = 30 | 60;
+
+/** Normaliza minutos de pausa do cadastro (só 30 ou 60). */
+export function normalizarPausaMinutos(
+  v: number | null | undefined,
+): TerceirosPausaMinutos {
+  return v === TERCEIROS_PAUSA_MINUTOS_30
+    ? TERCEIROS_PAUSA_MINUTOS_30
+    : TERCEIROS_PAUSA_MINUTOS_1H;
+}
+
+/**
+ * Minutos descontados no dia.
+ * Override do dia (0 / 30 / 60) vence; senão boolean legado; senão padrão da pessoa.
+ */
+export function resolverMinutosDescanso(input: {
+  pausaMinutosPadrao?: number | null;
+  /** null = padrão da pessoa; 0 = não descontar; 30 | 60 = forçar. */
+  minutosDescansoOverride?: number | null;
+  /** Legado: false = 0; true = 60; null = padrão. */
+  descontaDescansoOverride?: boolean | null;
+}): number {
+  const ov = input.minutosDescansoOverride;
+  if (ov === 0 || ov === 30 || ov === 60) return ov;
+  if (input.descontaDescansoOverride === false) return 0;
+  if (input.descontaDescansoOverride === true) return TERCEIROS_PAUSA_MINUTOS_1H;
+  return normalizarPausaMinutos(input.pausaMinutosPadrao);
+}
+
+export function rotuloPausaMinutos(minutos: number): string {
+  if (minutos <= 0) return "sem pausa";
+  if (minutos === 30) return "30 min";
+  if (minutos === 60) return "1h";
+  return `${minutos} min`;
+}
 
 /** Normaliza CPF para só dígitos. */
 export function normalizarCpf(cpf: string): string {
@@ -168,11 +209,13 @@ export type PagamentoDiaTerceiro = {
   almocouNaEmpresa: boolean;
   /** true se o admin definiu o almoço (não veio só do horário 11h–13h). */
   almocouNaEmpresaManual: boolean;
-  /** 1h de descanso não remunerada. Padrão: desconta. false só se o admin desligou. */
+  /** Pausa não remunerada aplicada (minutos &gt; 0). */
   descontaDescanso: boolean;
-  /** true se o admin definiu a hora de descanso. */
+  /** true se o admin definiu a pausa neste dia. */
   descontaDescansoManual: boolean;
-  /** Horas remuneradas (presente − almoço se couber). */
+  /** Minutos de pausa descontados (0, 30 ou 60). */
+  minutosDescanso: number;
+  /** Horas remuneradas (presente − pausa). */
   horasTrabalhadas: number;
   /** max(0, horasTrabalhadas − 8) — só informativo. */
   horasExtras: number;
@@ -192,14 +235,17 @@ export type PagamentoDiaTerceiro = {
  * @param diariaBase — diária combinada para 8h (padrão {@link TERCEIROS_DIARIA_BASE}).
  * @param almocouNaEmpresaOverride — null = automático (11h–13h);
  *   true = almoçou na empresa (sem R$ 25); false = não almoçou (mantém os R$ 25).
- * @param descontaDescansoOverride — null ou true = desconta 1h;
- *   false = não desconta a hora neste dia.
+ * @param pausaMinutosPadrao — 30 ou 60 (cadastro do prestador); padrão 60.
+ * @param minutosDescansoOverride — null = padrão; 0 = não descontar; 30 | 60 = forçar.
+ * @param descontaDescansoOverride — legado: null/true/false (usado se minutos não veio).
  */
 export function calcularPagamentoDiaTerceiro(input: {
   horaEntrada: string;
   horaSaida: string;
   diariaBase?: number | null;
   almocouNaEmpresaOverride?: boolean | null;
+  pausaMinutosPadrao?: number | null;
+  minutosDescansoOverride?: number | null;
   descontaDescansoOverride?: boolean | null;
 }): PagamentoDiaTerceiro | null {
   const ent = horaParaMinutos(input.horaEntrada);
@@ -230,13 +276,22 @@ export function calcularPagamentoDiaTerceiro(input: {
   const almocouNaEmpresa = almocouNaEmpresaManual
     ? Boolean(input.almocouNaEmpresaOverride)
     : almocouAuto;
+
+  const minutosDescansoRaw = resolverMinutosDescanso({
+    pausaMinutosPadrao: input.pausaMinutosPadrao,
+    minutosDescansoOverride: input.minutosDescansoOverride,
+    descontaDescansoOverride: input.descontaDescansoOverride,
+  });
   const descontaDescansoManual =
+    input.minutosDescansoOverride === 0 ||
+    input.minutosDescansoOverride === 30 ||
+    input.minutosDescansoOverride === 60 ||
     input.descontaDescansoOverride === true ||
     input.descontaDescansoOverride === false;
-  const descontaDescanso = input.descontaDescansoOverride !== false;
-  const descontoRefeicaoHoras = descontaDescanso
-    ? Math.min(TERCEIROS_HORAS_ALMOCO, horasPresente)
-    : 0;
+  const horasDescanso = minutosDescansoRaw / 60;
+  const descontoRefeicaoHoras = Math.min(horasDescanso, horasPresente);
+  const minutosDescanso = round2(descontoRefeicaoHoras * 60);
+  const descontaDescanso = minutosDescanso > 0;
   const horasTrabalhadas = round2(
     Math.max(0, horasPresente - descontoRefeicaoHoras),
   );
@@ -261,6 +316,7 @@ export function calcularPagamentoDiaTerceiro(input: {
     almocouNaEmpresaManual,
     descontaDescanso,
     descontaDescansoManual,
+    minutosDescanso,
     horasTrabalhadas,
     horasExtras,
     valorHoras,

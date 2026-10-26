@@ -415,7 +415,9 @@ export default function TerceirosPublicPage() {
                           ? " · refeição fora da empresa"
                           : ""}
                       {r.pagamento?.descontaDescanso
-                        ? " · descanso 1h"
+                        ? ` · pausa ${
+                            r.pagamento.minutosDescanso === 30 ? "30min" : "1h"
+                          }`
                         : ""}
                       {(r.pagamento?.valorAlimentacao ?? 0) > 0
                         ? " · vale alimentação"

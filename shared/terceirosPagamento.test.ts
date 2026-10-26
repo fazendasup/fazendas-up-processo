@@ -70,19 +70,33 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     expect(r!.almocouNaEmpresa).toBe(false);
     expect(r!.descontaDescanso).toBe(true);
     expect(r!.descontaDescansoManual).toBe(false);
+    expect(r!.minutosDescanso).toBe(60);
     expect(r!.horasPresente).toBe(8);
     expect(r!.horasTrabalhadas).toBe(7);
     expect(r!.valorAlimentacao).toBe(25);
     expect(r!.valorTotal).toBe(round2(7 * TERCEIROS_VALOR_HORA + 10 + 25));
   });
 
-  it("não descontar 1h neste dia: paga as horas cheias e mantém os R$ 25", () => {
+  it("pausa padrão de 30 min no cadastro", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "13:00",
       horaSaida: "21:00",
-      descontaDescansoOverride: false,
+      pausaMinutosPadrao: 30,
+    });
+    expect(r!.minutosDescanso).toBe(30);
+    expect(r!.horasTrabalhadas).toBe(7.5);
+    expect(r!.valorAlimentacao).toBe(25);
+    expect(r!.valorTotal).toBe(round2(7.5 * TERCEIROS_VALOR_HORA + 10 + 25));
+  });
+
+  it("não descontar pausa neste dia: paga as horas cheias e mantém os R$ 25", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "13:00",
+      horaSaida: "21:00",
+      minutosDescansoOverride: 0,
     });
     expect(r!.descontaDescanso).toBe(false);
+    expect(r!.minutosDescanso).toBe(0);
     expect(r!.horasTrabalhadas).toBe(8);
     expect(r!.valorAlimentacao).toBe(25);
     expect(r!.valorTotal).toBe(125);
@@ -92,14 +106,26 @@ describe("calcularPagamentoDiaTerceiro (por hora)", () => {
     const r = calcularPagamentoDiaTerceiro({
       horaEntrada: "13:00",
       horaSaida: "21:00",
-      descontaDescansoOverride: true,
+      minutosDescansoOverride: 60,
     });
     expect(r!.almocouNaEmpresa).toBe(false);
     expect(r!.descontaDescanso).toBe(true);
     expect(r!.descontaDescansoManual).toBe(true);
+    expect(r!.minutosDescanso).toBe(60);
     expect(r!.horasTrabalhadas).toBe(7);
     expect(r!.valorAlimentacao).toBe(25);
     expect(r!.valorTotal).toBe(round2(7 * TERCEIROS_VALOR_HORA + 10 + 25));
+  });
+
+  it("força 30 min no dia mesmo com padrão 1h", () => {
+    const r = calcularPagamentoDiaTerceiro({
+      horaEntrada: "13:00",
+      horaSaida: "21:00",
+      pausaMinutosPadrao: 60,
+      minutosDescansoOverride: 30,
+    });
+    expect(r!.minutosDescanso).toBe(30);
+    expect(r!.horasTrabalhadas).toBe(7.5);
   });
 
   it("entrada 12h ainda sem desconto (só desconta se entrou antes das 11h)", () => {

@@ -1371,6 +1371,10 @@ export const terceirosPrestadores = mysqlTable(
      * Valor/hora = diariaBase ÷ 8.
      */
     diariaBase: decimal("diariaBase", { precision: 10, scale: 2 }),
+    /**
+     * Pausa diária descontada das horas: 30 ou 60 (padrão 60).
+     */
+    pausaMinutos: int("pausaMinutos").notNull().default(60),
     /** Observação operacional (acordo de diária, almoço, etc.). */
     observacao: text("observacao"),
     ativo: boolean("ativo").notNull().default(true),
@@ -1405,10 +1409,15 @@ export const terceirosRegistros = mysqlTable(
      */
     almocouNaEmpresaOverride: boolean("almocouNaEmpresaOverride"),
     /**
-     * Override admin da 1h de descanso.
-     * null ou true = desconta 1h (padrão); false = não desconta neste dia.
+     * Override admin legado da pausa (boolean).
+     * Preferir minutosDescansoOverride. false = não desconta; true = 1h; null = padrão.
      */
     descontaDescansoOverride: boolean("descontaDescansoOverride"),
+    /**
+     * Override admin da pausa em minutos: null = padrão do prestador;
+     * 0 = não descontar; 30 ou 60 = forçar.
+     */
+    minutosDescansoOverride: int("minutosDescansoOverride"),
     /** null = em aberto; preenchido quando admin marca como pago. */
     pagoAt: timestamp("pagoAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),

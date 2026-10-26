@@ -108,6 +108,24 @@ export async function ensureTerceirosTables(): Promise<void> {
   try {
     await db.execute(
       sql.raw(
+        `ALTER TABLE \`terceiros_prestadores\` ADD COLUMN \`pausaMinutos\` int NOT NULL DEFAULT 60`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
+  try {
+    await db.execute(
+      sql.raw(
+        `ALTER TABLE \`terceiros_registros\` ADD COLUMN \`minutosDescansoOverride\` int NULL`,
+      ),
+    );
+  } catch {
+    // coluna já existe
+  }
+  try {
+    await db.execute(
+      sql.raw(
         `ALTER TABLE \`terceiros_prestadores\` DROP COLUMN \`descontaAlmoco\``,
       ),
     );
@@ -430,6 +448,7 @@ export async function listRegistrosAdmin(opts: {
       cpf: string;
       nomeCompleto: string;
       diariaBase: string | null;
+      pausaMinutos: number;
       observacao: string | null;
     }
   >
@@ -455,12 +474,14 @@ export async function listRegistrosAdmin(opts: {
       horaSaida: terceirosRegistros.horaSaida,
       almocouNaEmpresaOverride: terceirosRegistros.almocouNaEmpresaOverride,
       descontaDescansoOverride: terceirosRegistros.descontaDescansoOverride,
+      minutosDescansoOverride: terceirosRegistros.minutosDescansoOverride,
       pagoAt: terceirosRegistros.pagoAt,
       createdAt: terceirosRegistros.createdAt,
       updatedAt: terceirosRegistros.updatedAt,
       cpf: terceirosPrestadores.cpf,
       nomeCompleto: terceirosPrestadores.nomeCompleto,
       diariaBase: terceirosPrestadores.diariaBase,
+      pausaMinutos: terceirosPrestadores.pausaMinutos,
       observacao: terceirosPrestadores.observacao,
     })
     .from(terceirosRegistros)
@@ -481,6 +502,7 @@ export async function updatePrestadorAdmin(input: {
   id: number;
   diariaBase?: number | null;
   observacao?: string | null;
+  pausaMinutos?: number | null;
 }): Promise<TerceiroPrestadorRow> {
   await ensureTerceirosTables();
   const db = await getDb();
@@ -496,6 +518,12 @@ export async function updatePrestadorAdmin(input: {
   if (input.observacao !== undefined) {
     const t = input.observacao?.trim() ?? "";
     patch.observacao = t.length ? t : null;
+  }
+  if (input.pausaMinutos !== undefined) {
+    patch.pausaMinutos =
+      input.pausaMinutos === 30 || input.pausaMinutos === 60
+        ? input.pausaMinutos
+        : 60;
   }
   if (Object.keys(patch).length === 0) {
     const cur = await db
@@ -545,9 +573,16 @@ function rotuloAlimentacao(v: boolean | null | undefined): string {
 }
 
 function rotuloDescanso(v: boolean | null | undefined): string {
-  if (v === false) return "não descontar a hora de descanso neste dia";
-  if (v === true) return "descontar 1h de descanso neste dia";
-  return "descontar 1h de descanso (padrão)";
+  if (v === false) return "não descontar pausa neste dia";
+  if (v === true) return "descontar 1h de pausa neste dia";
+  return "pausa padrão do prestador";
+}
+
+function rotuloMinutosDescanso(v: number | null | undefined): string {
+  if (v === 0) return "não descontar pausa neste dia";
+  if (v === 30) return "descontar 30 min de pausa neste dia";
+  if (v === 60) return "descontar 1h de pausa neste dia";
+  return "pausa padrão do prestador";
 }
 
 /** Admin ajusta horário e/ou regra de alimentação; grava histórico para o PJ. */
@@ -557,8 +592,10 @@ export async function ajustarRegistroAdmin(input: {
   horaSaida?: string;
   /** undefined = não alterar; null = automático; true/false = override */
   almocouNaEmpresaOverride?: boolean | null;
-  /** undefined = não alterar; null = automático; true/false = override */
+  /** undefined = não alterar; null = automático; true/false = override (legado) */
   descontaDescansoOverride?: boolean | null;
+  /** undefined = não alterar; null = padrão; 0 | 30 | 60 = forçar */
+  minutosDescansoOverride?: number | null;
   adminUserId?: number | null;
 }): Promise<{
   registro: TerceiroRegistroRow;
@@ -632,7 +669,32 @@ export async function ajustarRegistroAdmin(input: {
     }
   }
 
-  if (input.descontaDescansoOverride !== undefined) {
+  if (input.minutosDescansoOverride !== undefined) {
+    const next =
+      input.minutosDescansoOverride === 0 ||
+      input.minutosDescansoOverride === 30 ||
+      input.minutosDescansoOverride === 60
+        ? input.minutosDescansoOverride
+        : null;
+    const prev = before.minutosDescansoOverride ?? null;
+    if (next !== prev) {
+      patch.minutosDescansoOverride = next;
+      // Mantém boolean legado alinhado para leituras antigas.
+      patch.descontaDescansoOverride =
+        next === 0 ? false : next == null ? null : true;
+      novosAjustes.push({
+        registroId: before.id,
+        prestadorId: before.prestadorId,
+        tipo: "descanso",
+        descricao: `Pausa ajustada: de ${rotuloMinutosDescanso(prev)} para ${rotuloMinutosDescanso(next)}.`,
+        detalheJson: JSON.stringify({
+          antes: prev,
+          depois: next,
+        }),
+        adminUserId: input.adminUserId ?? null,
+      });
+    }
+  } else if (input.descontaDescansoOverride !== undefined) {
     const next = input.descontaDescansoOverride;
     const prev = before.descontaDescansoOverride ?? null;
     const same =
@@ -641,6 +703,8 @@ export async function ajustarRegistroAdmin(input: {
       (next === false && prev === false);
     if (!same) {
       patch.descontaDescansoOverride = next;
+      patch.minutosDescansoOverride =
+        next === false ? 0 : next === true ? 60 : null;
       novosAjustes.push({
         registroId: before.id,
         prestadorId: before.prestadorId,
