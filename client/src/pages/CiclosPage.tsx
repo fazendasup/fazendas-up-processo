@@ -42,7 +42,7 @@ import {
 import {
   CalendarClock, Plus, Trash2, AlertTriangle, CheckCircle2, Power, Edit, Copy,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { atalhoBpfDoTexto, hrefBpf } from '@shared/bpfDocumento';
 import { toast } from 'sonner';
@@ -121,6 +121,7 @@ export default function CiclosPage() {
   const mutations = useFazendaMutations();
   const resolver = useDbIdResolver();
   const [showForm, setShowForm] = useState(false);
+  const [mostrarInativos, setMostrarInativos] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nomeCiclo, setNomeCiclo] = useState('');
   const [produto, setProduto] = useState<string>('');
@@ -407,31 +408,46 @@ export default function CiclosPage() {
         ultimaExecucao = null;
       }
 
-      mutations.updateCiclo.mutate({
-        id: dbId,
-        nome,
-        frequencia: (modoData === 'frequencia' ? frequencia : 'personalizada') as FrequenciaCiclo,
-        diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
-        intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
-        produto,
-        tipo,
-        dosagem: dosagem.trim() || null,
-        fasesAplicaveis: fasesSelecionadas,
-        alvo,
-        caixaIds,
-        ...(dataInicioDate ? { dataInicio: dataInicioDate } : {}),
-        ...(ultimaExecucao !== undefined ? { ultimaExecucao } : {}),
-      });
-    } else {
-      const dataInicioDate =
-        modoData === 'frequencia' && dataInicio
-          ? dateAtLocalNoonFromYmd(dataInicio)
-          : undefined;
-      if (dataInicioDate && Number.isNaN(dataInicioDate.getTime())) {
-        toast.error('Data de início inválida');
-        return;
-      }
-      mutations.createCiclo.mutate({
+      mutations.updateCiclo.mutate(
+        {
+          id: dbId,
+          nome,
+          frequencia: (modoData === 'frequencia' ? frequencia : 'personalizada') as FrequenciaCiclo,
+          diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
+          intervaloDias: frequencia === 'personalizada' ? intervaloDias : undefined,
+          produto,
+          tipo,
+          dosagem: dosagem.trim() || null,
+          fasesAplicaveis: fasesSelecionadas,
+          alvo,
+          caixaIds,
+          ...(dataInicioDate ? { dataInicio: dataInicioDate } : {}),
+          ...(ultimaExecucao !== undefined ? { ultimaExecucao } : {}),
+        },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            resetForm();
+            toast.success('Ciclo atualizado!');
+          },
+          onError: (err) => {
+            toast.error(err.message || 'Não foi possível salvar o ciclo.');
+          },
+        },
+      );
+      return;
+    }
+
+    const dataInicioDate =
+      modoData === 'frequencia' && dataInicio
+        ? dateAtLocalNoonFromYmd(dataInicio)
+        : undefined;
+    if (dataInicioDate && Number.isNaN(dataInicioDate.getTime())) {
+      toast.error('Data de início inválida');
+      return;
+    }
+    mutations.createCiclo.mutate(
+      {
         nome,
         frequencia: (modoData === 'frequencia' ? frequencia : 'personalizada') as FrequenciaCiclo,
         diasSemana: frequencia === 'semanal' ? diasSelecionados : undefined,
@@ -443,19 +459,27 @@ export default function CiclosPage() {
         alvo,
         caixaIds,
         ...(dataInicioDate ? { dataInicio: dataInicioDate } : {}),
-      }, {
+      },
+      {
         onSuccess: () => {
-          const datas = modoData === 'frequencia' 
-            ? calcularProximasDatas(dataInicio, frequencia, diasSelecionados, intervaloDias).length
-            : datesEspecificas.length;
+          const datas =
+            modoData === 'frequencia'
+              ? calcularProximasDatas(
+                  dataInicio,
+                  frequencia,
+                  diasSelecionados,
+                  intervaloDias,
+                ).length
+              : datesEspecificas.length;
+          setShowForm(false);
+          resetForm();
           toast.success(`Ciclo criado com ${datas} aplicação(ões)!`);
         },
-      });
-    }
-
-    setShowForm(false);
-    resetForm();
-    toast.success(editingId ? 'Ciclo atualizado!' : 'Ciclo cadastrado!');
+        onError: (err) => {
+          toast.error(err.message || 'Não foi possível cadastrar o ciclo.');
+        },
+      },
+    );
   };
 
   const handleDelete = (id: string) => {
@@ -538,6 +562,22 @@ export default function CiclosPage() {
   const ciclosPendentes = data.ciclos.filter((c) =>
     cicloPendenteNoProtocolo(c, data.ciclos, referenciaHoje),
   );
+  const pendentesIds = useMemo(
+    () => new Set(ciclosPendentes.map((c) => c.id)),
+    [ciclosPendentes],
+  );
+  const ciclosLista = useMemo(() => {
+    return data.ciclos
+      .filter((c) => (mostrarInativos ? true : c.ativo !== false))
+      .filter((c) => !pendentesIds.has(c.id))
+      .sort((a, b) => {
+        const aa = a.ativo === false ? 1 : 0;
+        const bb = b.ativo === false ? 1 : 0;
+        if (aa !== bb) return aa - bb;
+        return String(a.nome).localeCompare(String(b.nome), 'pt-BR');
+      });
+  }, [data.ciclos, mostrarInativos, pendentesIds]);
+  const qtdInativos = data.ciclos.filter((c) => c.ativo === false).length;
 
 
   return (
@@ -979,24 +1019,45 @@ export default function CiclosPage() {
           </motion.section>
         )}
 
-        {/* Todos os ciclos */}
+        {/* Lista operacional — ativos por padrão; pendentes ficam só na seção acima */}
         <section>
-          <h2 className="font-display font-bold text-base mb-3">
-            Todos os Ciclos ({data.ciclos.length})
-          </h2>
-          {data.ciclos.length === 0 ? (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display font-bold text-base">
+              Ciclos ativos ({ciclosLista.filter((c) => c.ativo !== false).length}
+              {mostrarInativos && qtdInativos > 0 ? ` · ${qtdInativos} inativos` : ''})
+            </h2>
+            {qtdInativos > 0 ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setMostrarInativos((v) => !v)}
+              >
+                {mostrarInativos ? 'Ocultar inativos' : `Mostrar inativos (${qtdInativos})`}
+              </Button>
+            ) : null}
+          </div>
+          {ciclosLista.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-xl border">
               <CalendarClock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">Nenhum ciclo cadastrado ainda.</p>
-              <p className="text-xs text-muted-foreground mt-1">Clique em "Novo Ciclo" para começar.</p>
+              <p className="text-sm text-muted-foreground">
+                {data.ciclos.length === 0
+                  ? 'Nenhum ciclo cadastrado ainda.'
+                  : 'Nada nesta lista — veja Pendentes Hoje ou mostre os inativos.'}
+              </p>
+              {data.ciclos.length === 0 ? (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Clique em &quot;Novo Ciclo&quot; para começar.
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-2">
-              {data.ciclos.map((ciclo) => (
+              {ciclosLista.map((ciclo) => (
                 <CicloItem
                   key={ciclo.id}
                   ciclo={ciclo}
-                  pendente={cicloPendenteNoProtocolo(ciclo, data.ciclos, referenciaHoje)}
+                  pendente={false}
                   caixasLabel={(ciclo.caixaIds ?? [])
                     .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
                     .filter(Boolean)

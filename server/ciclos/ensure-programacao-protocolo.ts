@@ -29,13 +29,32 @@ function chaveDoCiclo(nome: string, produto: string): CicloProgramado["chave"] |
   const nomeCalda = texto(nome);
   if (nomeCalda.startsWith("calda a")) return "A";
   if (nomeCalda.startsWith("calda b")) return "B";
-  const bruto = `${nome} ${produto}`;
-  if (texto(bruto).includes("cercobin")) return "cercobin";
-  if (texto(bruto).includes("infinito")) return "infinito";
-  if (texto(bruto).includes("peroxido") || texto(bruto).includes("h2o2")) return "peroxido";
-  if (/\bkoh\b/.test(texto(bruto))) return "koh";
+  const bruto = texto(`${nome} ${produto}`);
+  if (bruto.includes("cercobin")) return "cercobin";
+  if (bruto.includes("infinito")) return "infinito";
+  // Protocolo atual usa Thyper; Peróxido legado casa na mesma chave para não duplicar.
+  if (bruto.includes("thyper") || bruto.includes("peroxido") || bruto.includes("h2o2")) {
+    return "thyper";
+  }
+  if (/\bkoh\b/.test(bruto)) return "koh";
   if (texto(produto).trim() === "bio" || texto(nome).trim() === "bio") return "bio";
   return null;
+}
+
+function cicloCasaComChave(
+  ciclo: { nome: string; produto: string },
+  chave: CicloProgramado["chave"],
+): boolean {
+  return chaveDoCiclo(ciclo.nome, ciclo.produto) === chave;
+}
+
+function preferirCicloAtivo<T extends { id: number; nome: string; produto: string; ativo: boolean }>(
+  mesmos: T[],
+): T | undefined {
+  const ativos = mesmos.filter((c) => c.ativo);
+  if (ativos.length === 0) return undefined;
+  const thyper = ativos.find((c) => texto(`${c.nome} ${c.produto}`).includes("thyper"));
+  return thyper ?? ativos[0];
 }
 
 function misturaAsCaldas(nome: string, produto: string): boolean {
@@ -135,10 +154,19 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
         dataInicio: meioDiaSaoPaulo(item.dataInicio),
         ativo: true,
       };
-      const mesmos = existentes.filter(
-        (ciclo) => chaveDoCiclo(ciclo.nome, ciclo.produto) === item.chave,
+      const mesmos = existentes.filter((ciclo) =>
+        cicloCasaComChave(ciclo, item.chave),
       );
-      const ja = mesmos.find((ciclo) => ciclo.ativo);
+      const ja = preferirCicloAtivo(mesmos);
+      // Desliga duplicatas ativas da mesma chave (ex.: vários Thyper / Peróxido).
+      for (const extra of mesmos) {
+        if (!extra.ativo || !ja || extra.id === ja.id) continue;
+        await db
+          .update(ciclos)
+          .set({ ativo: false })
+          .where(and(eq(ciclos.id, extra.id), eq(ciclos.projetoId, fazenda.id)));
+        extra.ativo = false;
+      }
       const temInativo = mesmos.some((ciclo) => !ciclo.ativo);
       if (!ja && temInativo) continue;
       if (
@@ -162,15 +190,18 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
         continue;
       }
       if (ja) {
+        const legadoPeroxido =
+          item.chave === "thyper" &&
+          !texto(`${ja.nome} ${ja.produto}`).includes("thyper");
         await db
           .update(ciclos)
           .set({
             ...dados,
-            // Nome e produto ficam como foram salvos no ciclo.
-            nome: ja.nome,
-            produto: ja.produto,
-            tipo: ja.tipo,
-            dosagem: ja.dosagem,
+            // Mantém nome/produto salvos, exceto Peróxido legado → Thyper do protocolo.
+            nome: legadoPeroxido ? dados.nome : ja.nome,
+            produto: legadoPeroxido ? dados.produto : ja.produto,
+            tipo: legadoPeroxido ? dados.tipo : ja.tipo,
+            dosagem: legadoPeroxido ? dados.dosagem : ja.dosagem,
             dataInicio: reiniciar ? dados.dataInicio : (ja.dataInicio ?? dados.dataInicio),
             ...(reiniciar
               ? { ultimaExecucao: null, ultimoExecutorId: null, ultimoExecutorNome: null }
