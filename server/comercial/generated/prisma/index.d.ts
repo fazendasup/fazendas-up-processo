@@ -39,6 +39,11 @@ export type Cliente = $Result.DefaultSelection<Prisma.$ClientePayload>
  */
 export type EstoqueVivoConfig = $Result.DefaultSelection<Prisma.$EstoqueVivoConfigPayload>
 /**
+ * Model RelatorioVendasClasseConfig
+ * Mapa manual do relatório "Vendas por classe" (não altera o cadastro do produto).
+ */
+export type RelatorioVendasClasseConfig = $Result.DefaultSelection<Prisma.$RelatorioVendasClasseConfigPayload>
+/**
  * Model EstoqueVivoMix
  * Receita de mix (ex.: Crocante 1) com ingredientes em gramas e taxa de perda.
  */
@@ -738,6 +743,16 @@ export class PrismaClient<
     * ```
     */
   get estoqueVivoConfig(): Prisma.EstoqueVivoConfigDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.relatorioVendasClasseConfig`: Exposes CRUD operations for the **RelatorioVendasClasseConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RelatorioVendasClasseConfigs
+    * const relatorioVendasClasseConfigs = await prisma.relatorioVendasClasseConfig.findMany()
+    * ```
+    */
+  get relatorioVendasClasseConfig(): Prisma.RelatorioVendasClasseConfigDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.estoqueVivoMix`: Exposes CRUD operations for the **EstoqueVivoMix** model.
@@ -1563,6 +1578,7 @@ export namespace Prisma {
     GrupoCliente: 'GrupoCliente',
     Cliente: 'Cliente',
     EstoqueVivoConfig: 'EstoqueVivoConfig',
+    RelatorioVendasClasseConfig: 'RelatorioVendasClasseConfig',
     EstoqueVivoMix: 'EstoqueVivoMix',
     EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
     ProdutoComercial: 'ProdutoComercial',
@@ -1619,7 +1635,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalPedidoPagamento" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalProgramacao" | "portalProgramacaoDia" | "portalProgramacaoItem" | "portalProgramacaoEntrega" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "relatorioVendasClasseConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalPedidoPagamento" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalProgramacao" | "portalProgramacaoDia" | "portalProgramacaoItem" | "portalProgramacaoEntrega" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1950,6 +1966,72 @@ export namespace Prisma {
           count: {
             args: Prisma.EstoqueVivoConfigCountArgs<ExtArgs>
             result: $Utils.Optional<EstoqueVivoConfigCountAggregateOutputType> | number
+          }
+        }
+      }
+      RelatorioVendasClasseConfig: {
+        payload: Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>
+        fields: Prisma.RelatorioVendasClasseConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RelatorioVendasClasseConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RelatorioVendasClasseConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.RelatorioVendasClasseConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RelatorioVendasClasseConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload>
+          }
+          findMany: {
+            args: Prisma.RelatorioVendasClasseConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload>[]
+          }
+          create: {
+            args: Prisma.RelatorioVendasClasseConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload>
+          }
+          createMany: {
+            args: Prisma.RelatorioVendasClasseConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.RelatorioVendasClasseConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload>
+          }
+          update: {
+            args: Prisma.RelatorioVendasClasseConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.RelatorioVendasClasseConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RelatorioVendasClasseConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.RelatorioVendasClasseConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RelatorioVendasClasseConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.RelatorioVendasClasseConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRelatorioVendasClasseConfig>
+          }
+          groupBy: {
+            args: Prisma.RelatorioVendasClasseConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RelatorioVendasClasseConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RelatorioVendasClasseConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<RelatorioVendasClasseConfigCountAggregateOutputType> | number
           }
         }
       }
@@ -4562,6 +4644,7 @@ export namespace Prisma {
     grupoCliente?: GrupoClienteOmit
     cliente?: ClienteOmit
     estoqueVivoConfig?: EstoqueVivoConfigOmit
+    relatorioVendasClasseConfig?: RelatorioVendasClasseConfigOmit
     estoqueVivoMix?: EstoqueVivoMixOmit
     estoqueVivoMixComponente?: EstoqueVivoMixComponenteOmit
     produtoComercial?: ProdutoComercialOmit
@@ -10788,6 +10871,875 @@ export namespace Prisma {
      * Omit specific fields from the EstoqueVivoConfig
      */
     omit?: EstoqueVivoConfigOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model RelatorioVendasClasseConfig
+   */
+
+  export type AggregateRelatorioVendasClasseConfig = {
+    _count: RelatorioVendasClasseConfigCountAggregateOutputType | null
+    _min: RelatorioVendasClasseConfigMinAggregateOutputType | null
+    _max: RelatorioVendasClasseConfigMaxAggregateOutputType | null
+  }
+
+  export type RelatorioVendasClasseConfigMinAggregateOutputType = {
+    id: string | null
+    atualizadoEm: Date | null
+  }
+
+  export type RelatorioVendasClasseConfigMaxAggregateOutputType = {
+    id: string | null
+    atualizadoEm: Date | null
+  }
+
+  export type RelatorioVendasClasseConfigCountAggregateOutputType = {
+    id: number
+    unificarClasse: number
+    produtoParaClasse: number
+    atualizadoEm: number
+    _all: number
+  }
+
+
+  export type RelatorioVendasClasseConfigMinAggregateInputType = {
+    id?: true
+    atualizadoEm?: true
+  }
+
+  export type RelatorioVendasClasseConfigMaxAggregateInputType = {
+    id?: true
+    atualizadoEm?: true
+  }
+
+  export type RelatorioVendasClasseConfigCountAggregateInputType = {
+    id?: true
+    unificarClasse?: true
+    produtoParaClasse?: true
+    atualizadoEm?: true
+    _all?: true
+  }
+
+  export type RelatorioVendasClasseConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RelatorioVendasClasseConfig to aggregate.
+     */
+    where?: RelatorioVendasClasseConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RelatorioVendasClasseConfigs to fetch.
+     */
+    orderBy?: RelatorioVendasClasseConfigOrderByWithRelationInput | RelatorioVendasClasseConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RelatorioVendasClasseConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RelatorioVendasClasseConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RelatorioVendasClasseConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RelatorioVendasClasseConfigs
+    **/
+    _count?: true | RelatorioVendasClasseConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RelatorioVendasClasseConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RelatorioVendasClasseConfigMaxAggregateInputType
+  }
+
+  export type GetRelatorioVendasClasseConfigAggregateType<T extends RelatorioVendasClasseConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregateRelatorioVendasClasseConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRelatorioVendasClasseConfig[P]>
+      : GetScalarType<T[P], AggregateRelatorioVendasClasseConfig[P]>
+  }
+
+
+
+
+  export type RelatorioVendasClasseConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RelatorioVendasClasseConfigWhereInput
+    orderBy?: RelatorioVendasClasseConfigOrderByWithAggregationInput | RelatorioVendasClasseConfigOrderByWithAggregationInput[]
+    by: RelatorioVendasClasseConfigScalarFieldEnum[] | RelatorioVendasClasseConfigScalarFieldEnum
+    having?: RelatorioVendasClasseConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RelatorioVendasClasseConfigCountAggregateInputType | true
+    _min?: RelatorioVendasClasseConfigMinAggregateInputType
+    _max?: RelatorioVendasClasseConfigMaxAggregateInputType
+  }
+
+  export type RelatorioVendasClasseConfigGroupByOutputType = {
+    id: string
+    unificarClasse: JsonValue
+    produtoParaClasse: JsonValue
+    atualizadoEm: Date
+    _count: RelatorioVendasClasseConfigCountAggregateOutputType | null
+    _min: RelatorioVendasClasseConfigMinAggregateOutputType | null
+    _max: RelatorioVendasClasseConfigMaxAggregateOutputType | null
+  }
+
+  type GetRelatorioVendasClasseConfigGroupByPayload<T extends RelatorioVendasClasseConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RelatorioVendasClasseConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RelatorioVendasClasseConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RelatorioVendasClasseConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], RelatorioVendasClasseConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RelatorioVendasClasseConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    unificarClasse?: boolean
+    produtoParaClasse?: boolean
+    atualizadoEm?: boolean
+  }, ExtArgs["result"]["relatorioVendasClasseConfig"]>
+
+
+
+  export type RelatorioVendasClasseConfigSelectScalar = {
+    id?: boolean
+    unificarClasse?: boolean
+    produtoParaClasse?: boolean
+    atualizadoEm?: boolean
+  }
+
+  export type RelatorioVendasClasseConfigOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "unificarClasse" | "produtoParaClasse" | "atualizadoEm", ExtArgs["result"]["relatorioVendasClasseConfig"]>
+
+  export type $RelatorioVendasClasseConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RelatorioVendasClasseConfig"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * { [categoriaOperacional]: classeExibida }
+       */
+      unificarClasse: Prisma.JsonValue
+      /**
+       * { [nomeProduto]: classeExibida }
+       */
+      produtoParaClasse: Prisma.JsonValue
+      atualizadoEm: Date
+    }, ExtArgs["result"]["relatorioVendasClasseConfig"]>
+    composites: {}
+  }
+
+  type RelatorioVendasClasseConfigGetPayload<S extends boolean | null | undefined | RelatorioVendasClasseConfigDefaultArgs> = $Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload, S>
+
+  type RelatorioVendasClasseConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RelatorioVendasClasseConfigFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RelatorioVendasClasseConfigCountAggregateInputType | true
+    }
+
+  export interface RelatorioVendasClasseConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RelatorioVendasClasseConfig'], meta: { name: 'RelatorioVendasClasseConfig' } }
+    /**
+     * Find zero or one RelatorioVendasClasseConfig that matches the filter.
+     * @param {RelatorioVendasClasseConfigFindUniqueArgs} args - Arguments to find a RelatorioVendasClasseConfig
+     * @example
+     * // Get one RelatorioVendasClasseConfig
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RelatorioVendasClasseConfigFindUniqueArgs>(args: SelectSubset<T, RelatorioVendasClasseConfigFindUniqueArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one RelatorioVendasClasseConfig that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RelatorioVendasClasseConfigFindUniqueOrThrowArgs} args - Arguments to find a RelatorioVendasClasseConfig
+     * @example
+     * // Get one RelatorioVendasClasseConfig
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RelatorioVendasClasseConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, RelatorioVendasClasseConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RelatorioVendasClasseConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelatorioVendasClasseConfigFindFirstArgs} args - Arguments to find a RelatorioVendasClasseConfig
+     * @example
+     * // Get one RelatorioVendasClasseConfig
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RelatorioVendasClasseConfigFindFirstArgs>(args?: SelectSubset<T, RelatorioVendasClasseConfigFindFirstArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RelatorioVendasClasseConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelatorioVendasClasseConfigFindFirstOrThrowArgs} args - Arguments to find a RelatorioVendasClasseConfig
+     * @example
+     * // Get one RelatorioVendasClasseConfig
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RelatorioVendasClasseConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, RelatorioVendasClasseConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more RelatorioVendasClasseConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelatorioVendasClasseConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RelatorioVendasClasseConfigs
+     * const relatorioVendasClasseConfigs = await prisma.relatorioVendasClasseConfig.findMany()
+     * 
+     * // Get first 10 RelatorioVendasClasseConfigs
+     * const relatorioVendasClasseConfigs = await prisma.relatorioVendasClasseConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const relatorioVendasClasseConfigWithIdOnly = await prisma.relatorioVendasClasseConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RelatorioVendasClasseConfigFindManyArgs>(args?: SelectSubset<T, RelatorioVendasClasseConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a RelatorioVendasClasseConfig.
+     * @param {RelatorioVendasClasseConfigCreateArgs} args - Arguments to create a RelatorioVendasClasseConfig.
+     * @example
+     * // Create one RelatorioVendasClasseConfig
+     * const RelatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.create({
+     *   data: {
+     *     // ... data to create a RelatorioVendasClasseConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends RelatorioVendasClasseConfigCreateArgs>(args: SelectSubset<T, RelatorioVendasClasseConfigCreateArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many RelatorioVendasClasseConfigs.
+     * @param {RelatorioVendasClasseConfigCreateManyArgs} args - Arguments to create many RelatorioVendasClasseConfigs.
+     * @example
+     * // Create many RelatorioVendasClasseConfigs
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RelatorioVendasClasseConfigCreateManyArgs>(args?: SelectSubset<T, RelatorioVendasClasseConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a RelatorioVendasClasseConfig.
+     * @param {RelatorioVendasClasseConfigDeleteArgs} args - Arguments to delete one RelatorioVendasClasseConfig.
+     * @example
+     * // Delete one RelatorioVendasClasseConfig
+     * const RelatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.delete({
+     *   where: {
+     *     // ... filter to delete one RelatorioVendasClasseConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RelatorioVendasClasseConfigDeleteArgs>(args: SelectSubset<T, RelatorioVendasClasseConfigDeleteArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one RelatorioVendasClasseConfig.
+     * @param {RelatorioVendasClasseConfigUpdateArgs} args - Arguments to update one RelatorioVendasClasseConfig.
+     * @example
+     * // Update one RelatorioVendasClasseConfig
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RelatorioVendasClasseConfigUpdateArgs>(args: SelectSubset<T, RelatorioVendasClasseConfigUpdateArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more RelatorioVendasClasseConfigs.
+     * @param {RelatorioVendasClasseConfigDeleteManyArgs} args - Arguments to filter RelatorioVendasClasseConfigs to delete.
+     * @example
+     * // Delete a few RelatorioVendasClasseConfigs
+     * const { count } = await prisma.relatorioVendasClasseConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RelatorioVendasClasseConfigDeleteManyArgs>(args?: SelectSubset<T, RelatorioVendasClasseConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RelatorioVendasClasseConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelatorioVendasClasseConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RelatorioVendasClasseConfigs
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RelatorioVendasClasseConfigUpdateManyArgs>(args: SelectSubset<T, RelatorioVendasClasseConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one RelatorioVendasClasseConfig.
+     * @param {RelatorioVendasClasseConfigUpsertArgs} args - Arguments to update or create a RelatorioVendasClasseConfig.
+     * @example
+     * // Update or create a RelatorioVendasClasseConfig
+     * const relatorioVendasClasseConfig = await prisma.relatorioVendasClasseConfig.upsert({
+     *   create: {
+     *     // ... data to create a RelatorioVendasClasseConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RelatorioVendasClasseConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RelatorioVendasClasseConfigUpsertArgs>(args: SelectSubset<T, RelatorioVendasClasseConfigUpsertArgs<ExtArgs>>): Prisma__RelatorioVendasClasseConfigClient<$Result.GetResult<Prisma.$RelatorioVendasClasseConfigPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of RelatorioVendasClasseConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelatorioVendasClasseConfigCountArgs} args - Arguments to filter RelatorioVendasClasseConfigs to count.
+     * @example
+     * // Count the number of RelatorioVendasClasseConfigs
+     * const count = await prisma.relatorioVendasClasseConfig.count({
+     *   where: {
+     *     // ... the filter for the RelatorioVendasClasseConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends RelatorioVendasClasseConfigCountArgs>(
+      args?: Subset<T, RelatorioVendasClasseConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RelatorioVendasClasseConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RelatorioVendasClasseConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelatorioVendasClasseConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RelatorioVendasClasseConfigAggregateArgs>(args: Subset<T, RelatorioVendasClasseConfigAggregateArgs>): Prisma.PrismaPromise<GetRelatorioVendasClasseConfigAggregateType<T>>
+
+    /**
+     * Group by RelatorioVendasClasseConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelatorioVendasClasseConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RelatorioVendasClasseConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RelatorioVendasClasseConfigGroupByArgs['orderBy'] }
+        : { orderBy?: RelatorioVendasClasseConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RelatorioVendasClasseConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRelatorioVendasClasseConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RelatorioVendasClasseConfig model
+   */
+  readonly fields: RelatorioVendasClasseConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RelatorioVendasClasseConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RelatorioVendasClasseConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RelatorioVendasClasseConfig model
+   */
+  interface RelatorioVendasClasseConfigFieldRefs {
+    readonly id: FieldRef<"RelatorioVendasClasseConfig", 'String'>
+    readonly unificarClasse: FieldRef<"RelatorioVendasClasseConfig", 'Json'>
+    readonly produtoParaClasse: FieldRef<"RelatorioVendasClasseConfig", 'Json'>
+    readonly atualizadoEm: FieldRef<"RelatorioVendasClasseConfig", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RelatorioVendasClasseConfig findUnique
+   */
+  export type RelatorioVendasClasseConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which RelatorioVendasClasseConfig to fetch.
+     */
+    where: RelatorioVendasClasseConfigWhereUniqueInput
+  }
+
+  /**
+   * RelatorioVendasClasseConfig findUniqueOrThrow
+   */
+  export type RelatorioVendasClasseConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which RelatorioVendasClasseConfig to fetch.
+     */
+    where: RelatorioVendasClasseConfigWhereUniqueInput
+  }
+
+  /**
+   * RelatorioVendasClasseConfig findFirst
+   */
+  export type RelatorioVendasClasseConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which RelatorioVendasClasseConfig to fetch.
+     */
+    where?: RelatorioVendasClasseConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RelatorioVendasClasseConfigs to fetch.
+     */
+    orderBy?: RelatorioVendasClasseConfigOrderByWithRelationInput | RelatorioVendasClasseConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RelatorioVendasClasseConfigs.
+     */
+    cursor?: RelatorioVendasClasseConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RelatorioVendasClasseConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RelatorioVendasClasseConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RelatorioVendasClasseConfigs.
+     */
+    distinct?: RelatorioVendasClasseConfigScalarFieldEnum | RelatorioVendasClasseConfigScalarFieldEnum[]
+  }
+
+  /**
+   * RelatorioVendasClasseConfig findFirstOrThrow
+   */
+  export type RelatorioVendasClasseConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which RelatorioVendasClasseConfig to fetch.
+     */
+    where?: RelatorioVendasClasseConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RelatorioVendasClasseConfigs to fetch.
+     */
+    orderBy?: RelatorioVendasClasseConfigOrderByWithRelationInput | RelatorioVendasClasseConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RelatorioVendasClasseConfigs.
+     */
+    cursor?: RelatorioVendasClasseConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RelatorioVendasClasseConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RelatorioVendasClasseConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RelatorioVendasClasseConfigs.
+     */
+    distinct?: RelatorioVendasClasseConfigScalarFieldEnum | RelatorioVendasClasseConfigScalarFieldEnum[]
+  }
+
+  /**
+   * RelatorioVendasClasseConfig findMany
+   */
+  export type RelatorioVendasClasseConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which RelatorioVendasClasseConfigs to fetch.
+     */
+    where?: RelatorioVendasClasseConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RelatorioVendasClasseConfigs to fetch.
+     */
+    orderBy?: RelatorioVendasClasseConfigOrderByWithRelationInput | RelatorioVendasClasseConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RelatorioVendasClasseConfigs.
+     */
+    cursor?: RelatorioVendasClasseConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RelatorioVendasClasseConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RelatorioVendasClasseConfigs.
+     */
+    skip?: number
+    distinct?: RelatorioVendasClasseConfigScalarFieldEnum | RelatorioVendasClasseConfigScalarFieldEnum[]
+  }
+
+  /**
+   * RelatorioVendasClasseConfig create
+   */
+  export type RelatorioVendasClasseConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to create a RelatorioVendasClasseConfig.
+     */
+    data: XOR<RelatorioVendasClasseConfigCreateInput, RelatorioVendasClasseConfigUncheckedCreateInput>
+  }
+
+  /**
+   * RelatorioVendasClasseConfig createMany
+   */
+  export type RelatorioVendasClasseConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RelatorioVendasClasseConfigs.
+     */
+    data: RelatorioVendasClasseConfigCreateManyInput | RelatorioVendasClasseConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RelatorioVendasClasseConfig update
+   */
+  export type RelatorioVendasClasseConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to update a RelatorioVendasClasseConfig.
+     */
+    data: XOR<RelatorioVendasClasseConfigUpdateInput, RelatorioVendasClasseConfigUncheckedUpdateInput>
+    /**
+     * Choose, which RelatorioVendasClasseConfig to update.
+     */
+    where: RelatorioVendasClasseConfigWhereUniqueInput
+  }
+
+  /**
+   * RelatorioVendasClasseConfig updateMany
+   */
+  export type RelatorioVendasClasseConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RelatorioVendasClasseConfigs.
+     */
+    data: XOR<RelatorioVendasClasseConfigUpdateManyMutationInput, RelatorioVendasClasseConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which RelatorioVendasClasseConfigs to update
+     */
+    where?: RelatorioVendasClasseConfigWhereInput
+    /**
+     * Limit how many RelatorioVendasClasseConfigs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RelatorioVendasClasseConfig upsert
+   */
+  export type RelatorioVendasClasseConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * The filter to search for the RelatorioVendasClasseConfig to update in case it exists.
+     */
+    where: RelatorioVendasClasseConfigWhereUniqueInput
+    /**
+     * In case the RelatorioVendasClasseConfig found by the `where` argument doesn't exist, create a new RelatorioVendasClasseConfig with this data.
+     */
+    create: XOR<RelatorioVendasClasseConfigCreateInput, RelatorioVendasClasseConfigUncheckedCreateInput>
+    /**
+     * In case the RelatorioVendasClasseConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RelatorioVendasClasseConfigUpdateInput, RelatorioVendasClasseConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * RelatorioVendasClasseConfig delete
+   */
+  export type RelatorioVendasClasseConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
+    /**
+     * Filter which RelatorioVendasClasseConfig to delete.
+     */
+    where: RelatorioVendasClasseConfigWhereUniqueInput
+  }
+
+  /**
+   * RelatorioVendasClasseConfig deleteMany
+   */
+  export type RelatorioVendasClasseConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RelatorioVendasClasseConfigs to delete
+     */
+    where?: RelatorioVendasClasseConfigWhereInput
+    /**
+     * Limit how many RelatorioVendasClasseConfigs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * RelatorioVendasClasseConfig without action
+   */
+  export type RelatorioVendasClasseConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RelatorioVendasClasseConfig
+     */
+    select?: RelatorioVendasClasseConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RelatorioVendasClasseConfig
+     */
+    omit?: RelatorioVendasClasseConfigOmit<ExtArgs> | null
   }
 
 
@@ -49807,6 +50759,16 @@ export namespace Prisma {
   export type EstoqueVivoConfigScalarFieldEnum = (typeof EstoqueVivoConfigScalarFieldEnum)[keyof typeof EstoqueVivoConfigScalarFieldEnum]
 
 
+  export const RelatorioVendasClasseConfigScalarFieldEnum: {
+    id: 'id',
+    unificarClasse: 'unificarClasse',
+    produtoParaClasse: 'produtoParaClasse',
+    atualizadoEm: 'atualizadoEm'
+  };
+
+  export type RelatorioVendasClasseConfigScalarFieldEnum = (typeof RelatorioVendasClasseConfigScalarFieldEnum)[keyof typeof RelatorioVendasClasseConfigScalarFieldEnum]
+
+
   export const EstoqueVivoMixScalarFieldEnum: {
     id: 'id',
     nome: 'nome',
@@ -50512,6 +51474,13 @@ export namespace Prisma {
   };
 
   export type EstoqueVivoConfigOrderByRelevanceFieldEnum = (typeof EstoqueVivoConfigOrderByRelevanceFieldEnum)[keyof typeof EstoqueVivoConfigOrderByRelevanceFieldEnum]
+
+
+  export const RelatorioVendasClasseConfigOrderByRelevanceFieldEnum: {
+    id: 'id'
+  };
+
+  export type RelatorioVendasClasseConfigOrderByRelevanceFieldEnum = (typeof RelatorioVendasClasseConfigOrderByRelevanceFieldEnum)[keyof typeof RelatorioVendasClasseConfigOrderByRelevanceFieldEnum]
 
 
   export const EstoqueVivoMixOrderByRelevanceFieldEnum: {
@@ -51605,6 +52574,54 @@ export namespace Prisma {
     mixReferenciaNome?: StringWithAggregatesFilter<"EstoqueVivoConfig"> | string
     mixVariedades?: JsonWithAggregatesFilter<"EstoqueVivoConfig">
     atualizadoEm?: DateTimeWithAggregatesFilter<"EstoqueVivoConfig"> | Date | string
+  }
+
+  export type RelatorioVendasClasseConfigWhereInput = {
+    AND?: RelatorioVendasClasseConfigWhereInput | RelatorioVendasClasseConfigWhereInput[]
+    OR?: RelatorioVendasClasseConfigWhereInput[]
+    NOT?: RelatorioVendasClasseConfigWhereInput | RelatorioVendasClasseConfigWhereInput[]
+    id?: StringFilter<"RelatorioVendasClasseConfig"> | string
+    unificarClasse?: JsonFilter<"RelatorioVendasClasseConfig">
+    produtoParaClasse?: JsonFilter<"RelatorioVendasClasseConfig">
+    atualizadoEm?: DateTimeFilter<"RelatorioVendasClasseConfig"> | Date | string
+  }
+
+  export type RelatorioVendasClasseConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    unificarClasse?: SortOrder
+    produtoParaClasse?: SortOrder
+    atualizadoEm?: SortOrder
+    _relevance?: RelatorioVendasClasseConfigOrderByRelevanceInput
+  }
+
+  export type RelatorioVendasClasseConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: RelatorioVendasClasseConfigWhereInput | RelatorioVendasClasseConfigWhereInput[]
+    OR?: RelatorioVendasClasseConfigWhereInput[]
+    NOT?: RelatorioVendasClasseConfigWhereInput | RelatorioVendasClasseConfigWhereInput[]
+    unificarClasse?: JsonFilter<"RelatorioVendasClasseConfig">
+    produtoParaClasse?: JsonFilter<"RelatorioVendasClasseConfig">
+    atualizadoEm?: DateTimeFilter<"RelatorioVendasClasseConfig"> | Date | string
+  }, "id">
+
+  export type RelatorioVendasClasseConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    unificarClasse?: SortOrder
+    produtoParaClasse?: SortOrder
+    atualizadoEm?: SortOrder
+    _count?: RelatorioVendasClasseConfigCountOrderByAggregateInput
+    _max?: RelatorioVendasClasseConfigMaxOrderByAggregateInput
+    _min?: RelatorioVendasClasseConfigMinOrderByAggregateInput
+  }
+
+  export type RelatorioVendasClasseConfigScalarWhereWithAggregatesInput = {
+    AND?: RelatorioVendasClasseConfigScalarWhereWithAggregatesInput | RelatorioVendasClasseConfigScalarWhereWithAggregatesInput[]
+    OR?: RelatorioVendasClasseConfigScalarWhereWithAggregatesInput[]
+    NOT?: RelatorioVendasClasseConfigScalarWhereWithAggregatesInput | RelatorioVendasClasseConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"RelatorioVendasClasseConfig"> | string
+    unificarClasse?: JsonWithAggregatesFilter<"RelatorioVendasClasseConfig">
+    produtoParaClasse?: JsonWithAggregatesFilter<"RelatorioVendasClasseConfig">
+    atualizadoEm?: DateTimeWithAggregatesFilter<"RelatorioVendasClasseConfig"> | Date | string
   }
 
   export type EstoqueVivoMixWhereInput = {
@@ -55300,6 +56317,55 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     mixReferenciaNome?: StringFieldUpdateOperationsInput | string
     mixVariedades?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RelatorioVendasClasseConfigCreateInput = {
+    id?: string
+    unificarClasse?: JsonNullValueInput | InputJsonValue
+    produtoParaClasse?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: Date | string
+  }
+
+  export type RelatorioVendasClasseConfigUncheckedCreateInput = {
+    id?: string
+    unificarClasse?: JsonNullValueInput | InputJsonValue
+    produtoParaClasse?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: Date | string
+  }
+
+  export type RelatorioVendasClasseConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unificarClasse?: JsonNullValueInput | InputJsonValue
+    produtoParaClasse?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RelatorioVendasClasseConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unificarClasse?: JsonNullValueInput | InputJsonValue
+    produtoParaClasse?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RelatorioVendasClasseConfigCreateManyInput = {
+    id?: string
+    unificarClasse?: JsonNullValueInput | InputJsonValue
+    produtoParaClasse?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: Date | string
+  }
+
+  export type RelatorioVendasClasseConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unificarClasse?: JsonNullValueInput | InputJsonValue
+    produtoParaClasse?: JsonNullValueInput | InputJsonValue
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RelatorioVendasClasseConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unificarClasse?: JsonNullValueInput | InputJsonValue
+    produtoParaClasse?: JsonNullValueInput | InputJsonValue
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -59436,6 +60502,29 @@ export namespace Prisma {
   export type EstoqueVivoConfigMinOrderByAggregateInput = {
     id?: SortOrder
     mixReferenciaNome?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RelatorioVendasClasseConfigOrderByRelevanceInput = {
+    fields: RelatorioVendasClasseConfigOrderByRelevanceFieldEnum | RelatorioVendasClasseConfigOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type RelatorioVendasClasseConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    unificarClasse?: SortOrder
+    produtoParaClasse?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RelatorioVendasClasseConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    atualizadoEm?: SortOrder
+  }
+
+  export type RelatorioVendasClasseConfigMinOrderByAggregateInput = {
+    id?: SortOrder
     atualizadoEm?: SortOrder
   }
 

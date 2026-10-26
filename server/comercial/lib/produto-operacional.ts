@@ -30,6 +30,31 @@ export function criarIndiceProdutosOperacionais(produtos: ProdutoOperacionalLook
   return { porId, porSku, porCaId, porNome };
 }
 
+/**
+ * Categoria salva em Pedidos → Produtos (produtoComercial.categoria).
+ * Preferência: ativo por sku/CA/nome → qualquer match por nome.
+ */
+export function categoriaCatalogoOperacional(
+  indice: ReturnType<typeof criarIndiceProdutosOperacionais>,
+  item: { produto?: string; produtoNome?: string; sku?: string | null },
+): string | null {
+  const resolvido = resolverProdutoOperacional(indice, item);
+  const catAtivo = resolvido?.categoria?.trim();
+  if (catAtivo) return catAtivo;
+
+  const sku = item.sku?.trim();
+  if (sku) {
+    const porCa = indice.porCaId.get(sku)?.categoria?.trim();
+    if (porCa) return porCa;
+    const porSku = indice.porSku.get(sku)?.categoria?.trim();
+    if (porSku) return porSku;
+  }
+
+  const nome = item.produtoNome ?? item.produto ?? "";
+  const porNome = indice.porNome.get(normalizarNome(nome))?.categoria?.trim();
+  return porNome || null;
+}
+
 export function resolverProdutoOperacional(
   indice: ReturnType<typeof criarIndiceProdutosOperacionais>,
   item: { produto?: string; produtoNome?: string; sku?: string | null; produtoId?: string },

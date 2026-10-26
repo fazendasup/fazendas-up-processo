@@ -272,6 +272,18 @@ model EstoqueVivoConfig {
   @@map("estoque_vivo_config")
 }
 
+/// Mapa manual do relatório "Vendas por classe" (não altera o cadastro do produto).
+model RelatorioVendasClasseConfig {
+  id                String   @id @default("default")
+  /// { [categoriaOperacional]: classeExibida }
+  unificarClasse    Json     @default("{}") @map("unificar_classe")
+  /// { [nomeProduto]: classeExibida }
+  produtoParaClasse Json     @default("{}") @map("produto_para_classe")
+  atualizadoEm      DateTime @updatedAt @map("atualizado_em")
+
+  @@map("relatorio_vendas_classe_config")
+}
+
 /// Receita de mix (ex.: Crocante 1) com ingredientes em gramas e taxa de perda.
 model EstoqueVivoMix {
   id                  String   @id @default(cuid())

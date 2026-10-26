@@ -1,5 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { criarResolverChaveItemConciliacao } from "./produto-operacional";
+import {
+  categoriaCatalogoOperacional,
+  criarIndiceProdutosOperacionais,
+  criarResolverChaveItemConciliacao,
+} from "./produto-operacional";
+
+describe("categoriaCatalogoOperacional", () => {
+  it("usa a categoria salva no catálogo operacional (Pedidos → Produtos)", () => {
+    const indice = criarIndiceProdutosOperacionais([
+      {
+        id: "p1",
+        nome: "Alface Americana",
+        sku: "SKU-1",
+        contaAzulProdutoId: "ca-1",
+        ativo: true,
+        importadoOperacao: true,
+        categoria: "Folhas",
+      },
+    ]);
+
+    expect(
+      categoriaCatalogoOperacional(indice, { produto: "Alface Americana" }),
+    ).toBe("Folhas");
+    expect(
+      categoriaCatalogoOperacional(indice, {
+        produto: "outro nome",
+        sku: "ca-1",
+      }),
+    ).toBe("Folhas");
+  });
+});
 
 describe("criarResolverChaveItemConciliacao", () => {
   it("casa item da Conta Azul por nome quando SKU/ID não estão mapeados", () => {

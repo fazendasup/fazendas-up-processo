@@ -8,10 +8,17 @@ import {
 import { composicaoGerencialDoPedido, mapDescontoBoletoPorClienteId } from "../lib/valor-gerencial.js";
 import { mesIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import {
-  categoriaOperacaoDoProduto,
-  ordemCategoriaOperacao,
-  type CategoriaOperacaoOuOutros,
-} from "@shared/produtoCategoriaOperacao";
+  classeBaseOperacional,
+  classeNoRelatorioVendas,
+  listarClassesDisponiveis,
+  ordemClasseVendaRelatorio,
+  parseMapaVendasPorClasse,
+  type MapaVendasPorClasse,
+} from "@shared/relatoriosVendasPorClasse";
+import {
+  categoriaCatalogoOperacional,
+  criarIndiceProdutosOperacionais,
+} from "../lib/produto-operacional.js";
 import { router, comercialProcedure } from "../../_core/trpc";
 import {
   addMap,
@@ -23,6 +30,22 @@ import {
   round2,
   variacaoPct,
 } from "../services/relatorios-calculos.js";
+import type { PrismaClient } from "../generated/prisma/index.js";
+
+async function carregarMapaVendasPorClasse(
+  prisma: PrismaClient,
+): Promise<MapaVendasPorClasse> {
+  const row = await prisma.relatorioVendasClasseConfig.findUnique({
+    where: { id: "default" },
+  });
+  if (!row) {
+    return { unificarClasse: {}, produtoParaClasse: {} };
+  }
+  return parseMapaVendasPorClasse({
+    unificarClasse: row.unificarClasse,
+    produtoParaClasse: row.produtoParaClasse,
+  });
+}
 
 function diasDesde(data: Date | null): number | null {
   if (!data) return null;
@@ -167,7 +190,8 @@ export const relatoriosRouter = router({
       const clientePedidoWhere = clienteSituacaoWhere
         ? { cliente: { is: clienteSituacaoWhere } }
         : {};
-      const [pedidos, pedidosAnterior, clientes] = await Promise.all([
+      const [pedidos, pedidosAnterior, clientes, produtosOperacao, mapaClasse] =
+        await Promise.all([
         ctx.prisma!.pedido.findMany({
           where: {
             origemPedido: OrigemPedido.CONTA_AZUL,
@@ -229,7 +253,31 @@ export const relatoriosRouter = router({
           },
           orderBy: { nome: "asc" },
         }),
+        ctx.prisma!.produtoComercial.findMany({
+          where: { importadoOperacao: true },
+          select: {
+            id: true,
+            nome: true,
+            sku: true,
+            contaAzulProdutoId: true,
+            ativo: true,
+            importadoOperacao: true,
+            categoria: true,
+          },
+        }),
+        carregarMapaVendasPorClasse(ctx.prisma!),
       ]);
+      const indiceProdutosOperacao =
+        criarIndiceProdutosOperacionais(produtosOperacao);
+      const categoriaOperacionalDoItem = (item: {
+        produto: string;
+        sku?: string | null;
+        categoria?: string | null;
+      }) =>
+        categoriaCatalogoOperacional(indiceProdutosOperacao, {
+          produto: item.produto,
+          sku: item.sku,
+        }) ?? item.categoria ?? null;
 
       const vendas = pedidos.filter(
         p => classificarStatusPedido(p.statusPedido) === "venda"
@@ -371,15 +419,18 @@ export const relatoriosRouter = router({
             clienteRow.custoQtd += quantidade;
           }
 
+          const categoriaOp = categoriaOperacionalDoItem(item);
           const produtoCmv = addMap(cmvPorProduto, item.produto, () => ({
             produto: item.produto,
-            categoria: item.categoria,
+            categoria: categoriaOp,
             quantidade: 0,
             custoTotal: 0,
             custoQtd: 0,
             valorBruto: 0,
             vendas: 0,
           }));
+          // Mantém a categoria do catálogo operacional (Pedidos → Produtos).
+          if (categoriaOp) produtoCmv.categoria = categoriaOp;
           produtoCmv.quantidade += quantidade;
           produtoCmv.valorBruto += valorTotal;
           produtoCmv.vendas += 1;
@@ -396,7 +447,7 @@ export const relatoriosRouter = router({
             dataVenda: p.dataPedido,
             tipoItem: "PRODUTO",
             produto: item.produto,
-            categoria: item.categoria,
+            categoria: categoriaOp,
             quantidade,
             valorUnitario: n(item.precoUnit),
             valorTotal,
@@ -512,11 +563,11 @@ export const relatoriosRouter = router({
         }))
       );
 
-      /** Folhas, legumes (In natura), mixes, ervas, etc. */
+      /** Classes só deste relatório — mapa editável na tela, sem alterar o produto. */
       const porClasse = new Map<
-        CategoriaOperacaoOuOutros,
+        string,
         {
-          classe: CategoriaOperacaoOuOutros;
+          classe: string;
           quantidade: number;
           valorBruto: number;
           produtos: number;
@@ -524,7 +575,9 @@ export const relatoriosRouter = router({
         }
       >();
       const produtosPorClasse: Array<{
-        classe: CategoriaOperacaoOuOutros;
+        classe: string;
+        classeBase: string;
+        sobrescrito: boolean;
         produto: string;
         categoriaCadastro: string | null;
         quantidade: number;
@@ -533,7 +586,12 @@ export const relatoriosRouter = router({
         participacaoClasse: number;
       }> = [];
       for (const row of cmvRows) {
-        const classe = categoriaOperacaoDoProduto(row.produto, row.categoria);
+        const classeBase = classeBaseOperacional(row.produto, row.categoria);
+        const classe = classeNoRelatorioVendas(
+          row.produto,
+          row.categoria,
+          mapaClasse,
+        );
         const agg = addMap(porClasse, classe, () => ({
           classe,
           quantidade: 0,
@@ -547,6 +605,8 @@ export const relatoriosRouter = router({
         agg.itens += row.vendas;
         produtosPorClasse.push({
           classe,
+          classeBase,
+          sobrescrito: classe !== classeBase,
           produto: row.produto,
           categoriaCadastro: row.categoria,
           quantidade: row.quantidade,
@@ -573,7 +633,8 @@ export const relatoriosRouter = router({
         }))
         .sort(
           (a, b) =>
-            ordemCategoriaOperacao(a.classe) - ordemCategoriaOperacao(b.classe),
+            ordemClasseVendaRelatorio(a.classe) -
+            ordemClasseVendaRelatorio(b.classe),
         );
       for (const p of produtosPorClasse) {
         const totalClasse = porClasse.get(p.classe)?.valorBruto ?? 0;
@@ -585,7 +646,8 @@ export const relatoriosRouter = router({
       }
       produtosPorClasse.sort(
         (a, b) =>
-          ordemCategoriaOperacao(a.classe) - ordemCategoriaOperacao(b.classe) ||
+          ordemClasseVendaRelatorio(a.classe) -
+            ordemClasseVendaRelatorio(b.classe) ||
           b.valorBruto - a.valorBruto,
       );
 
@@ -797,6 +859,11 @@ export const relatoriosRouter = router({
         ),
         vendasPorClasse,
         produtosPorClasse,
+        mapaVendasPorClasse: mapaClasse,
+        classesDisponiveis: listarClassesDisponiveis(
+          mapaClasse,
+          produtosPorClasse.map(p => p.classe),
+        ),
         servicosPrestados: {
           linhas: [],
           observacao:
@@ -844,6 +911,41 @@ export const relatoriosRouter = router({
           observacao:
             "Vendedor não está persistido no pedido comercial; a API retorna esse campo no detalhe, mas ainda não foi modelado localmente.",
         },
+      };
+    }),
+
+  mapaVendasPorClasse: comercialProcedure.query(async ({ ctx }) => {
+    const mapa = await carregarMapaVendasPorClasse(ctx.prisma!);
+    return {
+      mapa,
+      classesDisponiveis: listarClassesDisponiveis(mapa),
+    };
+  }),
+
+  salvarMapaVendasPorClasse: comercialProcedure
+    .input(
+      z.object({
+        unificarClasse: z.record(z.string(), z.string()).default({}),
+        produtoParaClasse: z.record(z.string(), z.string()).default({}),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const mapa = parseMapaVendasPorClasse(input);
+      await ctx.prisma!.relatorioVendasClasseConfig.upsert({
+        where: { id: "default" },
+        create: {
+          id: "default",
+          unificarClasse: mapa.unificarClasse ?? {},
+          produtoParaClasse: mapa.produtoParaClasse ?? {},
+        },
+        update: {
+          unificarClasse: mapa.unificarClasse ?? {},
+          produtoParaClasse: mapa.produtoParaClasse ?? {},
+        },
+      });
+      return {
+        mapa,
+        classesDisponiveis: listarClassesDisponiveis(mapa),
       };
     }),
 });
