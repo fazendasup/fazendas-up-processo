@@ -13,6 +13,40 @@ import {
   type PassoCicloAgenda,
 } from "@shared/cicloSequencia";
 
+function passosAgenda(ciclos: CicloAplicacao[]): PassoCicloAgenda<string>[] {
+  const out: PassoCicloAgenda<string>[] = [];
+  for (const ciclo of ciclos) {
+    const id = Number(String(ciclo.id).replace(/^c-/, ""));
+    if (!Number.isFinite(id)) continue;
+    out.push({
+      id,
+      ativo: ciclo.ativo !== false,
+      alvo: ciclo.alvo,
+      frequencia: ciclo.frequencia,
+      diasSemana: ciclo.diasSemana,
+      intervaloDias: ciclo.intervaloDias,
+      dataInicio: ciclo.dataInicio,
+      nome: ciclo.nome,
+      produto: ciclo.produto,
+      caixaIds: ciclo.caixaIds ?? [],
+      execucoes: (ciclo.execucoesCaixa ?? []).map((e) => ({
+        caixaId: e.caixaId,
+        ultimaExecucao: e.ultimaExecucao,
+        dataAgenda: e.dataAgenda,
+      })),
+    });
+  }
+  return out;
+}
+
+type LinhaAplicacao = {
+  key: string;
+  produto: string;
+  dosagem: string;
+  diasAtraso: number;
+  acao: { tipo: "caixa"; cicloId: number; caixaDbId: number } | { tipo: "andar"; cicloId: number };
+};
+
 /** Agrupa Thyper/peróxido/etc. duplicados — um card por solução. */
 function chaveProdutoLinha(produto: string): string {
   const solucao = produtoSolucaoDoNome(produto);
@@ -33,38 +67,6 @@ function deduparLinhasAplicacao(linhas: LinhaAplicacao[]): LinhaAplicacao[] {
     (a, b) => b.diasAtraso - a.diasAtraso || a.produto.localeCompare(b.produto),
   );
 }
-
-function passosAgenda(ciclos: CicloAplicacao[]): PassoCicloAgenda<string>[] {
-  const out: PassoCicloAgenda<string>[] = [];
-  for (const ciclo of ciclos) {
-    const id = Number(String(ciclo.id).replace(/^c-/, ""));
-    if (!Number.isFinite(id)) continue;
-    out.push({
-      id,
-      ativo: ciclo.ativo !== false,
-      alvo: ciclo.alvo,
-      frequencia: ciclo.frequencia,
-      diasSemana: ciclo.diasSemana,
-      intervaloDias: ciclo.intervaloDias,
-      dataInicio: ciclo.dataInicio,
-      caixaIds: ciclo.caixaIds ?? [],
-      execucoes: (ciclo.execucoesCaixa ?? []).map((e) => ({
-        caixaId: e.caixaId,
-        ultimaExecucao: e.ultimaExecucao,
-        dataAgenda: e.dataAgenda,
-      })),
-    });
-  }
-  return out;
-}
-
-type LinhaAplicacao = {
-  key: string;
-  produto: string;
-  dosagem: string;
-  diasAtraso: number;
-  acao: { tipo: "caixa"; cicloId: number; caixaDbId: number } | { tipo: "andar"; cicloId: number };
-};
 
 function referenciaHojeFazenda(): Date {
   const [ano, mes, dia] = hojeYmdSaoPaulo().split("-").map(Number);

@@ -218,16 +218,59 @@ export function dataPrevistaCicloYmd<TCaixa extends string | number>(
   if (agenda && (!ultima || agenda > ultima)) return agenda;
 
   if (passo.frequencia === "semanal" && passo.diasSemana && passo.diasSemana.length > 0) {
-    const feitoHoje = ultima === hojeYmd;
+    // Base auditável: após a última aplicação, o próximo dia-da-semana da cadência.
+    if (ultima) {
+      return proximoDiaSemana(adicionarDiasYmd(ultima, 1), passo.diasSemana);
+    }
+    const feitoHoje = false;
     if (!feitoHoje && (!inicio || inicio <= hojeYmd) && passo.diasSemana.includes(diaSemanaYmd(hojeYmd))) {
       return hojeYmd;
     }
-    const aPartirDe = inicio && inicio > hojeYmd ? inicio : adicionarDiasYmd(hojeYmd, 1);
+    const aPartirDe = inicio && inicio > hojeYmd ? inicio : hojeYmd;
     return proximoDiaSemana(aPartirDe, passo.diasSemana);
   }
 
-  if (!ultima) return inicio ?? hojeYmd;
+  // Intervalo: próxima = última + cadência (fonte de verdade auditável).
+  if (!ultima) return inicio && inicio > hojeYmd ? inicio : inicio ?? hojeYmd;
   return adicionarDiasYmd(ultima, intervaloEfetivo(passo));
+}
+
+/**
+ * Empurra a data candidata para frente até respeitar as folgas mínimas
+ * após a última aplicação auditável dos outros produtos.
+ */
+export function aplicarFolgaSegurancaYmd(
+  candidataYmd: string,
+  ciclo: { nome?: string | null; produto?: string | null },
+  outros: Array<{
+    nome?: string | null;
+    produto?: string | null;
+    ultimaExecucao?: string | Date | null;
+    ativo?: boolean;
+  }>,
+): string {
+  const destino = chaveAplicacaoProtocolo(ciclo.nome ?? "", ciclo.produto ?? "");
+  if (!destino) return candidataYmd;
+  let ymd = candidataYmd;
+  for (let i = 0; i < 60; i++) {
+    let atrasou = false;
+    for (const outro of outros) {
+      if (outro.ativo === false) continue;
+      const origem = chaveAplicacaoProtocolo(outro.nome ?? "", outro.produto ?? "");
+      if (!origem || origem === destino) continue;
+      const ult = ymdCalendario(outro.ultimaExecucao ?? null);
+      if (!ult) continue;
+      const folga = folgaMinimaDias(origem, destino);
+      if (folga <= 0) continue;
+      const minimo = adicionarDiasYmd(ult, folga);
+      if (ymd < minimo) {
+        ymd = minimo;
+        atrasou = true;
+      }
+    }
+    if (!atrasou) break;
+  }
+  return ymd;
 }
 
 /** Todos os passos da caixa que já venceram ou vencem hoje, do mais antigo ao mais novo. */
@@ -236,10 +279,30 @@ export function passosDevidosDaCaixa<TCaixa extends string | number>(
   caixaId: TCaixa,
   hojeYmd: string,
 ): PassoEscolhido<TCaixa>[] {
+  const outrosDaCaixa = (excetoId: number) =>
+    passos
+      .filter((p) => p.id !== excetoId && p.ativo !== false)
+      .map((p) => {
+        const ex = p.execucoes.find((e) => e.caixaId === caixaId);
+        return {
+          nome: p.nome,
+          produto: p.produto,
+          ultimaExecucao: ex?.ultimaExecucao ?? null,
+          ativo: p.ativo,
+        };
+      });
+
   return passos
     .map((passo) => {
-      const previstaYmd = dataPrevistaCicloYmd(passo, caixaId, hojeYmd);
-      return previstaYmd ? { passo, previstaYmd } : null;
+      const base = dataPrevistaCicloYmd(passo, caixaId, hojeYmd);
+      if (!base) return null;
+      // Cadência (última + intervalo) + folga mínima entre produtos nesta caixa.
+      const previstaYmd = aplicarFolgaSegurancaYmd(
+        base,
+        { nome: passo.nome, produto: passo.produto },
+        outrosDaCaixa(passo.id),
+      );
+      return { passo, previstaYmd };
     })
     .filter((item): item is { passo: PassoCicloAgenda<TCaixa>; previstaYmd: string } => item != null)
     .filter((item) => item.previstaYmd <= hojeYmd)

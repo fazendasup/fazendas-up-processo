@@ -65,6 +65,55 @@ describe("escolherPassoDaCaixa", () => {
     );
     expect(devidos.map((item) => item.passo.id)).toEqual([1, 2]);
   });
+
+  it("não libera Cercobin antes da folga de 3 dias após Infinito", () => {
+    const devidos = passosDevidosDaCaixa(
+      [
+        passo(1, "2026-10-01", {
+          nome: "Infinito",
+          produto: "Infinito",
+          frequencia: "quinzenal",
+          intervaloDias: 14,
+          execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-20" }],
+        }),
+        passo(2, "2026-10-07", {
+          nome: "Cercobin",
+          produto: "Cercobin",
+          frequencia: "quinzenal",
+          intervaloDias: 14,
+          execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-07" }],
+        }),
+      ],
+      "cx",
+      "2026-10-21",
+    );
+    // Cadência do Cercobin já venceu (07+14=21), mas folga Infinito→Cercobin = 3 dias.
+    expect(devidos.map((item) => item.passo.id)).toEqual([]);
+  });
+
+  it("libera Cercobin quando a folga após Infinito já passou", () => {
+    const devidos = passosDevidosDaCaixa(
+      [
+        passo(1, "2026-10-01", {
+          nome: "Infinito",
+          produto: "Infinito",
+          frequencia: "quinzenal",
+          intervaloDias: 14,
+          execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-20" }],
+        }),
+        passo(2, "2026-10-07", {
+          nome: "Cercobin",
+          produto: "Cercobin",
+          frequencia: "quinzenal",
+          intervaloDias: 14,
+          execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-07" }],
+        }),
+      ],
+      "cx",
+      "2026-10-23",
+    );
+    expect(devidos.map((item) => item.passo.id)).toEqual([2]);
+  });
 });
 
 describe("reagendarSequenciaAposAplicar", () => {

@@ -27,6 +27,7 @@ import { variedadePulaVegetativa } from '@shared/variedadesFase';
 import { estruturaFaseParaProjeto, type TorreEstruturaOverride } from '@shared/types';
 import { receitaCicloPrioritariaParaVariedade } from '@shared/cicloReceita';
 import { produtoSolucaoDoNome } from '@/data/cicloFases14d';
+import { aplicarFolgaSegurancaYmd } from '@shared/cicloSequencia';
 
 /** Microverdes iluminação: cultivo em nível de bandeja (perfil), sem furos. */
 export type CultivoBandejaStatus = 'vazio' | 'plantado' | 'colhido';
@@ -489,7 +490,8 @@ export function cicloPendenteHoje(ciclo: CicloAplicacao, dataReferencia?: Date):
 
 /**
  * Bio (legado) não aparece no dia em que Infinito ou Cercobin estão pendentes.
- * Thyper/Peróxido e sistêmicos já se excluem pela folga em `cicloSequencia`.
+ * Demais produtos: só pendente se a cadência venceu E a folga de segurança já passou
+ * (última aplicação auditável dos outros produtos).
  */
 export function cicloPendenteNoProtocolo(
   ciclo: CicloAplicacao,
@@ -497,6 +499,22 @@ export function cicloPendenteNoProtocolo(
   dataReferencia?: Date,
 ): boolean {
   if (!cicloTemPendencia(ciclo, dataReferencia)) return false;
+  const ref = dataReferencia ? new Date(dataReferencia) : new Date();
+  const hojeYmd = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, "0")}-${String(ref.getDate()).padStart(2, "0")}`;
+  const liberada = aplicarFolgaSegurancaYmd(
+    hojeYmd,
+    { nome: ciclo.nome, produto: ciclo.produto },
+    ciclos
+      .filter((c) => c.id !== ciclo.id && c.ativo !== false)
+      .map((c) => ({
+        nome: c.nome,
+        produto: c.produto,
+        ultimaExecucao: c.ultimaExecucao,
+        ativo: c.ativo,
+      })),
+  );
+  if (liberada > hojeYmd) return false;
+
   const produto = produtoSolucaoDoNome(ciclo.nome) ?? produtoSolucaoDoNome(ciclo.produto || "");
   if (produto !== "bio") return true;
   return !ciclos.some((outro) => {

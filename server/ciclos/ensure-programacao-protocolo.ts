@@ -79,8 +79,10 @@ function ymdInicio(valor: unknown): string | null {
 
 function foliarDentroDaCaixa(nome: string, produto: string, alvo: string): boolean {
   const t = texto(`${nome} ${produto}`);
+  // Caldas foliares oficiais nunca são desligadas pelo ensure.
   if (t.startsWith("calda a") || t.startsWith("calda b")) return false;
   if (alvo === "andar") return false;
+  // Só desliga misturas soltas de foliar cadastradas por engano na caixa.
   return ["nutrisolve", "biozenith", "magleaf", "forticell"].some((item) => t.includes(item));
 }
 
@@ -177,22 +179,12 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
           }
         }
       }
+      // Se o operador desativou o único ciclo desta chave, não recria nem mexe.
       const temInativo = mesmos.some(
         (ciclo) => !ciclo.ativo && !idsRemovidos.has(ciclo.id),
       );
       if (!ja && temInativo) continue;
-      if (
-        ja &&
-        temInativo &&
-        !ja.ultimaExecucao &&
-        ymdInicio(ja.dataInicio) === item.dataInicio
-      ) {
-        await db
-          .update(ciclos)
-          .set({ ativo: false })
-          .where(and(eq(ciclos.id, ja.id), eq(ciclos.projetoId, fazenda.id)));
-        continue;
-      }
+      // Caldas: não sobrescreve dias/agenda definidos na fazenda.
       if (
         ja &&
         !reiniciar &&

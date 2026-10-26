@@ -12,10 +12,12 @@ type AlvoCiclo = "ambos" | "caixa" | "andar";
 import { cicloPendenteNoProtocolo, formatarDataHora, DIAS_SEMANA } from '@/lib/utils-farm';
 import {
   adicionarDiasYmd,
+  aplicarFolgaSegurancaYmd,
   dataPrevistaCicloYmd,
   hojeYmdSaoPaulo,
   ymdCalendario,
 } from '@shared/cicloSequencia';
+import { programacaoCiclos } from '@/data/cicloFases14d';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
@@ -589,22 +591,43 @@ export default function CiclosPage() {
   const ciclosPendentes = data.ciclos.filter((c) =>
     cicloPendenteNoProtocolo(c, data.ciclos, referenciaHoje),
   );
-  const pendentesIds = useMemo(
-    () => new Set(ciclosPendentes.map((c) => c.id)),
-    [ciclosPendentes],
-  );
   const ciclosLista = useMemo(() => {
+    const hojeRef = referenciaHojeFazenda();
     return data.ciclos
       .filter((c) => (mostrarInativos ? true : c.ativo !== false))
-      .filter((c) => !pendentesIds.has(c.id))
       .sort((a, b) => {
+        const pa = cicloPendenteNoProtocolo(a, data.ciclos, hojeRef) ? 0 : 1;
+        const pb = cicloPendenteNoProtocolo(b, data.ciclos, hojeRef) ? 0 : 1;
+        if (pa !== pb) return pa - pb;
         const aa = a.ativo === false ? 1 : 0;
         const bb = b.ativo === false ? 1 : 0;
         if (aa !== bb) return aa - bb;
         return String(a.nome).localeCompare(String(b.nome), 'pt-BR');
       });
-  }, [data.ciclos, mostrarInativos, pendentesIds]);
+  }, [data.ciclos, mostrarInativos]);
   const qtdInativos = data.ciclos.filter((c) => c.ativo === false).length;
+  const protocoloEsperado = useMemo(
+    () => programacaoCiclos(hojeYmdSaoPaulo()),
+    [],
+  );
+  const protocoloStatus = useMemo(() => {
+    return protocoloEsperado.map((item) => {
+      const ativo = data.ciclos.find((c) => {
+        if (c.ativo === false) return false;
+        const n = c.nome
+          .normalize('NFD')
+          .replace(/\p{M}/gu, '')
+          .toLowerCase();
+        if (item.chave === 'A') return n.startsWith('calda a');
+        if (item.chave === 'B') return n.startsWith('calda b');
+        if (item.chave === 'thyper') {
+          return n.includes('thyper') || n.includes('peroxido');
+        }
+        return n.includes(String(item.chave));
+      });
+      return { chave: item.chave, nome: item.nome, ciclo: ativo ?? null };
+    });
+  }, [data.ciclos, protocoloEsperado]);
 
 
   return (
@@ -1012,45 +1035,44 @@ export default function CiclosPage() {
 
         <ProtocoloFases14d />
 
-        {/* Pendentes hoje */}
-        {ciclosPendentes.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <h2 className="font-display font-bold text-base">
-                Pendentes Hoje ({ciclosPendentes.length})
-              </h2>
-            </div>
-            <div className="space-y-2">
-              {ciclosPendentes.map((ciclo) => (
-                <CicloItem
-                  key={ciclo.id}
-                  ciclo={ciclo}
-                  pendente
-                  caixasLabel={(ciclo.caixaIds ?? [])
-                    .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
-                    .filter(Boolean)
-                    .join(', ')}
-                  onDelete={handleDelete}
-                  onToggle={handleToggle}
-                  onExecutar={marcarFeitoHoje}
-                  onEdit={handleEditCiclo}
-                  onDuplicate={handleDuplicateCiclo}
-                />
-              ))}
-            </div>
-          </motion.section>
-        )}
+        {/* Protocolo esperado × o que está ativo nesta fazenda */}
+        <section className="mb-6 rounded-xl border bg-card p-4">
+          <h2 className="mb-2 font-display text-base font-bold">Protocolo da fazenda</h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Próximas datas usam a última aplicação registrada + cadência, com folga
+            de segurança entre produtos. Pendentes aparecem destacados na lista.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {protocoloStatus.map((item) => (
+              <span
+                key={item.chave}
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  item.ciclo
+                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
+                    : 'bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
+                }`}
+              >
+                {item.ciclo ? '✓' : '!'} {item.nome}
+                {!item.ciclo ? ' — ausente' : ''}
+              </span>
+            ))}
+          </div>
+          {ciclosPendentes.length > 0 ? (
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
+              <AlertTriangle className="h-4 w-4" />
+              {ciclosPendentes.length} pendente(s) hoje — use Feito após aplicar.
+            </p>
+          ) : null}
+        </section>
 
-        {/* Lista operacional — ativos por padrão; pendentes ficam só na seção acima */}
+        {/* Lista única: todos os ativos (pendentes no topo), sem esconder protocolo */}
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display font-bold text-base">
-              Ciclos ativos ({ciclosLista.filter((c) => c.ativo !== false).length}
+              Ciclos ({ciclosLista.filter((c) => c.ativo !== false).length} ativos
+              {ciclosPendentes.length > 0
+                ? ` · ${ciclosPendentes.length} pendente${ciclosPendentes.length === 1 ? '' : 's'}`
+                : ''}
               {mostrarInativos && qtdInativos > 0 ? ` · ${qtdInativos} inativos` : ''})
             </h2>
             {qtdInativos > 0 ? (
@@ -1068,15 +1090,11 @@ export default function CiclosPage() {
             <div className="text-center py-12 bg-card rounded-xl border">
               <CalendarClock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
-                {data.ciclos.length === 0
-                  ? 'Nenhum ciclo cadastrado ainda.'
-                  : 'Nada nesta lista — veja Pendentes Hoje ou mostre os inativos.'}
+                Nenhum ciclo cadastrado ainda.
               </p>
-              {data.ciclos.length === 0 ? (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Clique em &quot;Novo Ciclo&quot; para começar.
-                </p>
-              ) : null}
+              <p className="text-xs text-muted-foreground mt-1">
+                Clique em &quot;Novo Ciclo&quot; para começar.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -1084,7 +1102,12 @@ export default function CiclosPage() {
                 <CicloItem
                   key={ciclo.id}
                   ciclo={ciclo}
-                  pendente={false}
+                  pendente={cicloPendenteNoProtocolo(
+                    ciclo,
+                    data.ciclos,
+                    referenciaHoje,
+                  )}
+                  todosCiclos={data.ciclos}
                   caixasLabel={(ciclo.caixaIds ?? [])
                     .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
                     .filter(Boolean)
@@ -1104,16 +1127,25 @@ export default function CiclosPage() {
   );
 }
 
-/** Próxima ocorrência: agenda deslocada, senão cadência (última + intervalo / dias da semana). */
-function proximaDataAgenda(ciclo: CicloAplicacao, hojeYmd = hojeYmdSaoPaulo()): string | null {
-  const ymd = proximaYmdCiclo(ciclo, hojeYmd);
+/** Próxima ocorrência: última aplicação + cadência, com folga de segurança. */
+function proximaDataAgenda(
+  ciclo: CicloAplicacao,
+  todos: CicloAplicacao[] = [],
+  hojeYmd = hojeYmdSaoPaulo(),
+): string | null {
+  const ymd = proximaYmdCiclo(ciclo, todos, hojeYmd);
   if (!ymd) return null;
   return ymd.split("-").reverse().join("/");
 }
 
-function proximaYmdCiclo(ciclo: CicloAplicacao, hojeYmd: string): string | null {
+function proximaYmdCiclo(
+  ciclo: CicloAplicacao,
+  todos: CicloAplicacao[] = [],
+  hojeYmd: string,
+): string | null {
   if (!ciclo.ativo) return null;
 
+  let candidata: string | null = null;
   const caixas = ciclo.caixaIds ?? [];
   if (ciclo.alvo !== "andar" && caixas.length > 0) {
     const passo = {
@@ -1137,44 +1169,82 @@ function proximaYmdCiclo(ciclo: CicloAplicacao, hojeYmd: string): string | null 
       .map((caixaId) => dataPrevistaCicloYmd(passo, caixaId, hojeYmd))
       .filter((d): d is string => Boolean(d))
       .sort();
-    if (previstas[0]) return previstas[0];
+    candidata = previstas[0] ?? null;
   }
 
-  const agenda = ymdCalendario(ciclo.dataAgenda);
-  const ultima = ymdCalendario(ciclo.ultimaExecucao);
-  if (agenda && (!ultima || agenda > ultima)) return agenda;
-
-  if (ciclo.frequencia === "semanal" && ciclo.diasSemana && ciclo.diasSemana.length > 0) {
-    const inicio = ymdCalendario(ciclo.dataInicio);
-    const feitoHoje = ultima === hojeYmd;
-    if (!feitoHoje && (!inicio || inicio <= hojeYmd) && ciclo.diasSemana.includes(diaSemanaLocal(hojeYmd))) {
-      return hojeYmd;
+  if (!candidata) {
+    const agenda = ymdCalendario(ciclo.dataAgenda);
+    const ultima = ymdCalendario(ciclo.ultimaExecucao);
+    if (agenda && (!ultima || agenda > ultima)) {
+      candidata = agenda;
+    } else if (
+      ciclo.frequencia === "semanal" &&
+      ciclo.diasSemana &&
+      ciclo.diasSemana.length > 0
+    ) {
+      if (ultima) {
+        candidata = (() => {
+          for (let i = 1; i <= 21; i++) {
+            const ymd = adicionarDiasYmd(ultima, i);
+            if (ciclo.diasSemana!.includes(diaSemanaLocal(ymd))) return ymd;
+          }
+          return null;
+        })();
+      } else {
+        const inicio = ymdCalendario(ciclo.dataInicio);
+        if (
+          (!inicio || inicio <= hojeYmd) &&
+          ciclo.diasSemana.includes(diaSemanaLocal(hojeYmd))
+        ) {
+          candidata = hojeYmd;
+        } else {
+          const aPartirDe =
+            inicio && inicio > hojeYmd ? inicio : hojeYmd;
+          for (let i = 0; i < 21; i++) {
+            const ymd = adicionarDiasYmd(aPartirDe, i);
+            if (ciclo.diasSemana.includes(diaSemanaLocal(ymd))) {
+              candidata = ymd;
+              break;
+            }
+          }
+        }
+      }
+    } else if (ciclo.frequencia === "diaria") {
+      if (ultima === hojeYmd) candidata = adicionarDiasYmd(hojeYmd, 1);
+      else {
+        const inicio = ymdCalendario(ciclo.dataInicio);
+        candidata = inicio && inicio > hojeYmd ? inicio : hojeYmd;
+      }
+    } else {
+      const intervalo =
+        ciclo.intervaloDias && ciclo.intervaloDias > 0
+          ? ciclo.intervaloDias
+          : ciclo.frequencia === "quinzenal"
+            ? 14
+            : ciclo.frequencia === "mensal"
+              ? 30
+              : null;
+      if (intervalo) {
+        candidata = ultima
+          ? adicionarDiasYmd(ultima, intervalo)
+          : ymdCalendario(ciclo.dataInicio) ?? hojeYmd;
+      }
     }
-    const aPartirDe = inicio && inicio > hojeYmd ? inicio : adicionarDiasYmd(hojeYmd, 1);
-    for (let i = 0; i < 21; i++) {
-      const ymd = adicionarDiasYmd(aPartirDe, i);
-      if (ciclo.diasSemana.includes(diaSemanaLocal(ymd))) return ymd;
-    }
-    return null;
   }
 
-  if (ciclo.frequencia === "diaria") {
-    if (ultima === hojeYmd) return adicionarDiasYmd(hojeYmd, 1);
-    const inicio = ymdCalendario(ciclo.dataInicio);
-    return inicio && inicio > hojeYmd ? inicio : hojeYmd;
-  }
-
-  const intervalo =
-    ciclo.intervaloDias && ciclo.intervaloDias > 0
-      ? ciclo.intervaloDias
-      : ciclo.frequencia === "quinzenal"
-        ? 14
-        : ciclo.frequencia === "mensal"
-          ? 30
-          : null;
-  if (!intervalo) return null;
-  if (ultima) return adicionarDiasYmd(ultima, intervalo);
-  return ymdCalendario(ciclo.dataInicio) ?? hojeYmd;
+  if (!candidata) return null;
+  return aplicarFolgaSegurancaYmd(
+    candidata,
+    { nome: ciclo.nome, produto: ciclo.produto },
+    todos
+      .filter((c) => c.id !== ciclo.id && c.ativo !== false)
+      .map((c) => ({
+        nome: c.nome,
+        produto: c.produto,
+        ultimaExecucao: c.ultimaExecucao,
+        ativo: c.ativo,
+      })),
+  );
 }
 
 function diaSemanaLocal(ymd: string): number {
@@ -1185,6 +1255,7 @@ function diaSemanaLocal(ymd: string): number {
 function CicloItem({
   ciclo,
   pendente,
+  todosCiclos = [],
   onDelete,
   onToggle,
   onExecutar,
@@ -1194,6 +1265,7 @@ function CicloItem({
 }: {
   ciclo: CicloAplicacao;
   pendente: boolean;
+  todosCiclos?: CicloAplicacao[];
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
   onExecutar: (id: string) => void;
@@ -1259,13 +1331,15 @@ function CicloItem({
           {ciclo.dataInicio && (
             <span>Início: {ciclo.dataInicio.split('-').reverse().join('/')}</span>
           )}
-          {(() => {
-            const proxima = proximaDataAgenda(ciclo);
-            return proxima ? <span>Próxima: {proxima}</span> : null;
-          })()}
           {ciclo.ultimaExecucao && (
-            <span>Última execução: {formatarDataHora(ciclo.ultimaExecucao)}</span>
+            <span>Última: {formatarDataHora(ciclo.ultimaExecucao)}</span>
           )}
+          {(() => {
+            const proxima = proximaDataAgenda(ciclo, todosCiclos);
+            return proxima ? (
+              <span className="font-medium text-foreground">Próxima: {proxima}</span>
+            ) : null;
+          })()}
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
