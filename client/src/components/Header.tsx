@@ -92,6 +92,7 @@ type NavItem = {
 const OPERACAO_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/planejamento", label: "Plantio", icon: CalendarIcon },
+  { href: "/ciclos", label: "Ciclos", icon: CalendarClock },
   { href: "/automacao", label: "Automação", icon: Cpu },
   { href: "/correcao-ec", label: "Correção EC/pH", icon: Beaker },
   { href: "/manutencao", label: "Manutenção", icon: Wrench },

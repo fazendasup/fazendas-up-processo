@@ -192,7 +192,7 @@ function Router() {
           </Route>
 
           <Route path="/ciclos">
-            <ProtectedRoute requiredRole="comercial">
+            <ProtectedRoute requiredRole="operacao">
               <ComercialPerfilRouteGuard path="/ciclos">
                 <CiclosPage />
               </ComercialPerfilRouteGuard>
