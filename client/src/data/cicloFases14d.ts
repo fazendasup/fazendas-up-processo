@@ -5,7 +5,13 @@ export type FaseProtocoloId = "mudas" | "vegetativa" | "maturacao";
 
 export const protocoloFases14d = protocolo;
 
-export const DIAS_DA_FASE = Array.from({ length: protocolo.faseDias }, (_, dia) => dia);
+/** Vegetativa e maturação no protocolo de aplicação: 10 dias cada. */
+export const DURACAO_FASE_APLICACAO = 10;
+
+export const DIAS_DA_FASE = Array.from(
+  { length: protocolo.faseDias ?? DURACAO_FASE_APLICACAO },
+  (_, dia) => dia,
+);
 
 export function dosesDaVariante(variante: VarianteTanque) {
   const doses = protocolo.variantes[variante];
@@ -158,8 +164,9 @@ export function cartoesSolucao(): CartaoSolucao[] {
       id: "infinito",
       nome: "Infinito",
       produto: "Infinito",
-      frequencia: "quinzenal",
-      frequenciaLabel: "No máximo 1 por fase de 14 dias. Nunca em Mudas.",
+      frequencia: "personalizada",
+      intervaloDias: DURACAO_FASE_APLICACAO,
+      frequenciaLabel: `No máximo 1 por fase de ${DURACAO_FASE_APLICACAO} dias (veg/mat). Nunca em Mudas.`,
       fases: FASES_SISTEMICO,
       linhas: [
         { rotulo: "310 L", valor: tanque310.infinito },
@@ -167,14 +174,15 @@ export function cartoesSolucao(): CartaoSolucao[] {
       ],
       notas: notasDoProduto("Infinito"),
       aviso: "Folga 1 dia após Thyper. Preferir 24 h.",
-      dosagemAgenda: `310 L: ${tanque310.infinito}. 500 L: ${tanque500.infinito}. Máx. 1 por fase.`,
+      dosagemAgenda: `310 L: ${tanque310.infinito}. 500 L: ${tanque500.infinito}. Máx. 1 por fase (${DURACAO_FASE_APLICACAO}d).`,
     },
     {
       id: "cercobin",
       nome: "Cercobin",
       produto: "Cercobin",
-      frequencia: "quinzenal",
-      frequenciaLabel: "No máximo 1 por fase de 14 dias. Nunca em Mudas.",
+      frequencia: "personalizada",
+      intervaloDias: DURACAO_FASE_APLICACAO,
+      frequenciaLabel: `No máximo 1 por fase de ${DURACAO_FASE_APLICACAO} dias (veg/mat). Nunca em Mudas.`,
       fases: FASES_SISTEMICO,
       linhas: [
         { rotulo: "310 L", valor: tanque310.cercobin },
@@ -182,7 +190,7 @@ export function cartoesSolucao(): CartaoSolucao[] {
       ],
       notas: notasDoProduto("Cercobin"),
       aviso: "Pelo menos 3 dias depois do Infinito, em dia sem Thyper.",
-      dosagemAgenda: `310 L: ${tanque310.cercobin}. 500 L: ${tanque500.cercobin}. Máx. 1 por fase.`,
+      dosagemAgenda: `310 L: ${tanque310.cercobin}. 500 L: ${tanque500.cercobin}. Máx. 1 por fase (${DURACAO_FASE_APLICACAO}d).`,
     },
   ];
 }
@@ -338,10 +346,10 @@ export function mensagemRegraSolucao(
 
   if (produto === "infinito" || produto === "cercobin") {
     const cadencia = cadenciaDias(atual.frequencia, atual.intervaloDias);
-    if (cadencia != null && cadencia < 10) {
+    if (cadencia != null && cadencia < DURACAO_FASE_APLICACAO) {
       return produto === "infinito"
-        ? "Infinito com menos de 10 dias desde o último Infinito."
-        : "Cercobin com menos de 10 dias desde o último. Preferir 14 dias.";
+        ? `Infinito com menos de ${DURACAO_FASE_APLICACAO} dias desde o último Infinito.`
+        : `Cercobin com menos de ${DURACAO_FASE_APLICACAO} dias desde o último.`;
     }
   }
 
@@ -395,10 +403,15 @@ function segundaDaSemana(ymd: string): string {
   return somarDias(ymd, -voltar);
 }
 
-function proximoOffset(segunda: string, hoje: string, offsets: number[]): string {
-  for (let i = 0; i < 14; i++) {
+function proximoOffset(
+  ancora: string,
+  hoje: string,
+  offsets: number[],
+  cicloDias = DURACAO_FASE_APLICACAO,
+): string {
+  for (let i = 0; i < cicloDias; i++) {
     const ymd = somarDias(hoje, i);
-    const off = ((diferenca(segunda, ymd) % 14) + 14) % 14;
+    const off = ((diferenca(ancora, ymd) % cicloDias) + cicloDias) % cicloDias;
     if (offsets.includes(off)) return ymd;
   }
   return hoje;
@@ -413,13 +426,13 @@ function proximoDiaSemana(hoje: string, dia: number): string {
 }
 
 /**
- * Agenda a partir de hoje: Thyper (substitui peróxido) nos dias pares da
- * semana, Infinito na quinta (24 h depois do Thyper) e Cercobin fora do
- * Thyper, pelo menos 3 dias depois. Calda A na sexta, Calda B na segunda.
+ * Agenda a partir de hoje, alinhada à fase de 10 dias (veg/mat):
+ * Thyper nos dias pares; Infinito no dia 1; Cercobin no dia 5 (≥3 após
+ * Infinito, sem Thyper). Calda A na sexta, Calda B na segunda.
  * KOH não entra: só quando o pH estiver abaixo da faixa. Bio fica de fora.
  */
 export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
-  const segunda = segundaDaSemana(hojeYmd);
+  const ancoraFase = segundaDaSemana(hojeYmd);
   const thyper = cartaoSolucao("thyper");
   const infinito = cartaoSolucao("infinito");
   const cercobin = cartaoSolucao("cercobin");
@@ -435,7 +448,7 @@ export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
       intervaloDias: 2,
       fases: thyper.fases,
       dosagem: thyper.dosagemAgenda,
-      dataInicio: proximoOffset(segunda, hojeYmd, [0, 2, 4, 6, 8, 10, 12]),
+      dataInicio: proximoOffset(ancoraFase, hojeYmd, [0, 2, 4, 6, 8]),
       caixas: "todas",
     },
     {
@@ -443,11 +456,12 @@ export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
       nome: infinito.nome,
       produto: infinito.produto,
       tipo: "Solução",
-      frequencia: "quinzenal",
-      intervaloDias: 14,
+      frequencia: "personalizada",
+      intervaloDias: DURACAO_FASE_APLICACAO,
       fases: infinito.fases,
       dosagem: infinito.dosagemAgenda,
-      dataInicio: proximoOffset(segunda, hojeYmd, [3]),
+      // Dia 1 da fase: após Thyper do dia 0.
+      dataInicio: proximoOffset(ancoraFase, hojeYmd, [1]),
       caixas: "sem-mudas",
     },
     {
@@ -455,11 +469,12 @@ export function programacaoCiclos(hojeYmd: string): CicloProgramado[] {
       nome: cercobin.nome,
       produto: cercobin.produto,
       tipo: "Solução",
-      frequencia: "quinzenal",
-      intervaloDias: 14,
+      frequencia: "personalizada",
+      intervaloDias: DURACAO_FASE_APLICACAO,
       fases: cercobin.fases,
       dosagem: cercobin.dosagemAgenda,
-      dataInicio: proximoOffset(segunda, hojeYmd, [9]),
+      // Dia 5: ≥3 após Infinito (dia 1), ímpar (sem Thyper).
+      dataInicio: proximoOffset(ancoraFase, hojeYmd, [5]),
       caixas: "sem-mudas",
     },
     {

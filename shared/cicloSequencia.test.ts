@@ -72,22 +72,22 @@ describe("escolherPassoDaCaixa", () => {
         passo(1, "2026-10-01", {
           nome: "Infinito",
           produto: "Infinito",
-          frequencia: "quinzenal",
-          intervaloDias: 14,
+          frequencia: "personalizada",
+          intervaloDias: 10,
           execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-20" }],
         }),
         passo(2, "2026-10-07", {
           nome: "Cercobin",
           produto: "Cercobin",
-          frequencia: "quinzenal",
-          intervaloDias: 14,
+          frequencia: "personalizada",
+          intervaloDias: 10,
           execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-07" }],
         }),
       ],
       "cx",
       "2026-10-21",
     );
-    // Cadência do Cercobin já venceu (07+14=21), mas folga Infinito→Cercobin = 3 dias.
+    // Cadência do Cercobin já venceu (07+10=17), mas folga Infinito→Cercobin = 3 dias.
     expect(devidos.map((item) => item.passo.id)).toEqual([]);
   });
 
@@ -97,15 +97,15 @@ describe("escolherPassoDaCaixa", () => {
         passo(1, "2026-10-01", {
           nome: "Infinito",
           produto: "Infinito",
-          frequencia: "quinzenal",
-          intervaloDias: 14,
+          frequencia: "personalizada",
+          intervaloDias: 10,
           execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-20" }],
         }),
         passo(2, "2026-10-07", {
           nome: "Cercobin",
           produto: "Cercobin",
-          frequencia: "quinzenal",
-          intervaloDias: 14,
+          frequencia: "personalizada",
+          intervaloDias: 10,
           execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-07" }],
         }),
       ],
@@ -113,6 +113,25 @@ describe("escolherPassoDaCaixa", () => {
       "2026-10-23",
     );
     expect(devidos.map((item) => item.passo.id)).toEqual([2]);
+  });
+
+  it("próximo Infinito cai no dia 10 após a última (fase seguinte)", () => {
+    const devidos = passosDevidosDaCaixa(
+      [
+        passo(1, "2026-10-01", {
+          nome: "Infinito",
+          produto: "Infinito",
+          frequencia: "personalizada",
+          intervaloDias: 10,
+          execucoes: [{ caixaId: "cx", ultimaExecucao: "2026-10-16" }],
+        }),
+      ],
+      "cx",
+      "2026-10-26",
+    );
+    expect(devidos).toHaveLength(1);
+    expect(devidos[0]?.previstaYmd).toBe("2026-10-26");
+    expect(devidos[0]?.diasAtraso).toBe(0);
   });
 });
 

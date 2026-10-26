@@ -304,6 +304,7 @@ export function transformFazendaLoadAllResponse(raw: unknown): FazendaData {
     quantidadeTransplantada: t.quantidadeTransplantada,
     quantidadeDesperdicio: t.quantidadeDesperdicio,
     motivoDesperdicio: t.motivoDesperdicio || undefined,
+    torreOrigemId: t.torreOrigemId ? torreSlugMap.get(t.torreOrigemId) || undefined : undefined,
     torreDestinoId: t.torreDestinoId ? torreSlugMap.get(t.torreDestinoId) || undefined : undefined,
     andarDestinoId: t.andarDestinoId ? `a-${t.andarDestinoId}` : undefined,
     executadoPorNome: t.executadoPorNome || undefined,

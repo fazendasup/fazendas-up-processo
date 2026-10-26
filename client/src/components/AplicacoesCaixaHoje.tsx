@@ -8,10 +8,14 @@ import type { CicloAplicacao, Fase } from "@/lib/types";
 import { produtoSolucaoDoNome } from "@/data/cicloFases14d";
 import { cicloPendenteNoProtocolo } from "@/lib/utils-farm";
 import {
+  adicionarDiasYmd,
+  folgaMinimaDias,
   hojeYmdSaoPaulo,
   passosDevidosDaCaixa,
   type PassoCicloAgenda,
 } from "@shared/cicloSequencia";
+import { infinitosCarregadosPorLote } from "@shared/quadroAplicacoesProtocolo";
+import { torreEstaAtivaNoDashboard } from "@/lib/types";
 
 function passosAgenda(ciclos: CicloAplicacao[]): PassoCicloAgenda<string>[] {
   const out: PassoCicloAgenda<string>[] = [];
@@ -114,11 +118,58 @@ export function AplicacaoPendenteNaTorre({
     if (caixaId) {
       const caixaDbId = resolver.caixaSlugToId.get(caixaId);
       if (caixaDbId != null) {
+        const carregados = infinitosCarregadosPorLote({
+          caixaId,
+          hojeYmd: hoje,
+          torres: data.torres
+            .filter((t) => torreEstaAtivaNoDashboard(t))
+            .map((t) => ({
+              id: t.id,
+              nome: t.nome,
+              caixaAguaId: t.caixaAguaId,
+            })),
+          ciclos: data.ciclos.map((c) => ({
+            id: c.id,
+            nome: c.nome,
+            produto: c.produto,
+            ativo: c.ativo !== false,
+            alvo: c.alvo,
+            frequencia: c.frequencia,
+            intervaloDias: c.intervaloDias,
+            caixaIds: c.caixaIds ?? [],
+            execucoes: (c.execucoesCaixa ?? []).map((e) => ({
+              caixaId: e.caixaId,
+              ultimaExecucao: e.ultimaExecucao,
+              dataAgenda: e.dataAgenda,
+            })),
+          })),
+          transplantios: data.transplantios.map((t) => ({
+            dataHora: t.dataHora,
+            torreOrigemId: t.torreOrigemId,
+            torreDestinoId: t.torreDestinoId,
+            quantidadeTransplantada: t.quantidadeTransplantada,
+            faseDestino: t.faseDestino,
+          })),
+        });
+        const infinitoLote = carregados.map((c) => c.ymd).sort().at(-1);
+        const liberadoCercobin = infinitoLote
+          ? adicionarDiasYmd(infinitoLote, folgaMinimaDias("infinito", "cercobin"))
+          : null;
+
         for (const escolhido of passosDevidosDaCaixa(passosAgenda(data.ciclos), caixaId, hoje)) {
           const ciclo = data.ciclos.find(
             (c) => Number(String(c.id).replace(/^c-/, "")) === escolhido.passo.id,
           );
           if (!ciclo) continue;
+          const solucao = produtoSolucaoDoNome(ciclo.nome) ?? produtoSolucaoDoNome(ciclo.produto);
+          // Planta trouxe Infinito da fase anterior: não liberar Cercobin antes da folga.
+          if (
+            solucao === "cercobin" &&
+            liberadoCercobin &&
+            hoje < liberadoCercobin
+          ) {
+            continue;
+          }
           const cicloId = escolhido.passo.id;
           saida.push({
             key: `caixa-${cicloId}`,
@@ -147,7 +198,14 @@ export function AplicacaoPendenteNaTorre({
       }
     }
     return deduparLinhasAplicacao(saida);
-  }, [caixaId, data.ciclos, fase, resolver.caixaSlugToId]);
+  }, [
+    caixaId,
+    data.ciclos,
+    data.torres,
+    data.transplantios,
+    fase,
+    resolver.caixaSlugToId,
+  ]);
 
   if (linhas.length === 0) return null;
 

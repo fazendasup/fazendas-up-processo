@@ -11,7 +11,7 @@ import {
   rotulosNoDia,
 } from "./cicloFases14d";
 
-describe("protocolo fases 14 dias", () => {
+describe("protocolo fases 10 dias (veg/mat)", () => {
   it("troca a dose exata ao mudar o tanque", () => {
     expect(dosesDaVariante("310")).toMatchObject({
       h2o2: "1,0 ml",
@@ -25,9 +25,9 @@ describe("protocolo fases 14 dias", () => {
 
   it("não sugere Infinito nem Cercobin em Mudas", () => {
     expect(rotulosNoDia("mudas", 2)).toEqual([]);
-    expect(rotulosNoDia("vegetativa", 3)).toContain("Infinito");
-    expect(rotulosNoDia("vegetativa", 9)).toContain("Cercobin");
-    expect(rotulosNoDia("maturacao", 10)).toContain("Sem sistêmico novo");
+    expect(rotulosNoDia("vegetativa", 1)).toContain("Infinito");
+    expect(rotulosNoDia("vegetativa", 5)).toContain("Cercobin");
+    expect(rotulosNoDia("maturacao", 8)).toContain("Sem sistêmico novo");
   });
 
   it("guarda a calda foliar de 5 L com as doses da receita", () => {
@@ -105,7 +105,8 @@ describe("protocolo fases 14 dias", () => {
         id: "i",
         nome: "Infinito",
         ativo: true,
-        frequencia: "quinzenal",
+        frequencia: "personalizada",
+        intervaloDias: 10,
         dataInicio: "2026-10-01",
         fasesAplicaveis: ["vegetativa", "maturacao"],
       }),
@@ -115,7 +116,8 @@ describe("protocolo fases 14 dias", () => {
         id: "m",
         nome: "Cercobin",
         ativo: true,
-        frequencia: "quinzenal",
+        frequencia: "personalizada",
+        intervaloDias: 10,
         dataInicio: "2026-10-01",
         fasesAplicaveis: ["mudas"],
       }),
@@ -127,7 +129,8 @@ describe("protocolo fases 14 dias", () => {
             id: "i",
             nome: "Infinito",
             ativo: true,
-            frequencia: "quinzenal",
+            frequencia: "personalizada",
+            intervaloDias: 10,
             dataInicio: "2026-10-01",
             fasesAplicaveis: ["vegetativa"],
           },
@@ -136,7 +139,8 @@ describe("protocolo fases 14 dias", () => {
           id: "c",
           nome: "Cercobin",
           ativo: true,
-          frequencia: "quinzenal",
+          frequencia: "personalizada",
+          intervaloDias: 10,
           dataInicio: "2026-10-03",
           fasesAplicaveis: ["vegetativa"],
         },
@@ -155,7 +159,7 @@ describe("protocolo fases 14 dias", () => {
     ).toMatch(/10 dias/);
   });
 
-  it("programa a semana com Thyper, Infinito e Cercobin sem Bio", () => {
+  it("programa a fase de 10 dias com Thyper, Infinito e Cercobin sem Bio", () => {
     const agenda = programacaoCiclos("2026-10-02");
     const porChave = Object.fromEntries(agenda.map((item) => [item.chave, item]));
     expect(porChave.thyper).toMatchObject({
@@ -166,12 +170,16 @@ describe("protocolo fases 14 dias", () => {
     expect(porChave.bio).toBeUndefined();
     expect(porChave.peroxido).toBeUndefined();
     expect(porChave.infinito).toMatchObject({
-      frequencia: "quinzenal",
-      intervaloDias: 14,
-      dataInicio: "2026-10-15",
+      frequencia: "personalizada",
+      intervaloDias: 10,
+      dataInicio: "2026-10-09",
       fases: ["vegetativa", "maturacao"],
     });
-    expect(porChave.cercobin.dataInicio).toBe("2026-10-07");
+    expect(porChave.cercobin).toMatchObject({
+      frequencia: "personalizada",
+      intervaloDias: 10,
+      dataInicio: "2026-10-03",
+    });
     expect(porChave.A.diasSemana).toEqual([5]);
     expect(porChave.A.dataInicio).toBe("2026-10-02");
     expect(porChave.B.diasSemana).toEqual([1]);
@@ -216,16 +224,36 @@ describe("protocolo fases 14 dias", () => {
     expect(porChave.bio).toBeUndefined();
     expect(porChave.thyper.dataInicio).toBe("2026-10-07");
     expect(porChave.infinito).toMatchObject({
-      dataInicio: "2026-10-08",
+      frequencia: "personalizada",
+      intervaloDias: 10,
+      dataInicio: "2026-10-16",
       fases: ["vegetativa", "maturacao"],
       caixas: "sem-mudas",
     });
     expect(porChave.cercobin).toMatchObject({
-      dataInicio: "2026-10-14",
+      frequencia: "personalizada",
+      intervaloDias: 10,
+      dataInicio: "2026-10-10",
       fases: ["vegetativa", "maturacao"],
       caixas: "sem-mudas",
     });
     expect(porChave.A.dataInicio).toBe("2026-10-09");
     expect(porChave.B.dataInicio).toBe("2026-10-12");
+  });
+
+  it("Infinito e Cercobin usam cadência de 10 dias (1× por fase)", () => {
+    const agenda = programacaoCiclos("2026-10-05");
+    const infinito = agenda.find((item) => item.chave === "infinito")!;
+    const cercobin = agenda.find((item) => item.chave === "cercobin")!;
+    expect(infinito).toMatchObject({
+      frequencia: "personalizada",
+      intervaloDias: 10,
+    });
+    expect(cercobin).toMatchObject({
+      frequencia: "personalizada",
+      intervaloDias: 10,
+    });
+    expect(cartaoSolucao("infinito").frequenciaLabel).toMatch(/10 dias/);
+    expect(cartaoSolucao("cercobin").frequenciaLabel).toMatch(/10 dias/);
   });
 });

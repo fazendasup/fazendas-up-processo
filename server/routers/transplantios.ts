@@ -2,6 +2,7 @@ import { projetoIdFromCtx, adminProjectProcedure, projectProcedure, router } fro
 import { z } from "zod";
 import * as db from "../db";
 import { syncPlanoFromTransplantio } from "../planoOperacaoSync";
+import { agendarSistemicoPosTransplante } from "../ciclos/agendar-sistemico-pos-transplante";
 
 export const transplantiosRouter = router({
   list: projectProcedure.query(async ({ ctx }) => {
@@ -40,6 +41,12 @@ export const transplantiosRouter = router({
         input.faseDestino,
         input.quantidadeTransplantada,
       );
+      await agendarSistemicoPosTransplante({
+        projetoId: pid,
+        torreDestinoId: input.torreDestinoId,
+        faseDestino: input.faseDestino,
+        agora: input.dataHora,
+      });
       return result;
     }),
   delete: adminProjectProcedure

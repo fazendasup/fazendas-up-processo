@@ -3,6 +3,7 @@ import { resolverFaseDestinoTransplantio, type FaseDestinoTransplantioFv } from 
 import { variedadePulaVegetativa } from "@shared/variedadesFase";
 import { TRPCError } from "@trpc/server";
 import * as db from "../db";
+import { agendarSistemicoPosTransplante } from "../ciclos/agendar-sistemico-pos-transplante";
 import { syncPlanoFromTransplantio } from "../planoOperacaoSync";
 
 export type TransplantarDistribuidoInput = {
@@ -226,6 +227,8 @@ export async function runTransplantarDistribuido(
     });
   }
   const dataHoraTransplantio = input.dataHora ?? new Date();
+  /** Torres destino (veg/mat) que precisam de cobertura Infinito na caixa. */
+  const torresSistemico = new Set<number>();
 
   for (const d of input.destinos) {
     const destAndar = await db.getAndarById(pid, d.andarDestinoId);
@@ -350,6 +353,16 @@ export async function runTransplantarDistribuido(
       observacoes: input.observacoes ?? null,
       executadoPorId: ctx.userId,
       executadoPorNome: ctx.userName,
+    });
+    torresSistemico.add(destTorre.id);
+  }
+
+  for (const torreDestinoId of torresSistemico) {
+    await agendarSistemicoPosTransplante({
+      projetoId: pid,
+      torreDestinoId,
+      faseDestino,
+      agora: dataHoraTransplantio,
     });
   }
 

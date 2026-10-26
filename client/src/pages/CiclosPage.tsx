@@ -22,6 +22,7 @@ import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixa
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
 import ProtocoloFases14d from '@/components/ProtocoloFases14d';
+import QuadroAplicacoesProtocolo from '@/components/QuadroAplicacoesProtocolo';
 import {
   caldaFoliar,
   caldasNoMesmoDia,
@@ -1035,12 +1036,17 @@ export default function CiclosPage() {
 
         <ProtocoloFases14d />
 
+        <QuadroAplicacoesProtocolo />
+
         {/* Protocolo esperado × o que está ativo nesta fazenda */}
         <section className="mb-6 rounded-xl border bg-card p-4">
           <h2 className="mb-2 font-display text-base font-bold">Protocolo da fazenda</h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            Próximas datas usam a última aplicação registrada + cadência, com folga
-            de segurança entre produtos. Pendentes aparecem destacados na lista.
+            Infinito, Cercobin e Thyper entram na <strong>caixa</strong> (solução
+            compartilhada) — um “Aplicar” cobre todos os andares daquela caixa, mesmo
+            com transplantios em dias diferentes na mesma torre. Cadência base: 10 dias
+            por fase (veg/mat); transplantio novo puxa Infinito se a caixa ficou ≥7 dias
+            sem dose. Folgas entre produtos continuam valendo. Pendentes no topo.
           </p>
           <div className="flex flex-wrap gap-2">
             {protocoloStatus.map((item) => (

@@ -154,6 +154,8 @@ export interface RegistroTransplantio {
   quantidadeTransplantada: number;
   quantidadeDesperdicio: number;
   motivoDesperdicio?: string; // 'nao_germinou' | 'morta' | 'doente' | 'outro'
+  /** Torre de onde saiu o lote (para folga Infinito→Cercobin entre caixas). */
+  torreOrigemId?: string;
   torreDestinoId?: string;
   andarDestinoId?: string;
   executadoPorNome?: string;
