@@ -13,9 +13,11 @@ function hojeIsoLocal() {
   return `${y}-${m}-${day}`;
 }
 
+type EscopoProcessamento = "dia" | "semana";
+
 /**
  * Estoque vivo: produção por receitas/mixes (principal) + compras do dia.
- * Query `?dia=YYYY-MM-DD` alinha com o dashboard operacional de pedidos.
+ * Query `?dia=YYYY-MM-DD&escopo=dia|semana` alinha com o dashboard operacional.
  */
 export function EstoqueVivo() {
   const [location, setLocation] = useLocation();
@@ -24,15 +26,24 @@ export function EstoqueVivo() {
   const diaParam = params.get("dia");
   const dia =
     diaParam && /^\d{4}-\d{2}-\d{2}$/.test(diaParam) ? diaParam : hojeIsoLocal();
+  const escopoParam = params.get("escopo");
+  const escopo: EscopoProcessamento =
+    escopoParam === "semana" ? "semana" : "dia";
 
   const aba = location.includes("/compras") ? "compras" : "mixes";
 
-  function ir(abaNova: "mixes" | "compras", diaNovo = dia) {
+  function ir(
+    abaNova: "mixes" | "compras",
+    diaNovo = dia,
+    escopoNovo: EscopoProcessamento = escopo,
+  ) {
     const base =
       abaNova === "compras"
         ? "/comercial/estoque-vivo/compras"
         : "/comercial/estoque-vivo";
-    setLocation(`${base}?dia=${diaNovo}`);
+    const qs = new URLSearchParams({ dia: diaNovo });
+    if (escopoNovo === "semana") qs.set("escopo", "semana");
+    setLocation(`${base}?${qs.toString()}`);
   }
 
   return (
@@ -40,7 +51,11 @@ export function EstoqueVivo() {
       <PageHeader
         kicker="Comercial"
         title="Kg a processar"
-        subtitle="Receitas de mixes ligadas aos pedidos do dia — volume por ingrediente."
+        subtitle={
+          escopo === "semana"
+            ? "Receitas de mixes ligadas aos pedidos da semana — volume por ingrediente."
+            : "Receitas de mixes ligadas aos pedidos do dia — volume por ingrediente."
+        }
       />
 
       <Tabs
@@ -54,7 +69,13 @@ export function EstoqueVivo() {
         </TabsList>
 
         <TabsContent value="mixes" className="mt-0">
-          <Mixes embedded dia={dia} onDiaChange={novo => ir("mixes", novo)} />
+          <Mixes
+            embedded
+            dia={dia}
+            escopo={escopo}
+            onDiaChange={novo => ir("mixes", novo, escopo)}
+            onEscopoChange={novo => ir("mixes", dia, novo)}
+          />
         </TabsContent>
 
         <TabsContent value="compras" className="mt-0">

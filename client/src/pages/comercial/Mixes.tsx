@@ -64,6 +64,26 @@ function fmtDataBr(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
+type EscopoProcessamento = "dia" | "semana";
+
+/** Segunda–domingo da semana que contém `iso` (YYYY-MM-DD), horário local. */
+function intervaloSemanaIso(iso: string): { inicio: string; fim: string } {
+  const d = new Date(`${iso}T12:00:00`);
+  const diaSemana = d.getDay();
+  const diff = (diaSemana + 6) % 7;
+  const inicio = new Date(d);
+  inicio.setDate(d.getDate() - diff);
+  const fim = new Date(inicio);
+  fim.setDate(inicio.getDate() + 6);
+  const toIso = (x: Date) => {
+    const y = x.getFullYear();
+    const m = String(x.getMonth() + 1).padStart(2, "0");
+    const day = String(x.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  return { inicio: toIso(inicio), fim: toIso(fim) };
+}
+
 /** kg = (qtd × g / 1000) / (1 − perda%) */
 function kgComPerda(qtdMixes: number, gramas: number, perdaPct: number): number {
   if (qtdMixes <= 0 || gramas <= 0) return 0;
@@ -82,12 +102,16 @@ function gramasComPerda(qtdMixes: number, gramas: number, perdaPct: number): num
 export function Mixes({
   embedded = false,
   dia: diaProp,
+  escopo: escopoProp,
   onDiaChange,
+  onEscopoChange,
 }: {
   embedded?: boolean;
   /** Dia operacional (YYYY-MM-DD) — pedidos do dashboard. */
   dia?: string;
+  escopo?: EscopoProcessamento;
   onDiaChange?: (dia: string) => void;
+  onEscopoChange?: (escopo: EscopoProcessamento) => void;
 } = {}) {
   const utils = trpc.useUtils();
   const me = trpc.comercial.pedidos.me.useQuery(undefined, { staleTime: 60_000 });
@@ -99,6 +123,10 @@ export function Mixes({
 
   const [diaLocal, setDiaLocal] = useState(diaProp ?? hojeIsoLocal());
   const dia = diaProp ?? diaLocal;
+  const [escopoLocal, setEscopoLocal] = useState<EscopoProcessamento>(
+    escopoProp ?? "dia",
+  );
+  const escopo = escopoProp ?? escopoLocal;
 
   useEffect(() => {
     if (diaProp && /^\d{4}-\d{2}-\d{2}$/.test(diaProp) && diaProp !== diaLocal) {
@@ -106,9 +134,20 @@ export function Mixes({
     }
   }, [diaProp]);
 
+  useEffect(() => {
+    if (escopoProp && escopoProp !== escopoLocal) {
+      setEscopoLocal(escopoProp);
+    }
+  }, [escopoProp]);
+
   function setDia(novo: string) {
     if (onDiaChange) onDiaChange(novo);
     else setDiaLocal(novo);
+  }
+
+  function setEscopo(novo: EscopoProcessamento) {
+    if (onEscopoChange) onEscopoChange(novo);
+    else setEscopoLocal(novo);
   }
 
   const mixes = trpc.comercial.pedidos.listarMixesEstoqueVivo.useQuery();
@@ -117,9 +156,21 @@ export function Mixes({
     { staleTime: 60_000 },
   );
   const processamento = trpc.comercial.pedidos.processamentoEstoqueVivoDia.useQuery(
-    { dia: new Date(`${dia}T12:00:00`) },
+    { dia: new Date(`${dia}T12:00:00`), escopo },
     { staleTime: 15_000, refetchOnWindowFocus: true },
   );
+
+  const semanaRotulo = useMemo(() => {
+    const api = processamento.data?.periodo;
+    if (api?.inicio && api?.fim) {
+      return `${fmtDataBr(api.inicio)}–${fmtDataBr(api.fim)}`;
+    }
+    const { inicio, fim } = intervaloSemanaIso(dia);
+    return `${fmtDataBr(inicio)}–${fmtDataBr(fim)}`;
+  }, [processamento.data?.periodo, dia]);
+
+  const rotuloPeriodo = escopo === "semana" ? semanaRotulo : fmtDataBr(dia);
+  const labelEscopoCurto = escopo === "semana" ? "semana" : "dia";
 
   const [form, setForm] = useState<MixForm | null>(null);
   const [mixCalcId, setMixCalcId] = useState("");
@@ -324,7 +375,7 @@ export function Mixes({
         <PageHeader
           kicker="Comercial"
           title="Mixes"
-          subtitle="Receitas com gramas por mix e kg a processar a partir dos pedidos do dia."
+          subtitle="Receitas com gramas por mix e kg a processar a partir dos pedidos do dia ou da semana."
         />
       )}
 
@@ -333,10 +384,13 @@ export function Mixes({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Calculator className="h-4 w-4" /> Processamento do dia
+                <Calculator className="h-4 w-4" />{" "}
+                {escopo === "semana"
+                  ? "Processamento da semana"
+                  : "Processamento do dia"}
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Calculado pelos pedidos de <strong>{fmtDataBr(dia)}</strong> ainda
+                Calculado pelos pedidos de <strong>{rotuloPeriodo}</strong> ainda
                 pendentes — o que já está marcado como <strong>pronto</strong> é
                 descontado. Cada ingrediente mostra quantos <strong>kg</strong>{" "}
                 processar.
@@ -344,7 +398,9 @@ export function Mixes({
             </div>
             <div className="flex flex-wrap items-end gap-2">
               <div>
-                <Label className="text-xs">Dia (dashboard)</Label>
+                <Label className="text-xs">
+                  {escopo === "semana" ? "Referência (semana)" : "Dia"}
+                </Label>
                 <Input
                   type="date"
                   className="h-9 w-40"
@@ -352,13 +408,36 @@ export function Mixes({
                   onChange={e => setDia(e.target.value)}
                 />
               </div>
+              <div>
+                <Label className="text-xs">Visão</Label>
+                <div className="inline-flex h-9 rounded-md border bg-background p-0.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={escopo === "dia" ? "default" : "ghost"}
+                    className="h-8 px-3 text-xs"
+                    onClick={() => setEscopo("dia")}
+                  >
+                    Dia
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={escopo === "semana" ? "default" : "ghost"}
+                    className="h-8 px-3 text-xs"
+                    onClick={() => setEscopo("semana")}
+                  >
+                    Semana
+                  </Button>
+                </div>
+              </div>
               <Button type="button" variant="outline" size="sm" className="h-9" onClick={() => setDia(hojeIsoLocal())}>
                 Hoje
               </Button>
               <Button type="button" variant="outline" size="sm" className="h-9" asChild>
                 <Link href={`/comercial/pedidos?dia=${dia}`}>
                   <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                  Pedidos do dia
+                  {escopo === "semana" ? "Pedidos da semana" : "Pedidos do dia"}
                 </Link>
               </Button>
             </div>
@@ -375,7 +454,9 @@ export function Mixes({
             <>
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="rounded-lg border bg-background px-3 py-1.5">
-                  <span className="text-muted-foreground">Mixes no dia · </span>
+                  <span className="text-muted-foreground">
+                    Mixes na {labelEscopoCurto} ·{" "}
+                  </span>
                   <strong>{proc?.totais.mixes ?? 0}</strong>
                 </span>
                 <span className="rounded-lg border bg-background px-3 py-1.5">
@@ -525,7 +606,7 @@ export function Mixes({
                 <div>
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      Por receita (volume do dia)
+                      Por receita (volume d{escopo === "semana" ? "a semana" : "o dia"})
                       {filtroNorm ? (
                         <span className="ml-1 font-normal normal-case">
                           ({mixesUsadosFiltrados.length})
@@ -631,9 +712,11 @@ export function Mixes({
               {(proc?.mixesUsados.length ?? 0) === 0 &&
               (proc?.ingredientes.length ?? 0) === 0 ? (
                 <p className="rounded-lg border border-dashed bg-background px-3 py-4 text-sm text-muted-foreground">
-                  Nenhum mix encontrado nos pedidos deste dia. Cadastre a receita e vincule o{" "}
-                  <strong>produto de referência</strong> (o mesmo item vendido no pedido), ou use o
-                  mesmo nome da receita no pedido (ex.: «Mix Clássico» ↔ «Mix Clássico - 500g»).
+                  Nenhum mix encontrado nos pedidos dest
+                  {escopo === "semana" ? "a semana" : "e dia"}. Cadastre a receita e
+                  vincule o <strong>produto de referência</strong> (o mesmo item
+                  vendido no pedido), ou use o mesmo nome da receita no pedido (ex.:
+                  «Mix Clássico» ↔ «Mix Clássico - 500g»).
                 </p>
               ) : null}
 

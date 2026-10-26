@@ -1577,7 +1577,11 @@ export function Pedidos({
           </Button>
           {!somenteCompras && !perfilOperacionalRestrito ? (
             <Button variant="default" asChild>
-              <Link href={`/comercial/estoque-vivo?dia=${dia}`}>
+              <Link
+                href={`/comercial/estoque-vivo?dia=${dia}${
+                  escopoDashboard === "semana" ? "&escopo=semana" : ""
+                }`}
+              >
                 <Sprout className="mr-1.5 h-4 w-4" />
                 Kg a processar
               </Link>
@@ -1881,7 +1885,11 @@ export function Pedidos({
         value={aba}
         onValueChange={value => {
           if (value === "compras") {
-            setLocation(`/comercial/estoque-vivo?dia=${dia}`);
+            setLocation(
+              `/comercial/estoque-vivo/compras?dia=${dia}${
+                escopoDashboard === "semana" ? "&escopo=semana" : ""
+              }`,
+            );
             return;
           }
           setAba(value as PedidosTab);

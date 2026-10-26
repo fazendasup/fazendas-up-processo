@@ -2797,9 +2797,17 @@ export const pedidosRouter = router({
     return rows.map(mapMixEstoqueDbParaCfg);
   }),
 
-  /** Kg a processar por ingrediente a partir dos pedidos do dia + receitas de mix. */
+  /**
+   * Kg a processar por ingrediente a partir dos pedidos + receitas de mix.
+   * escopo=dia → só a data; escopo=semana → seg–dom da data (mesma lógica do dashboard).
+   */
   processamentoEstoqueVivoDia: comercialProcedure
-    .input(z.object({ dia: z.coerce.date() }))
+    .input(
+      z.object({
+        dia: z.coerce.date(),
+        escopo: z.enum(["dia", "semana"]).default("dia"),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       if (antesDoCortePedidos(input.dia)) {
         return {
@@ -2807,15 +2815,19 @@ export const pedidosRouter = router({
           ingredientes: [],
           pedidosSemMix: [],
           totais: { mixes: 0, ingredientes: 0, kgTotal: 0 },
+          escopo: input.escopo,
+          periodo: { inicio: null as string | null, fim: null as string | null },
         };
       }
+      const escopoSemana = input.escopo === "semana";
+      const inicio = escopoSemana
+        ? inicioSemana(input.dia)
+        : inicioComCortePedidos(input.dia);
+      const fim = escopoSemana ? fimSemana(input.dia) : fimDia(input.dia);
       const [pedidosDb, mixesDb] = await Promise.all([
         ctx.prisma!.pedidoOperacional.findMany({
           where: {
-            dataEntrega: {
-              gte: inicioComCortePedidos(input.dia),
-              lte: fimDia(input.dia),
-            },
+            dataEntrega: { gte: inicio, lte: fim },
             // ENTREGUE/CANCELADO não entram; PRONTO/parcial descontam via item.pronto.
             status: { notIn: ["CANCELADO", "ENTREGUE"] },
           },
@@ -2852,6 +2864,12 @@ export const pedidosRouter = router({
       const mixes = mixesDb.map(mapMixEstoqueDbParaCfg);
       const out = calcularProcessamentoDoDia(pedidosLinhas, mixes);
       const kgTotal = out.ingredientes.reduce((s, i) => s + i.kgProcessar, 0);
+      const iso = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      };
       return {
         ...out,
         totais: {
@@ -2859,6 +2877,8 @@ export const pedidosRouter = router({
           ingredientes: out.ingredientes.length,
           kgTotal: Math.ceil(kgTotal * 1000) / 1000,
         },
+        escopo: input.escopo,
+        periodo: { inicio: iso(inicio), fim: iso(fim) },
       };
     }),
 
