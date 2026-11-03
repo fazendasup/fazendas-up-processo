@@ -3,7 +3,7 @@
  * App principal: render, edição, fotos, salvar, exportar PDF
  */
 const STORAGE_KEY = 'fazendas-up-pop-fit-v16';
-const CONTENT_REV = 52;
+const CONTENT_REV = 53;
 const VIEW_KEY = 'fazendas-up-current-view';
 const APP_DOC_TITLE = 'Fazendas UP — Gerador POP & FIT';
 let titleBeforePrint = APP_DOC_TITLE;
@@ -13,7 +13,7 @@ let currentView = 'pop';
 let podeEditar = false;
 let syncTimer = null;
 let ultimaRevisaoResumo = '';
-const NEW_SECTOR_KEYS = ['lavagem', 'secagem', 'embalagem', 'plantioAlface', 'plantioMicroverdes', 'torresProducao'];
+const NEW_SECTOR_KEYS = ['lavagem', 'secagem', 'embalagem', 'legumesProcessados', 'plantioAlface', 'plantioMicroverdes', 'torresProducao'];
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
@@ -183,7 +183,7 @@ function ensureState() {
     }
 
     // Atualiza setores Lavagem/Secagem/Embalagem quando a revisão muda (preserva fotos)
-    for (const key of ['lavagem', 'secagem', 'embalagem', 'plantioAlface', 'plantioMicroverdes', 'torresProducao']) {
+    for (const key of ['lavagem', 'secagem', 'embalagem', 'legumesProcessados', 'plantioAlface', 'plantioMicroverdes', 'torresProducao']) {
       const dSec = def[key];
       if (dSec && state[key]) {
         const fotos = state[key].pop?.fotos;
@@ -488,10 +488,10 @@ function sliceDoDocumento(view) {
   if (view === 'fit1') return pl?.fits?.[0];
   if (view === 'fit2') return pl?.fits?.[1];
   if (view === 'fit3') return pl?.fits?.[2];
-  const m = String(view || '').match(/^(lv|sc|em|pa|pm|tr)-(pop|fit\d+|cartaz|forms)$/);
+  const m = String(view || '').match(/^(lv|sc|em|lg|pa|pm|tr)-(pop|fit\d+|cartaz|forms)$/);
   if (!m) return null;
   const sectorKey = {
-    lv: 'lavagem', sc: 'secagem', em: 'embalagem',
+    lv: 'lavagem', sc: 'secagem', em: 'embalagem', lg: 'legumesProcessados',
     pa: 'plantioAlface', pm: 'plantioMicroverdes', tr: 'torresProducao',
   }[m[1]];
   const setor = state[sectorKey];
@@ -656,14 +656,14 @@ function getDocMetaForView(view = currentView) {
     if (placa) return { codigo: placa.codigo, titulo: placa.titulo };
   }
 
-  const m = String(view || '').match(/^(lv|sc|em|pa|pm|tr)-(pop|fit\d+|cartaz|forms)$/);
+  const m = String(view || '').match(/^(lv|sc|em|lg|pa|pm|tr)-(pop|fit\d+|cartaz|forms)$/);
   if (m) {
     const sectorKey = {
-      lv: 'lavagem', sc: 'secagem', em: 'embalagem',
+      lv: 'lavagem', sc: 'secagem', em: 'embalagem', lg: 'legumesProcessados',
       pa: 'plantioAlface', pm: 'plantioMicroverdes', tr: 'torresProducao',
     }[m[1]];
     const d = state[sectorKey];
-    const prefix = { lv: 'LV', sc: 'SC', em: 'EM', pa: 'PA', pm: 'PM', tr: 'TR' }[m[1]];
+    const prefix = { lv: 'LV', sc: 'SC', em: 'EM', lg: 'LG', pa: 'PA', pm: 'PM', tr: 'TR' }[m[1]];
     if (!d) return { codigo: view, titulo: view };
     if (m[2] === 'pop') return { codigo: d.pop?.codigo, titulo: d.pop?.titulo };
     if (m[2] === 'cartaz') {
@@ -854,6 +854,7 @@ function prepareFitPrintPages() {
     'lv-fit0', 'lv-fit1', 'lv-cartaz',
     'sc-fit0', 'sc-fit1', 'sc-cartaz',
     'em-fit0', 'em-fit1', 'em-cartaz',
+    'lg-fit0', 'lg-fit1', 'lg-fit2', 'lg-fit3', 'lg-fit4', 'lg-cartaz',
     'pa-fit0', 'pa-fit1', 'pa-fit2', 'pa-fit3', 'pa-cartaz',
     'pm-fit0', 'pm-fit1', 'pm-fit2', 'pm-fit3', 'pm-fit4', 'pm-cartaz',
   ]);
@@ -2126,6 +2127,9 @@ function sectorFormHeaders(sectorKey) {
   if (sectorKey === 'secagem') {
     return ['Data', 'Operador', 'Hora', 'Produto', 'Entrada OK', 'Vel. mín.', '2+2 min', 'Bancada', 'Obs'];
   }
+  if (sectorKey === 'legumesProcessados') {
+    return ['Data', 'Operador', 'Produto', 'Disco', 'PAA ppm', 'Banho', '°C pack', 'Validade', 'Obs'];
+  }
   if (sectorKey === 'plantioAlface') {
     return ['Data', 'Operador', 'Lote', 'Variedade', 'Higiene', 'Semear', 'Escuro', 'NFT', 'Obs'];
   }
@@ -2140,6 +2144,9 @@ function sectorFormHeaders(sectorKey) {
 
 /** Larguras % das colunas do registro diário (soma ≈ 100). */
 function sectorFormColWidths(sectorKey, colCount) {
+  if (sectorKey === 'legumesProcessados') {
+    return [9, 11, 11, 9, 9, 10, 9, 10, 22];
+  }
   if (sectorKey === 'plantioAlface' || sectorKey === 'plantioMicroverdes') {
     return [9, 12, 10, 12, 10, 10, 9, 9, 19];
   }
@@ -2158,6 +2165,9 @@ function sectorFormHint(sectorKey) {
   }
   if (sectorKey === 'secagem') {
     return 'Entrada: conferir pré-secagem (FIT-LV-002) · CTD ECO: velocidade mínima · ciclo 2+2 min (agitar o cesto no intervalo) · carga sem completar o cesto.';
+  }
+  if (sectorKey === 'legumesProcessados') {
+    return 'PAA 80 mg/L · 90 s · 0–4 °C · peel-to-pack ≤30 min · selagem ≤4 °C · beterraba≠cebola · micro 0/3/5/7 antes de validade > piso.';
   }
   if (sectorKey === 'plantioAlface') {
     return 'Higiene 1 ml/L (FIT-PA-001) · Placa SECA → 1/célula → etiquetar → molhar (FIT-PA-002) · Escuro 24–48 h (FIT-PA-003) · Berçário → NFT com espuma (FIT-PA-004).';
@@ -2392,6 +2402,14 @@ function renderAll() {
     ['em-fit1', () => renderSectorFit('embalagem', 1, 'view-em-fit1', 'ops')],
     ['em-cartaz', () => renderSectorCartaz('embalagem', 'view-em-cartaz')],
     ['em-forms', () => renderSectorForms('embalagem', 'view-em-forms')],
+    ['lg-pop', () => renderSectorPop('legumesProcessados', 'view-lg-pop')],
+    ['lg-fit0', () => renderSectorFit('legumesProcessados', 0, 'view-lg-fit0', 'ops')],
+    ['lg-fit1', () => renderSectorFit('legumesProcessados', 1, 'view-lg-fit1', 'ops')],
+    ['lg-fit2', () => renderSectorFit('legumesProcessados', 2, 'view-lg-fit2', 'ops')],
+    ['lg-fit3', () => renderSectorFit('legumesProcessados', 3, 'view-lg-fit3', 'ops')],
+    ['lg-fit4', () => renderSectorFit('legumesProcessados', 4, 'view-lg-fit4', 'ops')],
+    ['lg-cartaz', () => renderSectorCartaz('legumesProcessados', 'view-lg-cartaz')],
+    ['lg-forms', () => renderSectorForms('legumesProcessados', 'view-lg-forms')],
     ['pa-pop', () => renderSectorPop('plantioAlface', 'view-pa-pop')],
     ['pa-fit0', () => renderSectorFit('plantioAlface', 0, 'view-pa-fit0', 'ops')],
     ['pa-fit1', () => renderSectorFit('plantioAlface', 1, 'view-pa-fit1', 'ops')],

@@ -390,6 +390,20 @@ const SECTOR_NAV = [
     ],
   },
   {
+    key: 'legumesProcessados',
+    label: 'Legumes — Minimamente',
+    items: [
+      { view: 'lg-pop', label: '📋 POP-LG-001' },
+      { view: 'lg-fit0', label: '🔧 FIT-LG-001 Batata' },
+      { view: 'lg-fit1', label: '🔧 FIT-LG-002 Cenoura' },
+      { view: 'lg-fit2', label: '🔧 FIT-LG-003 Beterraba' },
+      { view: 'lg-fit3', label: '🔧 FIT-LG-004 Repolho' },
+      { view: 'lg-fit4', label: '🔧 FIT-LG-005 Cebola' },
+      { view: 'lg-cartaz', label: '📌 Cartaz' },
+      { view: 'lg-forms', label: '📝 Formulários' },
+    ],
+  },
+  {
     key: 'plantioAlface',
     label: 'Plantio — Alface',
     items: [
