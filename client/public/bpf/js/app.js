@@ -3,7 +3,7 @@
  * App principal: render, edição, fotos, salvar, exportar PDF
  */
 const STORAGE_KEY = 'fazendas-up-pop-fit-v16';
-const CONTENT_REV = 53;
+const CONTENT_REV = 54;
 const VIEW_KEY = 'fazendas-up-current-view';
 const APP_DOC_TITLE = 'Fazendas UP — Gerador POP & FIT';
 let titleBeforePrint = APP_DOC_TITLE;
@@ -14,6 +14,21 @@ let podeEditar = false;
 let syncTimer = null;
 let ultimaRevisaoResumo = '';
 const NEW_SECTOR_KEYS = ['lavagem', 'secagem', 'embalagem', 'legumesProcessados', 'plantioAlface', 'plantioMicroverdes', 'torresProducao'];
+
+/**
+ * Se abrir `/bpf/index.html` direto no browser (sem iframe), redireciona para a
+ * rota SPA `/bpf` — assim o Header do ERP permanece e dá para voltar às páginas.
+ */
+(function redirecionarBpfParaSpaSeTopLevel() {
+  try {
+    if (window.top !== window.self) return;
+    const path = String(location.pathname || '');
+    if (!/\/bpf\/index\.html$/i.test(path)) return;
+    location.replace(`/bpf${location.hash || ''}`);
+  } catch (_) {
+    /* ignore */
+  }
+})();
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {

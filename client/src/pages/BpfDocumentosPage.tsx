@@ -6,8 +6,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 export default function BpfDocumentosPage() {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const { theme } = useTheme();
+  // Cache-bust do viewer estático para pegar novos setores (ex.: Legumes).
   const [src] = useState(
-    () => `/bpf/index.html${window.location.hash || ""}`,
+    () => `/bpf/index.html?v=101${window.location.hash || ""}`,
   );
 
   useEffect(() => {

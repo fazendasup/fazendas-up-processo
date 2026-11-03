@@ -79,9 +79,14 @@ export function serveStatic(app: Express) {
     "application/manifest+json",
   );
 
+  /**
+   * Sem índice automático de pasta: `public/bpf/index.html` não pode “roubar”
+   * a rota SPA `/bpf` (senão some o Header do ERP). Arquivos em `/bpf/...`
+   * continuam acessíveis (iframe usa `/bpf/index.html`).
+   */
   app.use(
     express.static(distPath, {
-      index: "index.html",
+      index: false,
       fallthrough: true,
       maxAge: process.env.NODE_ENV === "production" ? "1h" : 0,
     }),
@@ -92,6 +97,10 @@ export function serveStatic(app: Express) {
     if (req.method !== "GET" && req.method !== "HEAD") return next();
     if (req.path.startsWith("/api")) return next();
     if (req.path.startsWith("/assets/")) return next();
+    // Assets do viewer BPF (js/css) — se faltarem, 404; não devolver o SPA.
+    if (req.path.startsWith("/bpf/") && req.path !== "/bpf/" && !req.path.endsWith(".html")) {
+      return next();
+    }
 
     const indexFile = indexPath;
     res.sendFile(indexFile, (err) => {
