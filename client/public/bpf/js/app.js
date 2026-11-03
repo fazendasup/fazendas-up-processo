@@ -1294,6 +1294,42 @@ function critToggleBadge(path, isCritico) {
   return `<button type="button" class="crit-toggle ${cls}" data-crit-path="${esc(path)}" title="${esc(title)}" aria-pressed="${isCritico ? 'true' : 'false'}">${label}</button>`;
 }
 
+function ensurePassosArray(path) {
+  let arr = getNested(state, path);
+  if (!Array.isArray(arr)) {
+    setNested(state, path, []);
+    arr = getNested(state, path);
+  }
+  return arr;
+}
+
+function renderPassoRow(p, i, basePath) {
+  const passo = p && typeof p === 'object' ? p : { texto: '', critico: false, icon: 'check' };
+  return `
+    <div class="fit-step ${passo.critico ? 'critical' : ''}" data-passo-index="${i}">
+      <div class="num">${i + 1}</div>
+      <div class="icon-box">${renderIcon(passo.icon || 'check', 28)}</div>
+      ${fieldCompact(`${basePath}.${i}.texto`, passo.texto || '', 'step-text')}
+      <div class="passo-actions">
+        ${critToggleBadge(`${basePath}.${i}.critico`, !!passo.critico)}
+        <button type="button" class="passo-del no-print" data-passos-del="${esc(basePath)}" data-passos-idx="${i}" title="Excluir este passo">Excluir</button>
+      </div>
+    </div>`;
+}
+
+/** Lista editável de passos (POP processo / FIT passo a passo). */
+function renderPassosEditorHtml(items, basePath) {
+  const list = Array.isArray(items) ? items : [];
+  return `
+    <p class="crit-toggle-hint no-print">Clique em <strong>CRÍTICO</strong> ou <strong>OK</strong> · <strong>+ Adicionar</strong> / <strong>Excluir</strong> para editar a lista.</p>
+    <div class="fit-steps" data-passos-path="${esc(basePath)}">
+      ${list.map((p, i) => renderPassoRow(p, i, basePath)).join('')}
+    </div>
+    <div class="passos-toolbar no-print">
+      <button type="button" class="passos-add" data-passos-add="${esc(basePath)}">+ Adicionar passo</button>
+    </div>`;
+}
+
 function bindCritToggles(root) {
   root.querySelectorAll('button.crit-toggle[data-crit-path]').forEach((btn) => {
     if (btn.dataset.bound) return;
@@ -1321,17 +1357,45 @@ function bindCritToggles(root) {
   });
 }
 
+function bindPassosEditor(root) {
+  root.querySelectorAll('[data-passos-add]').forEach((btn) => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!podeEditar) return;
+      const path = btn.dataset.passosAdd;
+      const arr = ensurePassosArray(path);
+      arr.push({ icon: 'check', texto: 'Novo passo — edite o texto', critico: false });
+      saveState();
+      renderAll();
+      flashMsg('Passo adicionado');
+    });
+  });
+  root.querySelectorAll('[data-passos-del]').forEach((btn) => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!podeEditar) return;
+      const path = btn.dataset.passosDel;
+      const idx = Number(btn.dataset.passosIdx);
+      const arr = ensurePassosArray(path);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) return;
+      const texto = String(arr[idx]?.texto || '').trim();
+      if (texto && !confirm(`Excluir o passo ${idx + 1}?\n\n${texto.slice(0, 160)}`)) return;
+      arr.splice(idx, 1);
+      saveState();
+      renderAll();
+      flashMsg('Passo excluído');
+    });
+  });
+}
+
 function fillProcessoDetalhado(container, items) {
   if (!container) return;
-  container.innerHTML = `
-    <p class="crit-toggle-hint no-print">Clique em <strong>CRÍTICO</strong> ou <strong>OK</strong> para alternar.</p>
-    ${(items || []).map((p, i) => `
-    <div class="fit-step ${p.critico ? 'critical' : ''}">
-      <div class="num">${i + 1}</div>
-      <div class="icon-box">${renderIcon(p.icon, 28)}</div>
-      ${fieldCompact(`preLavagem.processoDetalhado.${i}.texto`, p.texto, 'step-text')}
-      ${critToggleBadge(`preLavagem.processoDetalhado.${i}.critico`, !!p.critico)}
-    </div>`).join('')}`;
+  container.innerHTML = renderPassosEditorHtml(items, 'preLavagem.processoDetalhado');
 }
 
 function renderHigieneExtended(container, items, basePath = 'preLavagem.higienizacao') {
@@ -1491,6 +1555,7 @@ function renderPop() {
 
   bindEditableFields(el);
   bindCritToggles(el);
+  bindPassosEditor(el);
   bindPhotos(el);
   bindLogo();
 }
@@ -1692,15 +1757,7 @@ function renderFit(index) {
     </div>`).join('');
 
   const stepsEl = el.querySelector(`#fit-steps-${index}`);
-  stepsEl.innerHTML = `
-    <p class="crit-toggle-hint no-print">Clique em <strong>CRÍTICO</strong> ou <strong>OK</strong> para alternar.</p>
-    ${(fit.passos || []).map((p, i) => `
-    <div class="fit-step ${p.critico ? 'critical' : ''}">
-      <div class="num">${i + 1}</div>
-      <div class="icon-box">${renderIcon(p.icon, 28)}</div>
-      ${fieldCompact(`preLavagem.fits.${index}.passos.${i}.texto`, p.texto, 'step-text')}
-      ${critToggleBadge(`preLavagem.fits.${index}.passos.${i}.critico`, !!p.critico)}
-    </div>`).join('')}`;
+  stepsEl.innerHTML = renderPassosEditorHtml(fit.passos, `preLavagem.fits.${index}.passos`);
 
   const cardsEl = el.querySelector(`#fit-cards-${index}`);
   cardsEl.innerHTML = (fit.cards || []).map((c, i) => `
@@ -1724,6 +1781,7 @@ function renderFit(index) {
 
   bindEditableFields(el);
   bindCritToggles(el);
+  bindPassosEditor(el);
   bindPhotos(el);
   bindLogo();
 }
@@ -1957,6 +2015,7 @@ function renderSectorPop(sectorKey, viewId) {
   renderResumo(el.querySelector(`#${sectorKey}-resumo`), d.resumo, `${base}.resumo`);
   bindEditableFields(el);
   bindCritToggles(el);
+  bindPassosEditor(el);
   bindLogo();
 }
 
@@ -1966,16 +2025,7 @@ function fillSectorProcesso(container, items, basePath) {
     <div class="print-keep-head">
       <div class="section-title plain">DESCRIÇÃO DO PROCESSO</div>
     </div>
-    <p class="crit-toggle-hint no-print">Clique em <strong>CRÍTICO</strong> ou <strong>OK</strong> para alternar.</p>
-    <div class="fit-steps processo-steps">
-    ${(items || []).map((p, i) => `
-    <div class="fit-step ${p.critico ? 'critical' : ''}">
-      <div class="num">${i + 1}</div>
-      <div class="icon-box">${renderIcon(p.icon, 28)}</div>
-      ${fieldCompact(`${basePath}.${i}.texto`, p.texto, 'step-text')}
-      ${critToggleBadge(`${basePath}.${i}.critico`, !!p.critico)}
-    </div>`).join('')}
-    </div>`;
+    ${renderPassosEditorHtml(items, basePath)}`;
 }
 
 function renderSectorFit(sectorKey, fitIndex, viewId, layout = 'ops') {
@@ -2055,15 +2105,7 @@ function renderSectorFit(sectorKey, fitIndex, viewId, layout = 'ops') {
       ${fieldCompact(`${base}.antesDeComecar.${i}.texto`, item.texto, 'field-check')}
     </div>`).join('');
 
-  el.querySelector(`#${viewId}-steps`).innerHTML = `
-    <p class="crit-toggle-hint no-print">Clique em <strong>CRÍTICO</strong> ou <strong>OK</strong> para alternar.</p>
-    ${(fit.passos || []).map((p, i) => `
-    <div class="fit-step ${p.critico ? 'critical' : ''}">
-      <div class="num">${i + 1}</div>
-      <div class="icon-box">${renderIcon(p.icon, 28)}</div>
-      ${fieldCompact(`${base}.passos.${i}.texto`, p.texto, 'step-text')}
-      ${critToggleBadge(`${base}.passos.${i}.critico`, !!p.critico)}
-    </div>`).join('')}`;
+  el.querySelector(`#${viewId}-steps`).innerHTML = renderPassosEditorHtml(fit.passos, `${base}.passos`);
 
   el.querySelector(`#${viewId}-cards`).innerHTML = (fit.cards || []).map((c, i) => `
     <div class="mini-card ${MINI_CARD_COLORS[i % MINI_CARD_COLORS.length]}">
@@ -2085,6 +2127,7 @@ function renderSectorFit(sectorKey, fitIndex, viewId, layout = 'ops') {
 
   bindEditableFields(el);
   bindCritToggles(el);
+  bindPassosEditor(el);
   bindPhotos(el);
   bindLogo();
 }

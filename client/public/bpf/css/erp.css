@@ -200,6 +200,10 @@ body.bpf-readonly [data-logo-upload],
 body.bpf-readonly .crit-toggle {
   pointer-events: none;
 }
+body.bpf-readonly .passo-del,
+body.bpf-readonly .passos-add {
+  display: none !important;
+}
 
 .bpf-menu-btn,
 .bpf-backdrop {
