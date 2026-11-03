@@ -49,24 +49,7 @@ body {
 .sidebar .sub {
   color: var(--erp-muted);
   opacity: 1;
-  margin-bottom: 0.5rem;
-}
-
-.bpf-voltar-sistema {
-  display: block;
-  margin: 0 0 0.85rem;
-  text-align: center;
-  text-decoration: none;
-  background: var(--erp-soft);
-  border: 1px solid var(--erp-border);
-  color: var(--erp-text);
-  font-weight: 600;
-}
-
-.bpf-voltar-sistema:hover {
-  background: var(--erp-card);
-  border-color: var(--erp-primary);
-  color: var(--erp-primary);
+  margin-bottom: 0.85rem;
 }
 
 .bpf-search {
