@@ -3,7 +3,7 @@
  * App principal: render, edição, fotos, salvar, exportar PDF
  */
 const STORAGE_KEY = 'fazendas-up-pop-fit-v16';
-const CONTENT_REV = 55;
+const CONTENT_REV = 57;
 const VIEW_KEY = 'fazendas-up-current-view';
 const APP_DOC_TITLE = 'Fazendas UP — Gerador POP & FIT';
 let titleBeforePrint = APP_DOC_TITLE;
@@ -2225,7 +2225,7 @@ function sectorFormHint(sectorKey) {
     return 'Entrada: conferir pré-secagem (FIT-LV-002) · CTD ECO: velocidade mínima · ciclo 2+2 min (agitar o cesto no intervalo) · carga sem completar o cesto.';
   }
   if (sectorKey === 'legumesProcessados') {
-    return 'PAA líquido 0,5 ml/L · 90 s · 0–4 °C · peel-to-pack ≤30 min · selagem ≤4 °C · beterraba≠cebola · micro 0/3/5/7 antes de validade > piso.';
+    return 'PAA líquido 0,5 ml/L · 90 s · 0–5 °C · peel-to-pack ≤30 min · selagem ≤4 °C · beterraba≠cebola · micro 0/3/5/7 antes de validade > piso.';
   }
   if (sectorKey === 'plantioAlface') {
     return 'Higiene 1 ml/L (FIT-PA-001) · Placa SECA → 1/célula → etiquetar → molhar (FIT-PA-002) · Escuro 24–48 h (FIT-PA-003) · Berçário → NFT com espuma (FIT-PA-004).';

@@ -22,10 +22,10 @@ Produzir repolho em tiras para salada com PAA, banho cítrico (ou sem cítrico s
 ### 3. Sequência completa
 
 1. **Limpeza** — folhas externas / sujeira; zona suja.
-2. **Corte E3** (ou H7 se SKU) — retirar talo; 0–4 °C.
-3. **Enxágue** 0–4 °C.
-4. **PAA** — **0,5 ml/L**, **90 s**, **0–4 °C**.
-5. **Enxágue** pós-PAA (água potável 0–4 °C).
+2. **Corte E3** (ou H7 se SKU) — retirar talo; 0–5 °C.
+3. **Enxágue** 0–5 °C.
+4. **PAA** — **0,5 ml/L**, **90 s**, **0–5 °C**.
+5. **Enxágue** pós-PAA (água potável 0–5 °C).
 6. **Banho** — **3 min** (abaixo).
 7. **Centrifuga** — água solta fora, **sem esmagar**; validar tempo/rpm (referência literatura ~5 min / ~800 g — **validar no equipamento**).
 8. **Embalagem** — PE/PP + ar + furos; ≤4 °C; peel-to-pack ≤30 min.
@@ -35,7 +35,7 @@ Produzir repolho em tiras para salada com PAA, banho cítrico (ou sem cítrico s
 | Parâmetro | Padrão | Alternativa rótulo “só repolho” |
 |-----------|--------|----------------------------------|
 | Tempo | **3 min** | 3 min |
-| Temperatura | **0–4 °C** | 0–4 °C |
+| Temperatura | **0–5 °C** | 0–5 °C |
 | Cítrico | **10 g/L** | **Omitir** |
 | Ascórbico | **0** | 0 |
 | CaCl₂ anidro | **0** (opcional **5 g/L** se amolecer) | conforme RT |
@@ -82,19 +82,21 @@ Com cítrico (e Ca se usado): declarar. Sem PAA. Se “só repolho”: sem aditi
 
 ## FIT — Repolho (posto)
 
-**0–4 °C** · peel-to-pack **≤30 min** · câmara alvo **0 °C** (alarme &gt;2 °C)
+**0–5 °C** · peel-to-pack **≤30 min** · câmara alvo **0 °C** (alarme &gt;2 °C)
 
 ### Disco
 **E3** tira 3 mm · **retirar talo** · H7 só SKU grosso · sem Z/V/E1
 
-### Sequência curta
-1. Limpar → cortar E3 (sem talo)  
-2. Enxágue 0–4 °C  
-3. **PAA 0,5 ml/L · 90 s · 0–4 °C**  
-4. Enxágue  
-5. Banho **3 min**  
-6. Centrífuga (água fora, **não esmagar**)  
-7. **PE/PP + ar + furos** · headspace folgado
+### Sequência (posto)
+1. Limpeza (zona suja): folhas externas / sujeira  
+2. Retirar **talo** (obrigatório)  
+3. Corte 0–5 °C: **E3** tira 3 mm (salada) · **H7** só SKU palito grosso separado · sem Z/V/E1  
+4. Enxágue água potável 0–5 °C  
+5. **PAA 0,5 ml/L · 90 s · 0–5 °C**  
+6. Enxágue pós-PAA 0–5 °C  
+7. Banho **3 min** (abaixo)  
+8. Centrífuga (água fora, **não esmagar**)  
+9. Embalagem: **PE/PP + ar + furos** · headspace folgado · O₂ ≥5%
 
 ### Banho — 10 L
 Cítrico **100 g** · AA **0** · Ca **0** (opc. **50 g** se amolecer) · **3 min**  

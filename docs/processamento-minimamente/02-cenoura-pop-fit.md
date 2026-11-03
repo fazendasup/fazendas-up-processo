@@ -23,17 +23,17 @@ Produzir cenoura minimamente processada com face úmida (evitar “face branca�
 
 1. **Lavar** (zona suja).
 2. **Descasque**.
-3. **Corte** (H7 / E3 / Z5) — frio 0–4 °C.
-4. **Enxágue** 0–4 °C.
-5. **PAA** — **0,5 ml/L**, **90 s**, **0–4 °C**.
-6. **Enxágue pós-PAA** — **30–45 s**, 0–4 °C.
+3. **Corte** (H7 / E3 / Z5) — frio 0–5 °C.
+4. **Enxágue** 0–5 °C.
+5. **PAA** — **0,5 ml/L**, **90 s**, **0–5 °C**.
+6. **Enxágue pós-PAA** — **30–45 s**, 0–5 °C.
 7. **Banho** — conforme disco (abaixo); sem enxágue posterior.
 8. **Centrifuga curta** — face **ainda úmida** (não secar fosco).
 9. **Embalagem** — PP/PE + ar + microfuros; produto ≤4 °C; peel-to-pack ≤30 min.
 
 ### 4. Banhos
 
-#### H7 / E3 — 90 s, 0–4 °C
+#### H7 / E3 — 90 s, 0–5 °C
 
 | Ingrediente | g/L | 10 L |
 |-------------|-----|------|
@@ -41,7 +41,7 @@ Produzir cenoura minimamente processada com face úmida (evitar “face branca�
 | Ascórbico | **0** | — |
 | CaCl₂ | **0** | — |
 
-#### Z5 (ralo) — 5 min, 0–4 °C
+#### Z5 (ralo) — 5 min, 0–5 °C
 
 | Ingrediente | g/L | 10 L |
 |-------------|-----|------|
@@ -67,7 +67,7 @@ Não misturar cítrico/cálcio no tanque de PAA. CaCl₂ primeiro se usar, esfri
 | PAA | 0,5 ml/L; medição lote + 30 min |
 | Face pós-centrífuga | Úmida — **defeito-chave: face branca** (desidratação) |
 | O₂ no pacote | 5–15% (amostragem D1/D3/D7) |
-| Temperatura | Corte→pack 0–4 °C; selagem ≤4 °C |
+| Temperatura | Corte→pack 0–5 °C; selagem ≤4 °C |
 | Peel-to-pack | ≤ 30 min |
 
 ### 7. Rejeição
@@ -91,19 +91,21 @@ Declarar cítrico (e Ca se Z5). Sem AA neste POP. Não listar PAA.
 
 ## FIT — Cenoura (posto)
 
-**Posto:** lavar → embalagem | **0–4 °C** do corte em diante | **Peel-to-pack ≤30 min**
+**Posto:** lavar → embalagem | **0–5 °C** do corte em diante | **Peel-to-pack ≤30 min**
 
 ### Disco
 **H7 > E3** · Z5 só ralo cliente · E1/V fora
 
-### Sequência curta
-1. Lavar → descascar → cortar  
-2. Enxágue 0–4 °C  
-3. **PAA 0,5 ml/L · 90 s · 0–4 °C**  
-4. Enxágue **30–45 s**  
-5. Banho (abaixo)  
-6. Centrífuga **curta — face úmida** (não fosco)  
-7. **PP/PE + ar + furos** (sem vácuo / sem Aliprot)
+### Sequência (posto)
+1. Lavar (zona suja)  
+2. Descasque  
+3. Corte 0–5 °C: **H7** palito (preferencial) · **E3** moeda · **Z5** só ralo sob demanda · sem E1/V  
+4. Enxágue água potável 0–5 °C  
+5. **PAA 0,5 ml/L · 90 s · 0–5 °C**  
+6. Enxágue pós-PAA **30–45 s**  
+7. Banho conforme disco (abaixo) · sem enxágue  
+8. Centrífuga **curta — face úmida** (não fosco)  
+9. Embalagem: **PP/PE + ar + furos** (sem vácuo / sem Aliprot)
 
 ### Banho — 10 L
 

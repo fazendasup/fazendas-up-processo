@@ -24,10 +24,10 @@ Produzir cebola fatiada (ou cubo sob demanda) com duplo enxágue (remoção de s
 1. **Seleção**.
 2. **Retirar** casca / raiz / colo.
 3. **Pré-lavagem**.
-4. **Corte** E3 (ou cubo) — 0–4 °C.
+4. **Corte** E3 (ou cubo) — 0–5 °C.
 5. **Enxágue 1** — **30–60 s** (tirar suco).
-6. **PAA** — **0,5 ml/L**, **90 s**, **0–4 °C**.
-7. **Enxágue 2** — **30–45 s**, 0–4 °C.
+6. **PAA** — **0,5 ml/L**, **90 s**, **0–5 °C**.
+7. **Enxágue 2** — **30–45 s**, 0–5 °C.
 8. **Banho** — **3 min** (abaixo); sem enxágue.
 9. **Centrifuga** até **sem água livre**.
 10. **Embalagem** — PP/bandeja + ar + furos; ≤4 °C; peel-to-pack ≤30 min.
@@ -37,7 +37,7 @@ Produzir cebola fatiada (ou cubo sob demanda) com duplo enxágue (remoção de s
 | Parâmetro | Valor |
 |-----------|--------|
 | Tempo | **3 min** |
-| Temperatura | **0–4 °C** |
+| Temperatura | **0–5 °C** |
 | Cítrico | **10 g/L** |
 | Ascórbico | **10 g/L** — ⚠️ *verificar base legal / SKU congelado* (IN 211/2023 cat. 04.11 refrigerado) |
 | CaCl₂ anidro | **5 g/L** (di-hidratado × 1,32) |
@@ -84,21 +84,25 @@ Declarar cítrico, ascórbico e cloreto de cálcio. Não listar PAA.
 
 ## FIT — Cebola (posto)
 
-**Tanque exclusivo** · **0–4 °C** · peel-to-pack **≤30 min**
+**Tanque exclusivo** · **0–5 °C** · peel-to-pack **≤30 min**
 
 ### Disco
 **E3** fatia 3 mm · cubo 10 mm só demanda · E1/Z/V/H7 fora
 
-### Sequência curta
-1. Selecionar → casca/raiz/colo → pré-lavar → cortar  
-2. Enxágue 1 **30–60 s** (suco)  
-3. **PAA 0,5 ml/L · 90 s · 0–4 °C**  
-4. Enxágue 2 **30–45 s**  
-5. Banho **3 min**  
-6. Centrífuga **sem água livre**  
-7. **PP/bandeja + ar** · 1–2 furos · sem Aliprot 1 mbar como padrão
+### Sequência (posto)
+1. Confirmar tanque exclusivo (≠ beterraba)  
+2. Seleção: rejeitar danificados / podres  
+3. Retirar casca, raiz e colo  
+4. Pré-lavagem  
+5. Corte 0–5 °C: **E3** fatia 3 mm (validado) · cubo ~10 mm só sob demanda · sem E1/Z/V/H7  
+6. Enxágue 1 **30–60 s** (tirar suco)  
+7. **PAA 0,5 ml/L · 90 s · 0–5 °C**  
+8. Enxágue 2 **30–45 s**  
+9. Banho **3 min** · 10 L: 100+100+50 g · sem enxágue  
+10. Centrífuga **sem água livre**  
+11. Embalagem: **PP/bandeja + ar** · 1–2 furos · sem Aliprot 1 mbar como padrão
 
-### Banho — 10 L (0–4 °C)
+### Banho — 10 L (0–5 °C)
 | Ingrediente | Dose |
 |-------------|------|
 | Cítrico | **100 g** |

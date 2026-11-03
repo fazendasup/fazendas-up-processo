@@ -7,7 +7,7 @@ Aplicar a **todos** os SKUs (batata, cenoura, beterraba, repolho, cebola), salvo
 | Regra | Setpoint / limite |
 |-------|-------------------|
 | Zona suja × zona limpa | Separar fisicamente; sem retorno de utensílio/mão sem higienizar |
-| Do corte em diante | Câmara / produto **0–4 °C** |
+| Do corte em diante | Câmara / produto **0–5 °C** |
 | Na selagem | Produto **≤ 4 °C** |
 | Peel-to-pack | **≤ 30 min** (descasque/corte → embalagem fechada) |
 
@@ -18,7 +18,7 @@ Aplicar a **todos** os SKUs (batata, cenoura, beterraba, repolho, cebola), salvo
 | Equipamento | **Tanque separado** (nunca misturar com antioxidante) |
 | Dose (líquido) | **0,5 ml/L** (0,5 ml de produto por 1 L de água) |
 | Tempo de contato | **90 s** |
-| Temperatura | **0–4 °C** |
+| Temperatura | **0–5 °C** |
 | Medição | Antes do lote e **a cada 30 min** |
 | Descarte | Se turvo / com amido / fora de ppm |
 | Incompatível no mesmo tanque | Cítrico, ascórbico, cálcio |
@@ -28,7 +28,7 @@ Aplicar a **todos** os SKUs (batata, cenoura, beterraba, repolho, cebola), salvo
 
 ## 3. Após PAA
 
-1. **Enxágue** com água potável **0–4 °C** (tempo no POP do produto).
+1. **Enxágue** com água potável **0–5 °C** (tempo no POP do produto).
 2. **Banho antioxidante** (fórmula e tempo no POP).
 3. Em geral **sem enxágue** após o banho (exceto se o POP indicar).
 

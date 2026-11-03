@@ -24,10 +24,10 @@ Produzir beterraba fatiada/palito com controle de pigmento solúvel (enxágues c
 1. **Lavar**.
 2. **Descasque** abrasivo ou manual.
 3. **Enxágue curto**.
-4. **Corte** (E3 ou H7) — 0–4 °C.
+4. **Corte** (E3 ou H7) — 0–5 °C.
 5. **Enxágue pós-corte** — **somente 30–45 s** (pigmento solúvel — não prolongar).
-6. **PAA** — **0,5 ml/L**, **90 s**, **0–4 °C**.
-7. **Enxágue pós-PAA** — **30–45 s**, 0–4 °C.
+6. **PAA** — **0,5 ml/L**, **90 s**, **0–5 °C**.
+7. **Enxágue pós-PAA** — **30–45 s**, 0–5 °C.
 8. **Banho** — **5 min** (abaixo); sem enxágue.
 9. **Centrifuga ~1 min** — face **úmida**.
 10. **Embalagem** escura / sem luz forte; ≤4 °C; peel-to-pack ≤30 min.
@@ -37,7 +37,7 @@ Produzir beterraba fatiada/palito com controle de pigmento solúvel (enxágues c
 | Parâmetro | Valor |
 |-----------|--------|
 | Tempo | **5 min** |
-| Temperatura | **0–4 °C** |
+| Temperatura | **0–5 °C** |
 | Cítrico | **2 g/L** |
 | Ascórbico | **0** — não usar (risco a betalaína em dose alta) |
 | CaCl₂ | **0** |
@@ -84,22 +84,26 @@ Declarar cítrico. Sem AA. Não listar PAA.
 
 ## FIT — Beterraba (posto)
 
-**Tanque exclusivo** · **0–4 °C** · peel-to-pack **≤30 min** · sem luz forte no pack
+**Tanque exclusivo** · **0–5 °C** · peel-to-pack **≤30 min** · sem luz forte no pack
 
 ### Disco
 **E3** fatia · **H7** palito (código separado) · sem Z/V
 
-### Sequência curta
-1. Lavar → descascar → enxágue curto → cortar  
-2. Enxágue pós-corte **só 30–45 s**  
-3. **PAA 0,5 ml/L · 90 s · 0–4 °C**  
-4. Enxágue **30–45 s**  
-5. Banho **5 min**  
-6. Centrífuga **~1 min**, face úmida  
-7. **PP/PE + ar + furos** (sem vácuo) · pack escuro
+### Sequência (posto)
+1. Confirmar tanque exclusivo (≠ cebola)  
+2. Lavar (zona suja)  
+3. Descasque (abrasivo ou manual)  
+4. Enxágue curto pós-descasque  
+5. Corte 0–5 °C: **E3** fatia ou **H7** palito (código próprio) · sem Z/V  
+6. Enxágue pós-corte **só 30–45 s** (pigmento)  
+7. **PAA 0,5 ml/L · 90 s · 0–5 °C**  
+8. Enxágue pós-PAA **30–45 s**  
+9. Banho **5 min** · 10 L: 20 g cítrico · sem AA/Ca  
+10. Centrífuga **~1 min**, face úmida  
+11. Embalagem: **PP/PE + ar + furos** (sem vácuo) · pack escuro
 
 ### Banho — 10 L
-Cítrico **20 g** · AA **0** · Ca **0** · **5 min** · 0–4 °C
+Cítrico **20 g** · AA **0** · Ca **0** · **5 min** · 0–5 °C
 
 ### Embalagem / furos
 0,18 mm · **200 g → 3–4** furos · O₂ **5–15%**
