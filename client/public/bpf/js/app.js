@@ -3,7 +3,7 @@
  * App principal: render, edição, fotos, salvar, exportar PDF
  */
 const STORAGE_KEY = 'fazendas-up-pop-fit-v16';
-const CONTENT_REV = 54;
+const CONTENT_REV = 55;
 const VIEW_KEY = 'fazendas-up-current-view';
 const APP_DOC_TITLE = 'Fazendas UP — Gerador POP & FIT';
 let titleBeforePrint = APP_DOC_TITLE;
@@ -2186,7 +2186,7 @@ function sectorFormHeaders(sectorKey) {
     return ['Data', 'Operador', 'Hora', 'Produto', 'Entrada OK', 'Vel. mín.', '2+2 min', 'Bancada', 'Obs'];
   }
   if (sectorKey === 'legumesProcessados') {
-    return ['Data', 'Operador', 'Produto', 'Disco', 'PAA ppm', 'Banho', '°C pack', 'Validade', 'Obs'];
+    return ['Data', 'Operador', 'Produto', 'Disco', 'PAA ml/L', 'Banho', '°C pack', 'Validade', 'Obs'];
   }
   if (sectorKey === 'plantioAlface') {
     return ['Data', 'Operador', 'Lote', 'Variedade', 'Higiene', 'Semear', 'Escuro', 'NFT', 'Obs'];
@@ -2225,7 +2225,7 @@ function sectorFormHint(sectorKey) {
     return 'Entrada: conferir pré-secagem (FIT-LV-002) · CTD ECO: velocidade mínima · ciclo 2+2 min (agitar o cesto no intervalo) · carga sem completar o cesto.';
   }
   if (sectorKey === 'legumesProcessados') {
-    return 'PAA 80 mg/L · 90 s · 0–4 °C · peel-to-pack ≤30 min · selagem ≤4 °C · beterraba≠cebola · micro 0/3/5/7 antes de validade > piso.';
+    return 'PAA líquido 0,5 ml/L · 90 s · 0–4 °C · peel-to-pack ≤30 min · selagem ≤4 °C · beterraba≠cebola · micro 0/3/5/7 antes de validade > piso.';
   }
   if (sectorKey === 'plantioAlface') {
     return 'Higiene 1 ml/L (FIT-PA-001) · Placa SECA → 1/célula → etiquetar → molhar (FIT-PA-002) · Escuro 24–48 h (FIT-PA-003) · Berçário → NFT com espuma (FIT-PA-004).';

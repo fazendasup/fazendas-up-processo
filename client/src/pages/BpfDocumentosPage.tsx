@@ -8,7 +8,7 @@ export default function BpfDocumentosPage() {
   const { theme } = useTheme();
   // Cache-bust do viewer estático para pegar novos setores (ex.: Legumes).
   const [src] = useState(
-    () => `/bpf/index.html?v=102${window.location.hash || ""}`,
+    () => `/bpf/index.html?v=103${window.location.hash || ""}`,
   );
 
   useEffect(() => {
