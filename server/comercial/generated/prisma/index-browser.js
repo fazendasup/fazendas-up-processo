@@ -362,6 +362,7 @@ exports.Prisma.RegraComercialClienteScalarFieldEnum = {
   observacoesGerais: 'observacoesGerais',
   tipoVendaPadrao: 'tipoVendaPadrao',
   periodoEntrega: 'periodoEntrega',
+  diasEntrega: 'diasEntrega',
   horarioMaximoEntrega: 'horarioMaximoEntrega',
   cobraTaxaEntrega: 'cobraTaxaEntrega',
   valorTaxaEntrega: 'valorTaxaEntrega',

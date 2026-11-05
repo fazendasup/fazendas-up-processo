@@ -169,6 +169,33 @@ const DIAS = [
   "Sexta",
   "Sábado",
 ];
+/** Labels curtos para toggles de dia de entrega (índice = getDay()). */
+const DIAS_ENTREGA_OPCOES = [
+  { value: 0, label: "Dom" },
+  { value: 1, label: "Seg" },
+  { value: 2, label: "Ter" },
+  { value: 3, label: "Qua" },
+  { value: 4, label: "Qui" },
+  { value: 5, label: "Sex" },
+  { value: 6, label: "Sáb" },
+] as const;
+
+function normalizarDiasEntrega(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value
+        .map(Number)
+        .filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
+    ),
+  ].sort((a, b) => a - b);
+}
+
+function rotuloDiasEntrega(dias: number[]): string {
+  if (!dias.length) return "Dias não definidos";
+  const freq = dias.length === 1 ? "1×/sem" : `${dias.length}×/sem`;
+  return `${dias.map(d => DIAS_ENTREGA_OPCOES[d]?.label ?? DIAS[d]).join(" · ")} (${freq})`;
+}
 const STATUS = ["PENDENTE", "PRONTO", "ENTREGUE", "CANCELADO"] as const;
 const STATUS_ATIVOS = ["PRONTO", "PENDENTE", "ENTREGUE"] as const;
 const STATUS_BLOCOS: Record<
@@ -628,9 +655,7 @@ export function Pedidos({
   const alterarDataPedido =
     trpc.comercial.pedidos.alterarDataPedido.useMutation({
       onSuccess: async result => {
-        if (!result.unchanged && result.dataEntrega) {
-          setDia(isoDataEntrega(result.dataEntrega));
-        }
+        // Mantém a data da página; só o pedido muda de dia.
         toast.success(
           result.unchanged
             ? "Pedido já estava nesta data."
@@ -649,9 +674,7 @@ export function Pedidos({
   const copiarPedidoParaDia =
     trpc.comercial.pedidos.copiarPedidoParaDia.useMutation({
       onSuccess: async result => {
-        if (result.dataEntrega) {
-          setDia(isoDataEntrega(result.dataEntrega));
-        }
+        // Mantém a data da página; a cópia vai para o destino sem navegar.
         toast.success(
           `Pedido de ${result.clienteNome} copiado para ${fmtDate(result.dataEntrega)}. O original permanece no dia de origem.`
         );
@@ -3907,6 +3930,8 @@ function RegrasResumo({
       </p>
     );
   }
+  const diasEntrega = normalizarDiasEntrega(regra.diasEntrega);
+  const diasLabel = rotuloDiasEntrega(diasEntrega);
   const entrega = `${regra.periodoEntrega || "Sem período"}${regra.horarioMaximoEntrega ? ` até ${regra.horarioMaximoEntrega}` : ""}`;
   const tipoPadrao =
     TIPOS.find(([value]) => value === regra.tipoVendaPadrao)?.[1] ??
@@ -3949,7 +3974,8 @@ function RegrasResumo({
         >
           {compact ? (
             <>
-              <span className="font-medium text-foreground">{entrega}</span>
+              <span className="font-medium text-foreground">{diasLabel}</span>
+              <span className="opacity-70"> · {entrega}</span>
               <span className="opacity-70"> · {entregaTaxa}</span>
             </>
           ) : (
@@ -3957,7 +3983,7 @@ function RegrasResumo({
               Regras comerciais
               {!aberto ? (
                 <span className="ml-2 font-semibold normal-case tracking-normal text-foreground">
-                  · {entrega} · {entregaTaxa}
+                  · {diasLabel} · {entrega} · {entregaTaxa}
                 </span>
               ) : null}
             </>
@@ -3972,6 +3998,11 @@ function RegrasResumo({
       {aberto ? (
         <>
           <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+            <RegraChip
+              label="Dias"
+              value={diasLabel}
+              className="border-cyan-200 bg-cyan-50 text-cyan-900 dark:border-cyan-900 dark:bg-cyan-950/30 dark:text-cyan-100"
+            />
             <RegraChip
               label="Entrega"
               value={entrega}
@@ -4080,10 +4111,26 @@ function RegrasClienteArea({
   );
   const [precosForm, setPrecosForm] = useState<Record<string, string>>({});
   const merged = { ...regra, ...form };
+  const diasEntregaSelecionados = normalizarDiasEntrega(
+    form.diasEntrega !== undefined ? form.diasEntrega : regra?.diasEntrega
+  );
   const clienteSelecionado = (clientes as any[]).find(
     (c: any) => c.externalId === clienteId,
   );
   const podeAcumular = clientePodeAcumularPedidos(clienteSelecionado?.nome);
+
+  function toggleDiaEntrega(dia: number) {
+    setForm((f: any) => {
+      const atuais = normalizarDiasEntrega(
+        f.diasEntrega !== undefined ? f.diasEntrega : regra?.diasEntrega
+      );
+      const next = atuais.includes(dia)
+        ? atuais.filter(d => d !== dia)
+        : [...atuais, dia].sort((a, b) => a - b);
+      return { ...f, diasEntrega: next };
+    });
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -4122,6 +4169,35 @@ function RegrasClienteArea({
                     }))
                   }
                 />
+              </div>
+              <div className="md:col-span-3">
+                <Label className="text-xs">Dias de entrega na semana</Label>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {DIAS_ENTREGA_OPCOES.map(({ value, label }) => {
+                    const ativo = diasEntregaSelecionados.includes(value);
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => toggleDiaEntrega(value)}
+                        className={`min-w-[2.75rem] rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                          ativo
+                            ? "border-emerald-600 bg-emerald-600 text-white"
+                            : "border-border bg-background text-muted-foreground hover:bg-muted"
+                        }`}
+                        aria-pressed={ativo}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Marque 1 dia (1×/semana) ou 2+ dias (ex.: Seg e Qui). Usado para saber em quais dias o cliente recebe.
+                  {diasEntregaSelecionados.length
+                    ? ` Selecionado: ${rotuloDiasEntrega(diasEntregaSelecionados)}.`
+                    : " Nenhum dia selecionado."}
+                </p>
               </div>
               <div>
                 <Label className="text-xs">Tipo padrão de venda</Label>
@@ -4289,6 +4365,7 @@ function RegrasClienteArea({
                   observacoesGerais: merged.observacoesGerais ?? null,
                   tipoVendaPadrao: merged.tipoVendaPadrao ?? null,
                   periodoEntrega: merged.periodoEntrega ?? null,
+                  diasEntrega: diasEntregaSelecionados,
                   horarioMaximoEntrega: merged.horarioMaximoEntrega ?? null,
                   cobraTaxaEntrega: Boolean(merged.cobraTaxaEntrega),
                   valorTaxaEntrega: merged.cobraTaxaEntrega

@@ -967,6 +967,12 @@ export const pedidosRouter = router({
         observacoesGerais: z.string().nullable().optional(),
         tipoVendaPadrao: tipoVendaSchema.nullable().optional(),
         periodoEntrega: periodoEntregaSchema,
+        /** Dias de entrega: getDay() 0=Dom … 6=Sáb. Ex.: [1,4] = Seg e Qui. */
+        diasEntrega: z
+          .array(z.number().int().min(0).max(6))
+          .max(7)
+          .nullable()
+          .optional(),
         horarioMaximoEntrega: z.string().nullable().optional(),
         cobraTaxaEntrega: z.boolean().default(false),
         valorTaxaEntrega: nullableNonNegativeNumber,
@@ -1013,6 +1019,13 @@ export const pedidosRouter = router({
           message: `Acúmulo de pedidos só é permitido para: ${CLIENTES_ACUMULO_ALLOWLIST_LABELS.join(", ")}.`,
         });
       }
+      const diasEntregaJson =
+        input.diasEntrega === undefined
+          ? undefined
+          : input.diasEntrega == null || input.diasEntrega.length === 0
+            ? Prisma.JsonNull
+            : ([...new Set(input.diasEntrega)].sort((a, b) => a - b) as Prisma.InputJsonValue);
+
       return ctx.prisma!.$transaction(async tx => {
         const regra = await tx.regraComercialCliente.upsert({
           where: { contaAzulCustomerId: input.contaAzulCustomerId },
@@ -1021,6 +1034,7 @@ export const pedidosRouter = router({
             observacoesGerais: input.observacoesGerais?.trim() || null,
             tipoVendaPadrao: input.tipoVendaPadrao ?? null,
             periodoEntrega: input.periodoEntrega ?? null,
+            ...(diasEntregaJson !== undefined ? { diasEntrega: diasEntregaJson } : {}),
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
             valorTaxaEntrega:
@@ -1040,6 +1054,7 @@ export const pedidosRouter = router({
             observacoesGerais: input.observacoesGerais?.trim() || null,
             tipoVendaPadrao: input.tipoVendaPadrao ?? null,
             periodoEntrega: input.periodoEntrega ?? null,
+            ...(diasEntregaJson !== undefined ? { diasEntrega: diasEntregaJson } : {}),
             horarioMaximoEntrega: input.horarioMaximoEntrega || null,
             cobraTaxaEntrega: input.cobraTaxaEntrega,
             valorTaxaEntrega:

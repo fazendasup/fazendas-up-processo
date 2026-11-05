@@ -673,11 +673,17 @@ export function AjustarFreteConciliacaoDialog({
       toast.error("Informe um valor de taxa válido.");
       return;
     }
+    const diasEntrega = Array.isArray(r?.diasEntrega)
+      ? r.diasEntrega
+          .map(Number)
+          .filter((d: number) => Number.isInteger(d) && d >= 0 && d <= 6)
+      : undefined;
     salvarRegra.mutate({
       contaAzulCustomerId,
       observacoesGerais: r?.observacoesGerais ?? null,
       tipoVendaPadrao: r?.tipoVendaPadrao ?? null,
       periodoEntrega: r?.periodoEntrega ?? null,
+      ...(diasEntrega !== undefined ? { diasEntrega } : {}),
       horarioMaximoEntrega: r?.horarioMaximoEntrega ?? null,
       cobraTaxaEntrega: cobraTaxa,
       valorTaxaEntrega: valor,

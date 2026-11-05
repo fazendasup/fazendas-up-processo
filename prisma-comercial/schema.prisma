@@ -573,6 +573,8 @@ model RegraComercialCliente {
   observacoesGerais                   String?                @map("observacoes_gerais") @db.Text
   tipoVendaPadrao                     TipoVendaPedido?       @map("tipo_venda_padrao")
   periodoEntrega                      PeriodoEntregaCliente? @map("periodo_entrega")
+  /// Dias da semana de entrega: JSON number[] com getDay() (0=Dom … 6=Sáb). Ex.: [1,4] = Seg e Qui.
+  diasEntrega                         Json?                  @map("dias_entrega")
   horarioMaximoEntrega                String?                @map("horario_maximo_entrega")
   cobraTaxaEntrega                    Boolean                @default(false) @map("cobra_taxa_entrega")
   valorTaxaEntrega                    Decimal?               @map("valor_taxa_entrega") @db.Decimal(14, 2)

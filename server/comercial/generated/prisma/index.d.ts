@@ -26064,6 +26064,7 @@ export namespace Prisma {
     observacoesGerais: number
     tipoVendaPadrao: number
     periodoEntrega: number
+    diasEntrega: number
     horarioMaximoEntrega: number
     cobraTaxaEntrega: number
     valorTaxaEntrega: number
@@ -26136,6 +26137,7 @@ export namespace Prisma {
     observacoesGerais?: true
     tipoVendaPadrao?: true
     periodoEntrega?: true
+    diasEntrega?: true
     horarioMaximoEntrega?: true
     cobraTaxaEntrega?: true
     valorTaxaEntrega?: true
@@ -26241,6 +26243,7 @@ export namespace Prisma {
     observacoesGerais: string | null
     tipoVendaPadrao: $Enums.TipoVendaPedido | null
     periodoEntrega: $Enums.PeriodoEntregaCliente | null
+    diasEntrega: JsonValue | null
     horarioMaximoEntrega: string | null
     cobraTaxaEntrega: boolean
     valorTaxaEntrega: Decimal | null
@@ -26278,6 +26281,7 @@ export namespace Prisma {
     observacoesGerais?: boolean
     tipoVendaPadrao?: boolean
     periodoEntrega?: boolean
+    diasEntrega?: boolean
     horarioMaximoEntrega?: boolean
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: boolean
@@ -26301,6 +26305,7 @@ export namespace Prisma {
     observacoesGerais?: boolean
     tipoVendaPadrao?: boolean
     periodoEntrega?: boolean
+    diasEntrega?: boolean
     horarioMaximoEntrega?: boolean
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: boolean
@@ -26313,7 +26318,7 @@ export namespace Prisma {
     atualizadoEm?: boolean
   }
 
-  export type RegraComercialClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "contaAzulCustomerId" | "observacoesGerais" | "tipoVendaPadrao" | "periodoEntrega" | "horarioMaximoEntrega" | "cobraTaxaEntrega" | "valorTaxaEntrega" | "prazoBoletoDias" | "descontoBoletoPercentual" | "acumulaPedidos" | "diasAcumulo" | "prazoBoletoAcumuloDias" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["regraComercialCliente"]>
+  export type RegraComercialClienteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "contaAzulCustomerId" | "observacoesGerais" | "tipoVendaPadrao" | "periodoEntrega" | "diasEntrega" | "horarioMaximoEntrega" | "cobraTaxaEntrega" | "valorTaxaEntrega" | "prazoBoletoDias" | "descontoBoletoPercentual" | "acumulaPedidos" | "diasAcumulo" | "prazoBoletoAcumuloDias" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["regraComercialCliente"]>
   export type RegraComercialClienteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cliente?: boolean | RegraComercialCliente$clienteArgs<ExtArgs>
     precosEspeciais?: boolean | RegraComercialCliente$precosEspeciaisArgs<ExtArgs>
@@ -26332,6 +26337,10 @@ export namespace Prisma {
       observacoesGerais: string | null
       tipoVendaPadrao: $Enums.TipoVendaPedido | null
       periodoEntrega: $Enums.PeriodoEntregaCliente | null
+      /**
+       * Dias da semana de entrega: JSON number[] com getDay() (0=Dom … 6=Sáb). Ex.: [1,4] = Seg e Qui.
+       */
+      diasEntrega: Prisma.JsonValue | null
       horarioMaximoEntrega: string | null
       cobraTaxaEntrega: boolean
       valorTaxaEntrega: Prisma.Decimal | null
@@ -26718,6 +26727,7 @@ export namespace Prisma {
     readonly observacoesGerais: FieldRef<"RegraComercialCliente", 'String'>
     readonly tipoVendaPadrao: FieldRef<"RegraComercialCliente", 'TipoVendaPedido'>
     readonly periodoEntrega: FieldRef<"RegraComercialCliente", 'PeriodoEntregaCliente'>
+    readonly diasEntrega: FieldRef<"RegraComercialCliente", 'Json'>
     readonly horarioMaximoEntrega: FieldRef<"RegraComercialCliente", 'String'>
     readonly cobraTaxaEntrega: FieldRef<"RegraComercialCliente", 'Boolean'>
     readonly valorTaxaEntrega: FieldRef<"RegraComercialCliente", 'Decimal'>
@@ -50992,6 +51002,7 @@ export namespace Prisma {
     observacoesGerais: 'observacoesGerais',
     tipoVendaPadrao: 'tipoVendaPadrao',
     periodoEntrega: 'periodoEntrega',
+    diasEntrega: 'diasEntrega',
     horarioMaximoEntrega: 'horarioMaximoEntrega',
     cobraTaxaEntrega: 'cobraTaxaEntrega',
     valorTaxaEntrega: 'valorTaxaEntrega',
@@ -53790,6 +53801,7 @@ export namespace Prisma {
     observacoesGerais?: StringNullableFilter<"RegraComercialCliente"> | string | null
     tipoVendaPadrao?: EnumTipoVendaPedidoNullableFilter<"RegraComercialCliente"> | $Enums.TipoVendaPedido | null
     periodoEntrega?: EnumPeriodoEntregaClienteNullableFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: JsonNullableFilter<"RegraComercialCliente">
     horarioMaximoEntrega?: StringNullableFilter<"RegraComercialCliente"> | string | null
     cobraTaxaEntrega?: BoolFilter<"RegraComercialCliente"> | boolean
     valorTaxaEntrega?: DecimalNullableFilter<"RegraComercialCliente"> | Decimal | DecimalJsLike | number | string | null
@@ -53810,6 +53822,7 @@ export namespace Prisma {
     observacoesGerais?: SortOrderInput | SortOrder
     tipoVendaPadrao?: SortOrderInput | SortOrder
     periodoEntrega?: SortOrderInput | SortOrder
+    diasEntrega?: SortOrderInput | SortOrder
     horarioMaximoEntrega?: SortOrderInput | SortOrder
     cobraTaxaEntrega?: SortOrder
     valorTaxaEntrega?: SortOrderInput | SortOrder
@@ -53834,6 +53847,7 @@ export namespace Prisma {
     observacoesGerais?: StringNullableFilter<"RegraComercialCliente"> | string | null
     tipoVendaPadrao?: EnumTipoVendaPedidoNullableFilter<"RegraComercialCliente"> | $Enums.TipoVendaPedido | null
     periodoEntrega?: EnumPeriodoEntregaClienteNullableFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: JsonNullableFilter<"RegraComercialCliente">
     horarioMaximoEntrega?: StringNullableFilter<"RegraComercialCliente"> | string | null
     cobraTaxaEntrega?: BoolFilter<"RegraComercialCliente"> | boolean
     valorTaxaEntrega?: DecimalNullableFilter<"RegraComercialCliente"> | Decimal | DecimalJsLike | number | string | null
@@ -53854,6 +53868,7 @@ export namespace Prisma {
     observacoesGerais?: SortOrderInput | SortOrder
     tipoVendaPadrao?: SortOrderInput | SortOrder
     periodoEntrega?: SortOrderInput | SortOrder
+    diasEntrega?: SortOrderInput | SortOrder
     horarioMaximoEntrega?: SortOrderInput | SortOrder
     cobraTaxaEntrega?: SortOrder
     valorTaxaEntrega?: SortOrderInput | SortOrder
@@ -53880,6 +53895,7 @@ export namespace Prisma {
     observacoesGerais?: StringNullableWithAggregatesFilter<"RegraComercialCliente"> | string | null
     tipoVendaPadrao?: EnumTipoVendaPedidoNullableWithAggregatesFilter<"RegraComercialCliente"> | $Enums.TipoVendaPedido | null
     periodoEntrega?: EnumPeriodoEntregaClienteNullableWithAggregatesFilter<"RegraComercialCliente"> | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: JsonNullableWithAggregatesFilter<"RegraComercialCliente">
     horarioMaximoEntrega?: StringNullableWithAggregatesFilter<"RegraComercialCliente"> | string | null
     cobraTaxaEntrega?: BoolWithAggregatesFilter<"RegraComercialCliente"> | boolean
     valorTaxaEntrega?: DecimalNullableWithAggregatesFilter<"RegraComercialCliente"> | Decimal | DecimalJsLike | number | string | null
@@ -57636,6 +57652,7 @@ export namespace Prisma {
     observacoesGerais?: string | null
     tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: Decimal | DecimalJsLike | number | string | null
@@ -57656,6 +57673,7 @@ export namespace Prisma {
     observacoesGerais?: string | null
     tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: Decimal | DecimalJsLike | number | string | null
@@ -57674,6 +57692,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57694,6 +57713,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57713,6 +57733,7 @@ export namespace Prisma {
     observacoesGerais?: string | null
     tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: Decimal | DecimalJsLike | number | string | null
@@ -57730,6 +57751,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57748,6 +57770,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -61553,6 +61576,7 @@ export namespace Prisma {
     observacoesGerais?: SortOrder
     tipoVendaPadrao?: SortOrder
     periodoEntrega?: SortOrder
+    diasEntrega?: SortOrder
     horarioMaximoEntrega?: SortOrder
     cobraTaxaEntrega?: SortOrder
     valorTaxaEntrega?: SortOrder
@@ -68023,6 +68047,7 @@ export namespace Prisma {
     observacoesGerais?: string | null
     tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: Decimal | DecimalJsLike | number | string | null
@@ -68041,6 +68066,7 @@ export namespace Prisma {
     observacoesGerais?: string | null
     tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: Decimal | DecimalJsLike | number | string | null
@@ -68526,6 +68552,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -68544,6 +68571,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -71678,6 +71706,7 @@ export namespace Prisma {
     observacoesGerais?: string | null
     tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: Decimal | DecimalJsLike | number | string | null
@@ -71697,6 +71726,7 @@ export namespace Prisma {
     observacoesGerais?: string | null
     tipoVendaPadrao?: $Enums.TipoVendaPedido | null
     periodoEntrega?: $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: string | null
     cobraTaxaEntrega?: boolean
     valorTaxaEntrega?: Decimal | DecimalJsLike | number | string | null
@@ -71809,6 +71839,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -71828,6 +71859,7 @@ export namespace Prisma {
     observacoesGerais?: NullableStringFieldUpdateOperationsInput | string | null
     tipoVendaPadrao?: NullableEnumTipoVendaPedidoFieldUpdateOperationsInput | $Enums.TipoVendaPedido | null
     periodoEntrega?: NullableEnumPeriodoEntregaClienteFieldUpdateOperationsInput | $Enums.PeriodoEntregaCliente | null
+    diasEntrega?: NullableJsonNullValueInput | InputJsonValue
     horarioMaximoEntrega?: NullableStringFieldUpdateOperationsInput | string | null
     cobraTaxaEntrega?: BoolFieldUpdateOperationsInput | boolean
     valorTaxaEntrega?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
