@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Download, Loader2, MessageCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -13,6 +13,7 @@ import {
 import { exportTableDocument } from "@/lib/exportTableDocument";
 import {
   abrirWhatsappCobranca,
+  montarMensagemInadimplencia,
   normalizarTelefoneWhatsapp,
 } from "@shared/comercial/whatsapp-cobranca";
 
@@ -114,41 +115,108 @@ export function InadimplenciaClienteBadge({
   } | null;
 }) {
   const [aberto, setAberto] = useState(false);
+  /** Só abre o WhatsApp depois que o detalhe (venda/data/NF) carregou. */
+  const [whatsappPendente, setWhatsappPendente] = useState(false);
   const detalhe = trpc.comercial.pedidos.inadimplenciaDetalhe.useQuery(
     { contaAzulCustomerId },
     { enabled: aberto, staleTime: 30_000, retry: false },
   );
   const [baixandoPdf, setBaixandoPdf] = useState(false);
 
-  if (!resumo?.inadimplente) return null;
+  const titulosMsg = useMemo(
+    () =>
+      (detalhe.data?.titulos ?? []).map((t) => ({
+        descricao: t.descricao,
+        dataVenda: t.dataCompetencia ?? null,
+        dataVencimento: t.dataVencimento,
+        numeroNf: t.numeroNf ?? null,
+        tipoNf: t.tipoNf ?? null,
+        numeroVenda: t.numeroVenda ?? null,
+        valorAberto: t.valorAberto,
+      })),
+    [detalhe.data?.titulos],
+  );
 
-  function abrirWhatsapp() {
+  const previewMensagem = useMemo(() => {
+    if (!detalhe.data) return null;
+    return montarMensagemInadimplencia({
+      clienteNome:
+        detalhe.data.clienteNome || clienteNome || contaAzulCustomerId,
+      valorEmAberto: detalhe.data.valorEmAberto,
+      quantidadeTitulos: detalhe.data.titulos.length,
+      titulos: titulosMsg,
+    });
+  }, [detalhe.data, titulosMsg, clienteNome, contaAzulCustomerId]);
+
+  useEffect(() => {
+    if (!resumo?.inadimplente) return;
+    if (!whatsappPendente || !aberto) return;
+    if (detalhe.isLoading || detalhe.isFetching) return;
+    if (detalhe.error) {
+      setWhatsappPendente(false);
+      toast.error(detalhe.error.message);
+      return;
+    }
+    if (!detalhe.data) return;
+
     const telefone =
-      detalhe.data?.telefoneWhatsapp ?? telefoneWhatsapp ?? null;
-    const nome =
-      detalhe.data?.clienteNome || clienteNome || contaAzulCustomerId;
-    const titulos = (detalhe.data?.titulos ?? []).map((t) => ({
-      descricao: t.descricao,
-      dataVenda: t.dataCompetencia ?? null,
-      dataVencimento: t.dataVencimento,
-      numeroNf: t.numeroNf ?? null,
-      tipoNf: t.tipoNf ?? null,
-      numeroVenda: t.numeroVenda ?? null,
-      valorAberto: t.valorAberto,
-    }));
+      detalhe.data.telefoneWhatsapp ?? telefoneWhatsapp ?? null;
     const result = abrirWhatsappCobranca({
       telefone,
-      clienteNome: nome,
-      valorEmAberto: detalhe.data?.valorEmAberto ?? resumo!.valorEmAberto,
-      quantidadeTitulos:
-        detalhe.data?.titulos.length ?? resumo!.quantidadeTitulos,
-      titulos: titulos.length > 0 ? titulos : undefined,
+      clienteNome:
+        detalhe.data.clienteNome || clienteNome || contaAzulCustomerId,
+      valorEmAberto: detalhe.data.valorEmAberto,
+      quantidadeTitulos: detalhe.data.titulos.length,
+      titulos: titulosMsg,
     });
     if (!result.ok) {
       toast.error(result.erro);
-      if (!aberto) setAberto(true);
+      setWhatsappPendente(false);
       return;
     }
+    setWhatsappPendente(false);
+    window.open(result.url, "_blank", "noopener,noreferrer");
+    toast.message("WhatsApp aberto com a mensagem pronta — confira e envie.");
+  }, [
+    resumo?.inadimplente,
+    whatsappPendente,
+    aberto,
+    detalhe.isLoading,
+    detalhe.isFetching,
+    detalhe.error,
+    detalhe.data,
+    titulosMsg,
+    telefoneWhatsapp,
+    clienteNome,
+    contaAzulCustomerId,
+  ]);
+
+  if (!resumo?.inadimplente) return null;
+
+  function abrirWhatsapp() {
+    if (!detalhe.data) {
+      setAberto(true);
+      setWhatsappPendente(true);
+      toast.message("Carregando títulos no Conta Azul para montar a mensagem…");
+      return;
+    }
+    const telefone =
+      detalhe.data.telefoneWhatsapp ?? telefoneWhatsapp ?? null;
+    const result = abrirWhatsappCobranca({
+      telefone,
+      clienteNome:
+        detalhe.data.clienteNome || clienteNome || contaAzulCustomerId,
+      valorEmAberto: detalhe.data.valorEmAberto,
+      quantidadeTitulos: detalhe.data.titulos.length,
+      titulos: titulosMsg,
+    });
+    if (!result.ok) {
+      toast.error(result.erro);
+      setAberto(true);
+      setWhatsappPendente(false);
+      return;
+    }
+    setWhatsappPendente(false);
     window.open(result.url, "_blank", "noopener,noreferrer");
     toast.message("WhatsApp aberto com a mensagem pronta — confira e envie.");
   }
@@ -218,12 +286,11 @@ export function InadimplenciaClienteBadge({
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200 hover:bg-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-900"
-          title="Abrir WhatsApp com mensagem de cobrança pronta (sem API)"
+          title="Carrega os títulos e abre o WhatsApp com a mensagem completa"
           onClick={(e) => {
             e.stopPropagation();
-            if (!aberto) setAberto(true);
-            // Se o detalhe já estiver em cache, envia na hora; senão o diálogo carrega e o botão do rodapé envia.
-            if (detalhe.data || telefoneWhatsapp) abrirWhatsapp();
+            setAberto(true);
+            setWhatsappPendente(true);
           }}
         >
           <MessageCircle className="h-3 w-3" />
@@ -297,13 +364,19 @@ export function InadimplenciaClienteBadge({
                 ) : null}
               </div>
 
-              <p className="rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2 text-[11px] text-amber-950 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
-                Mensagem em tom leve: pede a regularização para seguir com os próximos
-                pedidos/envios e lista venda, data e NF de cada título.
-              </p>
+              {previewMensagem ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 dark:border-emerald-900 dark:bg-emerald-950/20">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+                    Prévia da mensagem no WhatsApp
+                  </p>
+                  <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap font-sans text-[11px] leading-relaxed text-foreground">
+                    {previewMensagem}
+                  </pre>
+                </div>
+              ) : null}
               <p className="rounded-md border border-dashed border-emerald-200 bg-emerald-50/60 px-2.5 py-2 text-[11px] text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-100">
-                O botão abre o WhatsApp Web/app com o contato e a mensagem já preenchidos.
-                Não usa API paga — o WhatsApp precisa estar logado; você só confere e envia.
+                O botão abre o WhatsApp Web/app com essa mensagem. Não usa API paga — o
+                WhatsApp precisa estar logado; você só confere e envia.
               </p>
             </div>
           ) : null}
@@ -333,11 +406,20 @@ export function InadimplenciaClienteBadge({
             <Button
               type="button"
               className="bg-emerald-600 text-white hover:bg-emerald-700"
-              disabled={detalhe.isLoading || !detalhe.data}
+              disabled={detalhe.isLoading || detalhe.isFetching || !detalhe.data}
               onClick={() => abrirWhatsapp()}
             >
-              <MessageCircle className="mr-1.5 h-4 w-4" />
-              WhatsApp cobrança
+              {detalhe.isLoading || detalhe.isFetching || whatsappPendente ? (
+                <>
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  Montando…
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="mr-1.5 h-4 w-4" />
+                  WhatsApp cobrança
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
