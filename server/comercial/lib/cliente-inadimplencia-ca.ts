@@ -13,6 +13,8 @@ export type TituloReceberCa = {
   descricao: string;
   dataVencimento: string | null;
   dataPagamento: string | null;
+  /** Data da venda / competência no Conta Azul */
+  dataCompetencia: string | null;
   status: string;
   valorTotal: number;
   valorAberto: number;
@@ -21,6 +23,11 @@ export type TituloReceberCa = {
   clienteNome: string | null;
   categoria: string | null;
   referencia: string | null;
+  /** Código de referência / nº da venda no evento */
+  numeroVenda: string | null;
+  /** Número da NF quando o Conta Azul expõe `fatura` */
+  numeroNf: string | null;
+  tipoNf: string | null;
 };
 
 export type ResumoInadimplenciaCliente = {
@@ -35,14 +42,23 @@ type ParcelaRaw = {
   descricao?: string;
   data_vencimento?: string;
   data_pagamento?: string;
+  data_competencia?: string;
   status?: string;
   total?: number;
   pago?: number;
   nao_pago?: number;
   cliente?: { id?: string; nome?: string };
   categorias?: Array<{ nome?: string }>;
-  referencia?: string;
+  referencia?: string | { id?: string; origem?: string; revisao?: string };
   indice?: number;
+  fatura?: { numero?: number | string; rps?: number; tipo_fatura?: string };
+  evento?: {
+    id?: string;
+    data_competencia?: string;
+    codigo_referencia?: string | number;
+    referencia?: { id?: string; origem?: string };
+  };
+  codigo_referencia?: string | number;
 };
 
 type BuscaResponse = { itens?: ParcelaRaw[]; itens_totais?: number };
@@ -59,17 +75,57 @@ function isoHoje(): string {
   return diaIsoAmericaSp(new Date());
 }
 
+function pickNumeroVenda(raw: ParcelaRaw): string | null {
+  const candidatos = [
+    raw.evento?.codigo_referencia,
+    raw.codigo_referencia,
+    typeof raw.referencia === "string" ? raw.referencia : raw.referencia?.id,
+    raw.indice,
+  ];
+  for (const c of candidatos) {
+    if (c == null) continue;
+    const s = String(c).trim();
+    if (s) return s;
+  }
+  return null;
+}
+
+function pickNf(raw: ParcelaRaw): { numeroNf: string | null; tipoNf: string | null } {
+  const fatura = raw.fatura;
+  if (!fatura) return { numeroNf: null, tipoNf: null };
+  const numero =
+    fatura.numero != null && String(fatura.numero).trim()
+      ? String(fatura.numero).trim()
+      : null;
+  const tipo = fatura.tipo_fatura?.trim() || null;
+  return { numeroNf: numero, tipoNf: tipo };
+}
+
 function mapParcela(raw: ParcelaRaw): TituloReceberCa | null {
   const id = String(raw.id ?? "").trim();
   if (!id) return null;
   const valorAberto = num(raw.nao_pago);
   const valorPago = num(raw.pago);
   const valorTotal = num(raw.total) || valorAberto + valorPago;
+  const { numeroNf, tipoNf } = pickNf(raw);
+  const dataCompetencia =
+    raw.data_competencia?.slice(0, 10) ??
+    raw.evento?.data_competencia?.slice(0, 10) ??
+    null;
+  const referenciaStr =
+    typeof raw.referencia === "string"
+      ? raw.referencia
+      : raw.referencia?.id != null
+        ? String(raw.referencia.id)
+        : raw.indice != null
+          ? String(raw.indice)
+          : null;
   return {
     id,
     descricao: String(raw.descricao ?? "").trim() || "Sem descrição",
     dataVencimento: raw.data_vencimento?.slice(0, 10) ?? null,
     dataPagamento: raw.data_pagamento?.slice(0, 10) ?? null,
+    dataCompetencia,
     status: String(raw.status ?? "").trim() || "DESCONHECIDO",
     valorTotal,
     valorAberto,
@@ -77,13 +133,44 @@ function mapParcela(raw: ParcelaRaw): TituloReceberCa | null {
     clienteId: raw.cliente?.id?.trim() || null,
     clienteNome: raw.cliente?.nome?.trim() || null,
     categoria: raw.categorias?.[0]?.nome?.trim() || null,
-    referencia:
-      raw.referencia != null
-        ? String(raw.referencia)
-        : raw.indice != null
-          ? String(raw.indice)
-          : null,
+    referencia: referenciaStr,
+    numeroVenda: pickNumeroVenda(raw),
+    numeroNf,
+    tipoNf,
   };
+}
+
+/** Detalhe da parcela (traz fatura/NF e código da venda quando a listagem não traz). */
+async function enriquecerTituloComDetalheParcela(
+  http: ReturnType<typeof createContaAzulHttp>,
+  titulo: TituloReceberCa,
+): Promise<TituloReceberCa> {
+  if (titulo.numeroNf && titulo.dataCompetencia && titulo.numeroVenda) {
+    return titulo;
+  }
+  try {
+    const raw = await contaAzulGet<ParcelaRaw>(
+      http,
+      `/v1/financeiro/eventos-financeiros/parcelas/${encodeURIComponent(titulo.id)}`,
+    );
+    const detalhado = mapParcela({ ...raw, id: raw.id ?? titulo.id });
+    if (!detalhado) return titulo;
+    return {
+      ...titulo,
+      descricao: detalhado.descricao || titulo.descricao,
+      dataCompetencia: detalhado.dataCompetencia ?? titulo.dataCompetencia,
+      numeroVenda: detalhado.numeroVenda ?? titulo.numeroVenda,
+      numeroNf: detalhado.numeroNf ?? titulo.numeroNf,
+      tipoNf: detalhado.tipoNf ?? titulo.tipoNf,
+      referencia: detalhado.referencia ?? titulo.referencia,
+    };
+  } catch (err) {
+    logger.warn(
+      { err, parcelaId: titulo.id },
+      "Conta Azul: falha ao detalhar parcela para cobrança WhatsApp",
+    );
+    return titulo;
+  }
 }
 
 function tituloEmAtraso(t: TituloReceberCa, hoje: string): boolean {
@@ -239,7 +326,18 @@ export async function detalheInadimplenciaCliente(
       select: { nome: true, telefoneWhatsapp: true },
     }),
   ]);
-  const titulos = atrasados.filter((t) => t.clienteId === id);
+  let titulos = atrasados.filter((t) => t.clienteId === id);
+
+  // Enriquece até 8 títulos com NF / data da venda (detalhe da parcela no CA).
+  if (titulos.length > 0) {
+    const http = await httpCa();
+    const alvo = titulos.slice(0, 8);
+    const enriquecidos = await Promise.all(
+      alvo.map((t) => enriquecerTituloComDetalheParcela(http, t)),
+    );
+    titulos = [...enriquecidos, ...titulos.slice(8)];
+  }
+
   const valorEmAberto =
     Math.round(titulos.reduce((s, t) => s + t.valorAberto, 0) * 100) / 100;
   return {

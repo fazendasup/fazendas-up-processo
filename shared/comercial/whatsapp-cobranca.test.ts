@@ -21,22 +21,32 @@ describe("normalizarTelefoneWhatsapp", () => {
 });
 
 describe("mensagem e url", () => {
-  it("monta texto e link wa.me", () => {
+  it("monta texto leve com pedido de regularização, venda, data e NF", () => {
     const msg = montarMensagemInadimplencia({
       clienteNome: "Mercado Teste",
       valorEmAberto: 150.5,
       quantidadeTitulos: 1,
       titulos: [
         {
-          descricao: "Venda 123",
+          descricao: "Venda hortifruti",
+          dataVenda: "2026-09-28",
           dataVencimento: "2026-10-01",
+          numeroVenda: "4521",
+          numeroNf: "8899",
+          tipoNf: "NFE",
           valorAberto: 150.5,
         },
       ],
     });
     expect(msg).toContain("Mercado Teste");
-    expect(msg).toContain("R$");
+    expect(msg).toContain("Tudo bem?");
+    expect(msg).toContain("próximos pedidos e envios");
+    expect(msg).toContain("Venda hortifruti");
+    expect(msg).toContain("nº venda 4521");
+    expect(msg).toContain("28/09/2026");
+    expect(msg).toContain("NF 8899 (NFE)");
     expect(msg).toContain("01/10/2026");
+    expect(msg.toLowerCase()).not.toContain("⚠️");
     const url = urlWhatsappMensagem("5511988887777", msg);
     expect(url.startsWith("https://wa.me/5511988887777?text=")).toBe(true);
   });

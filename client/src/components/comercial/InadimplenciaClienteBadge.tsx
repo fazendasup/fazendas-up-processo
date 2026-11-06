@@ -129,7 +129,11 @@ export function InadimplenciaClienteBadge({
       detalhe.data?.clienteNome || clienteNome || contaAzulCustomerId;
     const titulos = (detalhe.data?.titulos ?? []).map((t) => ({
       descricao: t.descricao,
+      dataVenda: t.dataCompetencia ?? null,
       dataVencimento: t.dataVencimento,
+      numeroNf: t.numeroNf ?? null,
+      tipoNf: t.tipoNf ?? null,
+      numeroVenda: t.numeroVenda ?? null,
       valorAberto: t.valorAberto,
     }));
     const result = abrirWhatsappCobranca({
@@ -273,7 +277,16 @@ export function InadimplenciaClienteBadge({
                       </p>
                     </div>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      Venc. {fmtDataBr(t.dataVencimento)} · {situacaoPt(t.status)} · Venda
+                      Data {fmtDataBr(t.dataCompetencia ?? t.dataVencimento)}
+                      {t.numeroVenda ? ` · Nº venda ${t.numeroVenda}` : ""}
+                      {" · "}
+                      NF{" "}
+                      {t.numeroNf
+                        ? `${t.numeroNf}${t.tipoNf ? ` (${t.tipoNf})` : ""}`
+                        : "não informada"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Venc. {fmtDataBr(t.dataVencimento)} · {situacaoPt(t.status)}
                     </p>
                   </div>
                 ))}
@@ -284,10 +297,13 @@ export function InadimplenciaClienteBadge({
                 ) : null}
               </div>
 
+              <p className="rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2 text-[11px] text-amber-950 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
+                Mensagem em tom leve: pede a regularização para seguir com os próximos
+                pedidos/envios e lista venda, data e NF de cada título.
+              </p>
               <p className="rounded-md border border-dashed border-emerald-200 bg-emerald-50/60 px-2.5 py-2 text-[11px] text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-100">
-                O botão abre o WhatsApp Web/app com o contato e a mensagem de cobrança
-                já preenchidos. Não usa API paga — o WhatsApp precisa estar logado; você
-                só confere e envia.
+                O botão abre o WhatsApp Web/app com o contato e a mensagem já preenchidos.
+                Não usa API paga — o WhatsApp precisa estar logado; você só confere e envia.
               </p>
             </div>
           ) : null}

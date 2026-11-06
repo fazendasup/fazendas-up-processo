@@ -4,8 +4,16 @@
  */
 
 export type TituloCobrancaMsg = {
+  /** Nome/descrição da venda no Conta Azul */
   descricao: string;
+  /** Data da venda / competência */
+  dataVenda?: string | null;
   dataVencimento?: string | null;
+  /** Número da NF (quando disponível no Conta Azul) */
+  numeroNf?: string | null;
+  tipoNf?: string | null;
+  /** Nº da venda / código de referência */
+  numeroVenda?: string | null;
   valorAberto: number;
 };
 
@@ -38,6 +46,12 @@ function fmtDataBr(iso: string | null | undefined): string {
   return `${d}/${m}/${y}`;
 }
 
+function rotuloNf(t: TituloCobrancaMsg): string {
+  if (!t.numeroNf) return "não informada no Conta Azul";
+  const tipo = t.tipoNf ? ` (${t.tipoNf})` : "";
+  return `${t.numeroNf}${tipo}`;
+}
+
 export function montarMensagemInadimplencia(input: {
   clienteNome: string;
   valorEmAberto: number;
@@ -48,32 +62,44 @@ export function montarMensagemInadimplencia(input: {
   const nome = input.clienteNome.trim() || "cliente";
   const remetente = (input.remetente ?? "Fazendas Up").trim();
   const linhas: string[] = [
-    `Olá, ${nome}!`,
+    `Olá, ${nome}! Tudo bem?`,
     "",
+    "Passando para alinhar um pontinho financeiro conosco 🙂",
     input.quantidadeTitulos <= 1
-      ? `Identificamos um título em atraso no valor de ${fmtMoneyBr(input.valorEmAberto)}.`
-      : `Identificamos ${input.quantidadeTitulos} títulos em atraso, totalizando ${fmtMoneyBr(input.valorEmAberto)}.`,
+      ? `Temos 1 título em aberto no valor de ${fmtMoneyBr(input.valorEmAberto)}.`
+      : `Temos ${input.quantidadeTitulos} títulos em aberto, somando ${fmtMoneyBr(input.valorEmAberto)}.`,
+    "",
+    "Para conseguirmos seguir com os próximos pedidos e envios com tranquilidade, pedimos a gentileza de regularizar esses valores.",
   ];
 
   const titulos = (input.titulos ?? []).filter(t => t.valorAberto > 0.009);
   if (titulos.length > 0) {
-    linhas.push("", "Detalhes:");
-    for (const t of titulos.slice(0, 8)) {
-      linhas.push(
-        `• ${t.descricao} — venc. ${fmtDataBr(t.dataVencimento)} — ${fmtMoneyBr(t.valorAberto)}`,
-      );
-    }
+    linhas.push("", "Segue o detalhe para facilitar:");
+    titulos.slice(0, 8).forEach((t, i) => {
+      const dataRef = t.dataVenda || t.dataVencimento;
+      const partes = [
+        `${i + 1}) ${t.descricao}`,
+        t.numeroVenda ? `nº venda ${t.numeroVenda}` : null,
+        `data ${fmtDataBr(dataRef)}`,
+        `NF ${rotuloNf(t)}`,
+        `venc. ${fmtDataBr(t.dataVencimento)}`,
+        fmtMoneyBr(t.valorAberto),
+      ].filter(Boolean);
+      linhas.push(partes.join(" · "));
+    });
     if (titulos.length > 8) {
-      linhas.push(`• … e mais ${titulos.length - 8} título(s)`);
+      linhas.push(`(+ ${titulos.length - 8} outro(s) título(s))`);
     }
   }
 
   linhas.push(
     "",
-    "Pedimos a gentileza de regularizar o pagamento o quanto antes.",
-    "Se já tiver quitado ou houver alguma dúvida, responda esta mensagem.",
+    "Assim que estiver em dia, seguimos normalmente com as próximas entregas.",
+    "Se já tiver pago, é só nos mandar o comprovante por aqui que a gente confere e libera.",
     "",
-    `Atenciosamente,`,
+    "Qualquer dúvida, estamos à disposição.",
+    "",
+    "Abraço,",
     remetente,
   );
 
