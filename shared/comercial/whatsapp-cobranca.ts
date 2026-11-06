@@ -64,7 +64,7 @@ export function montarMensagemInadimplencia(input: {
   const linhas: string[] = [
     `Olá, ${nome}! Tudo bem?`,
     "",
-    "Passando para alinhar um pontinho financeiro conosco 🙂",
+    "Passando para alinhar um pontinho financeiro conosco.",
     input.quantidadeTitulos <= 1
       ? `Temos 1 título em aberto no valor de ${fmtMoneyBr(input.valorEmAberto)}.`
       : `Temos ${input.quantidadeTitulos} títulos em aberto, somando ${fmtMoneyBr(input.valorEmAberto)}.`,
