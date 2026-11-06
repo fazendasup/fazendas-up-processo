@@ -1085,6 +1085,7 @@ export function Pedidos({
               <InadimplenciaClienteBadge
                 contaAzulCustomerId={String(grupo.contaAzulCustomerId)}
                 clienteNome={grupo.cliente?.nome}
+                telefoneWhatsapp={grupo.cliente?.telefoneWhatsapp}
                 resumo={mapaInadimplencia.get(
                   String(grupo.contaAzulCustomerId),
                 )}
@@ -1402,7 +1403,7 @@ export function Pedidos({
     const origemLabel = origem.toLocaleDateString("pt-BR");
     const destinoLabel = diaDate.toLocaleDateString("pt-BR");
     const ok = window.confirm(
-      `Trazer pedidos de ${origemLabel} para ${destinoLabel}?\n\nO histórico da semana anterior será mantido. Clientes que já têm pedido no dia selecionado serão ignorados para evitar duplicidade.`
+      `Trazer pedidos de ${origemLabel} para ${destinoLabel}?\n\nO histórico da semana anterior será mantido. O dia de entrega segue a regra comercial do cliente (não o dia excepcional da semana passada). Clientes que já têm pedido no dia de destino serão ignorados.`
     );
     if (!ok) return;
     copiarSemanaAnterior.mutate({ dia: diaDate });
@@ -2584,6 +2585,7 @@ export function Pedidos({
                                   <InadimplenciaClienteBadge
                                     contaAzulCustomerId={String(p.contaAzulCustomerId)}
                                     clienteNome={p.cliente?.nome}
+                                    telefoneWhatsapp={p.cliente?.telefoneWhatsapp}
                                     resumo={mapaInadimplencia.get(
                                       String(p.contaAzulCustomerId),
                                     )}

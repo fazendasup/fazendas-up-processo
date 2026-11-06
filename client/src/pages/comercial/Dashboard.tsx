@@ -115,6 +115,10 @@ export function Dashboard() {
     { refetchInterval: 60_000, staleTime: 30_000 },
   );
   const serie = trpc.comercial.dashboard.serieFaturamento.useQuery({ inicio, fim, bucket: "day" }, { staleTime: 30_000 });
+  const projecaoPedidos = trpc.comercial.dashboard.projecaoPedidos.useQuery(
+    undefined,
+    { refetchInterval: 60_000, staleTime: 30_000 },
+  );
 
   type TotaisComp = { bruto: number; frete: number; desconto: number; liquido: number };
 
@@ -236,6 +240,117 @@ export function Dashboard() {
       </motion.div>
 
       <div className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 md:px-6">
+        {/* Projeção operacional — pedidos do dia e da semana */}
+        <motion.section
+          data-tour="dash-projecao-pedidos"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className={`${fuGlass} ${fuGlassHover} border-violet-400/20 p-5 md:p-6`}
+        >
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/10">
+                <TrendingUp className="h-5 w-5 text-violet-700 dark:text-violet-300" />
+              </div>
+              <div>
+                <h2 className={`text-lg font-bold ${fuTitleGradient}`}>
+                  Projeção de venda (pedidos)
+                </h2>
+                <p className={`text-sm ${fuTextMuted}`}>
+                  Com base nos pedidos operacionais do dia e da semana (seg–dom)
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <TooltipInfo text="Soma qtd × preço praticado (item → tabela do cliente → catálogo) + taxa de entrega da regra, excluindo cancelados. Não é o faturamento Conta Azul." />
+              <Link
+                href={comercialPath("/pedidos")}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-violet-300/50 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-900 transition hover:bg-violet-100 dark:border-violet-400/30 dark:bg-violet-500/10 dark:text-violet-200 dark:hover:bg-violet-500/20"
+              >
+                Abrir pedidos <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {projecaoPedidos.isLoading ? (
+            <div className={`flex items-center gap-2 text-sm ${fuTextMuted}`}>
+              <Spinner /> Carregando projeção…
+            </div>
+          ) : projecaoPedidos.isError ? (
+            <p className="text-sm text-rose-700 dark:text-rose-300">
+              Não foi possível carregar a projeção dos pedidos.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className={`${fuGlassSm} border-violet-400/25 p-4`}>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-800 dark:text-violet-400/80">
+                    Hoje
+                  </div>
+                  <div className={`mt-1 text-3xl font-bold ${fuTextStrong} ${fuStat}`}>
+                    {fmtMoney(projecaoPedidos.data?.hoje.valor ?? 0)}
+                  </div>
+                  <div className={`mt-1 text-xs ${fuTextMuted}`}>
+                    {projecaoPedidos.data?.hoje.pedidos ?? 0} pedido(s) ·{" "}
+                    {projecaoPedidos.data?.hoje.clientes ?? 0} cliente(s)
+                    {(projecaoPedidos.data?.hoje.valorFrete ?? 0) > 0
+                      ? ` · frete ${fmtMoney(projecaoPedidos.data!.hoje.valorFrete)}`
+                      : ""}
+                  </div>
+                </div>
+                <div className={`${fuGlassSm} border-fuchsia-400/25 p-4`}>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-800 dark:text-fuchsia-400/80">
+                    Semana{" "}
+                    {projecaoPedidos.data?.semana.inicio && projecaoPedidos.data?.semana.fim
+                      ? `(${projecaoPedidos.data.semana.inicio.slice(8)}/${projecaoPedidos.data.semana.inicio.slice(5, 7)}–${projecaoPedidos.data.semana.fim.slice(8)}/${projecaoPedidos.data.semana.fim.slice(5, 7)})`
+                      : ""}
+                  </div>
+                  <div className={`mt-1 text-3xl font-bold ${fuTextStrong} ${fuStat}`}>
+                    {fmtMoney(projecaoPedidos.data?.semana.valor ?? 0)}
+                  </div>
+                  <div className={`mt-1 text-xs ${fuTextMuted}`}>
+                    {projecaoPedidos.data?.semana.pedidos ?? 0} pedido(s) ·{" "}
+                    {projecaoPedidos.data?.semana.clientes ?? 0} cliente(s)
+                    {(projecaoPedidos.data?.semana.semPreco ?? 0) > 0
+                      ? ` · ${projecaoPedidos.data!.semana.semPreco} linha(s) sem preço`
+                      : ""}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                {(projecaoPedidos.data?.porDia ?? []).map((d) => {
+                  const labels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+                  const dow = new Date(`${d.dia}T12:00:00-03:00`).getDay();
+                  const isHoje = d.dia === projecaoPedidos.data?.hojeIso;
+                  return (
+                    <div
+                      key={d.dia}
+                      className={`rounded-xl border px-2.5 py-2 ${
+                        isHoje
+                          ? "border-violet-500/50 bg-violet-50 dark:border-violet-400/40 dark:bg-violet-500/15"
+                          : "border-slate-200/80 bg-slate-50/80 dark:border-white/10 dark:bg-black/20"
+                      }`}
+                    >
+                      <div className={`text-[10px] font-bold uppercase tracking-wide ${fuTextMuted}`}>
+                        {labels[dow]}
+                        {isHoje ? " · hoje" : ""}
+                      </div>
+                      <div className={`mt-0.5 text-sm font-bold ${fuTextStrong} ${fuStat}`}>
+                        {fmtMoney(d.valor)}
+                      </div>
+                      <div className={`text-[10px] ${fuTextMuted}`}>
+                        {d.pedidos} ped. · {d.clientes} cli.
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </motion.section>
+
         {/* Linha principal: 3 colunas */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Card 1 — KPIs principais (verde) */}

@@ -285,6 +285,27 @@ function diaSemana(d: Date): number {
   return d.getDay();
 }
 
+/** Dias de entrega da regra: getDay() 0=Dom … 6=Sáb. */
+function normalizarDiasEntregaRegra(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value
+        .map(Number)
+        .filter(d => Number.isInteger(d) && d >= 0 && d <= 6),
+    ),
+  ].sort((a, b) => a - b);
+}
+
+/**
+ * Data na semana operacional (seg→dom) para um getDay().
+ * `semanaInicio` deve ser a segunda 00:00 da semana destino.
+ */
+function dataNaSemanaPorDow(semanaInicio: Date, dow: number): Date {
+  const offset = (dow + 6) % 7; // seg=0 … dom=6
+  return inicioDia(adicionarDias(semanaInicio, offset));
+}
+
 function money(v: unknown): number | null {
   if (v == null) return null;
   const n = Number(v);
@@ -1670,11 +1691,21 @@ export const pedidosRouter = router({
           select: { contaAzulCustomerId: true, dataEntrega: true },
         }),
         ctx.prisma!.regraComercialCliente.findMany({
-          select: { contaAzulCustomerId: true, tipoVendaPadrao: true },
+          select: {
+            contaAzulCustomerId: true,
+            tipoVendaPadrao: true,
+            diasEntrega: true,
+          },
         }),
       ]);
       const tipoVendaPadraoPorCliente = new Map(
         regrasOrigem.map(regra => [regra.contaAzulCustomerId, regra.tipoVendaPadrao])
+      );
+      const diasEntregaPorCliente = new Map(
+        regrasOrigem.map(regra => [
+          regra.contaAzulCustomerId,
+          normalizarDiasEntregaRegra(regra.diasEntrega),
+        ]),
       );
 
       if (pedidosOrigem.length === 0) {
@@ -1696,6 +1727,8 @@ export const pedidosRouter = router({
 
       // Um pedido por transação: evita undo log gigante. Limpeza pesada fica no endpoint /liberar.
       const clientesJaNoDestino = new Set(destinosJaExistentes);
+      /** Índice do pedido elegível por cliente — mapeia 1º/2º pedido → 1º/2º dia da regra. */
+      const indicePedidoPorCliente = new Map<string, number>();
       let criados = 0;
       let ignorados = 0;
       let falhasEspaco = 0;
@@ -1708,13 +1741,31 @@ export const pedidosRouter = router({
           ignorados++;
           continue;
         }
-        const dataDestino = inicioDia(adicionarDias(pedidoOrigem.dataEntrega, 7));
-        const keyDestino = destinoKey(pedidoOrigem.contaAzulCustomerId, dataDestino);
-        if (clientesJaNoDestino.has(keyDestino)) {
+        if (pedidoOrigem.itens.length === 0) {
           ignorados++;
           continue;
         }
-        if (pedidoOrigem.itens.length === 0) {
+
+        // Dia destino: regra comercial (diasEntrega). Exceção da semana anterior não conta.
+        // Sem regra de dias → fallback +7 (mesmo dia da semana do pedido origem).
+        const diasRegra =
+          diasEntregaPorCliente.get(pedidoOrigem.contaAzulCustomerId) ?? [];
+        let dataDestino: Date;
+        if (diasRegra.length > 0) {
+          const idx =
+            indicePedidoPorCliente.get(pedidoOrigem.contaAzulCustomerId) ?? 0;
+          indicePedidoPorCliente.set(
+            pedidoOrigem.contaAzulCustomerId,
+            idx + 1,
+          );
+          const dow = diasRegra[Math.min(idx, diasRegra.length - 1)]!;
+          dataDestino = dataNaSemanaPorDow(semanaDestinoInicio, dow);
+        } else {
+          dataDestino = inicioDia(adicionarDias(pedidoOrigem.dataEntrega, 7));
+        }
+
+        const keyDestino = destinoKey(pedidoOrigem.contaAzulCustomerId, dataDestino);
+        if (clientesJaNoDestino.has(keyDestino)) {
           ignorados++;
           continue;
         }

@@ -18,8 +18,14 @@ import {
 import { composicaoGerencialDoPedido, mapDescontoBoletoPorClienteId } from "../lib/valor-gerencial.js";
 import {
   diaIsoAmericaSp,
+  inicioDiaAmericaSp,
   mesIsoAmericaSp,
 } from "@shared/comercial/periodo-america-sp";
+import { fimSemana, inicioSemana } from "../lib/semana.js";
+import {
+  agregarProjecaoPedidos,
+  resumoFaixa,
+} from "../lib/projecao-pedidos-operacionais.js";
 import { router, comercialProcedure } from "../../_core/trpc";
 
 function pedidoNoMesCalendarioSp(
@@ -266,6 +272,125 @@ export const dashboardRouter = router({
           cliente: o.cliente,
         })),
         ultimasExecucoes,
+      };
+    }),
+
+  /**
+   * Projeção de venda do dia e da semana operacional (seg–dom),
+   * com base nos pedidos da página Pedidos (não Conta Azul).
+   */
+  projecaoPedidos: comercialProcedure
+    .input(
+      z
+        .object({
+          /** Referência do dia (padrão: agora). */
+          dia: z.coerce.date().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const ref = input?.dia ?? new Date();
+      const hojeIso = diaIsoAmericaSp(ref);
+      const semanaIni = inicioSemana(inicioDiaAmericaSp(hojeIso));
+      const semanaFim = fimSemana(semanaIni);
+
+      const pedidos = await ctx.prisma!.pedidoOperacional.findMany({
+        where: {
+          dataEntrega: { gte: semanaIni, lte: semanaFim },
+          status: { not: "CANCELADO" },
+        },
+        select: {
+          id: true,
+          dataEntrega: true,
+          status: true,
+          freteCortesia: true,
+          contaAzulCustomerId: true,
+          itens: {
+            select: {
+              produtoId: true,
+              quantidade: true,
+              precoUnit: true,
+              precoEspecial: true,
+              produto: { select: { precoBase: true } },
+            },
+          },
+        },
+        orderBy: [{ dataEntrega: "asc" }, { criadoEm: "asc" }],
+      });
+
+      const caIds = [...new Set(pedidos.map(p => p.contaAzulCustomerId))];
+      const regras = caIds.length
+        ? await ctx.prisma!.regraComercialCliente.findMany({
+            where: { contaAzulCustomerId: { in: caIds } },
+            select: {
+              contaAzulCustomerId: true,
+              cobraTaxaEntrega: true,
+              valorTaxaEntrega: true,
+              precosEspeciais: { select: { produtoId: true, preco: true } },
+            },
+          })
+        : [];
+      const regraPorCliente = new Map(
+        regras.map(r => [r.contaAzulCustomerId, r]),
+      );
+
+      const normalizados = pedidos.map(p => ({
+        id: p.id,
+        dataEntrega: p.dataEntrega,
+        status: p.status,
+        freteCortesia: p.freteCortesia,
+        contaAzulCustomerId: p.contaAzulCustomerId,
+        itens: p.itens,
+        regra: regraPorCliente.get(p.contaAzulCustomerId) ?? null,
+      }));
+
+      const { porDia, clientesPorDia } = agregarProjecaoPedidos(normalizados);
+
+      const diasSemana: string[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(semanaIni);
+        d.setDate(d.getDate() + i);
+        diasSemana.push(diaIsoAmericaSp(d));
+      }
+
+      const hoje = porDia.get(hojeIso) ?? {
+        dia: hojeIso,
+        pedidos: 0,
+        clientes: 0,
+        itens: 0,
+        unidades: 0,
+        valorItens: 0,
+        valorFrete: 0,
+        valor: 0,
+        semPreco: 0,
+      };
+      const semana = resumoFaixa(porDia, clientesPorDia, diasSemana);
+      const porDiaLista = diasSemana.map(
+        dia =>
+          porDia.get(dia) ?? {
+            dia,
+            pedidos: 0,
+            clientes: 0,
+            itens: 0,
+            unidades: 0,
+            valorItens: 0,
+            valorFrete: 0,
+            valor: 0,
+            semPreco: 0,
+          },
+      );
+
+      return {
+        geradoEm: new Date().toISOString(),
+        timezone: "America/Sao_Paulo",
+        hojeIso,
+        semana: {
+          inicio: diaIsoAmericaSp(semanaIni),
+          fim: diaIsoAmericaSp(semanaFim),
+          ...semana,
+        },
+        hoje,
+        porDia: porDiaLista,
       };
     }),
 

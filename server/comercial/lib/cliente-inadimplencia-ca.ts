@@ -225,18 +225,27 @@ export async function detalheInadimplenciaCliente(
 ): Promise<{
   contaAzulCustomerId: string;
   clienteNome: string | null;
+  telefoneWhatsapp: string | null;
   inadimplente: boolean;
   valorEmAberto: number;
   titulos: TituloReceberCa[];
 }> {
   const id = contaAzulCustomerId.trim();
-  const atrasados = await listarTitulosEmAtrasoCa();
+  const prisma = getComercialPrisma();
+  const [atrasados, clienteDb] = await Promise.all([
+    listarTitulosEmAtrasoCa(),
+    prisma.cliente.findUnique({
+      where: { externalId: id },
+      select: { nome: true, telefoneWhatsapp: true },
+    }),
+  ]);
   const titulos = atrasados.filter((t) => t.clienteId === id);
   const valorEmAberto =
     Math.round(titulos.reduce((s, t) => s + t.valorAberto, 0) * 100) / 100;
   return {
     contaAzulCustomerId: id,
-    clienteNome: titulos[0]?.clienteNome ?? null,
+    clienteNome: clienteDb?.nome ?? titulos[0]?.clienteNome ?? null,
+    telefoneWhatsapp: clienteDb?.telefoneWhatsapp?.trim() || null,
     inadimplente: titulos.length > 0,
     valorEmAberto,
     titulos,

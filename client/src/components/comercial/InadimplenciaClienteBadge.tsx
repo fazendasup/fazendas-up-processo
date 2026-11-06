@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Download, Loader2 } from "lucide-react";
+import { AlertTriangle, Download, Loader2, MessageCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { exportTableDocument } from "@/lib/exportTableDocument";
+import {
+  abrirWhatsappCobranca,
+  normalizarTelefoneWhatsapp,
+} from "@shared/comercial/whatsapp-cobranca";
 
 function fmtMoney(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -96,10 +100,13 @@ export function useInadimplenciaResumo(contaAzulCustomerIds: string[]) {
 export function InadimplenciaClienteBadge({
   contaAzulCustomerId,
   clienteNome,
+  telefoneWhatsapp,
   resumo,
 }: {
   contaAzulCustomerId: string;
   clienteNome?: string | null;
+  /** Telefone do cadastro (se já veio no pedido). Senão usa o do detalhe CA. */
+  telefoneWhatsapp?: string | null;
   resumo?: {
     inadimplente: boolean;
     quantidadeTitulos: number;
@@ -114,6 +121,33 @@ export function InadimplenciaClienteBadge({
   const [baixandoPdf, setBaixandoPdf] = useState(false);
 
   if (!resumo?.inadimplente) return null;
+
+  function abrirWhatsapp() {
+    const telefone =
+      detalhe.data?.telefoneWhatsapp ?? telefoneWhatsapp ?? null;
+    const nome =
+      detalhe.data?.clienteNome || clienteNome || contaAzulCustomerId;
+    const titulos = (detalhe.data?.titulos ?? []).map((t) => ({
+      descricao: t.descricao,
+      dataVencimento: t.dataVencimento,
+      valorAberto: t.valorAberto,
+    }));
+    const result = abrirWhatsappCobranca({
+      telefone,
+      clienteNome: nome,
+      valorEmAberto: detalhe.data?.valorEmAberto ?? resumo!.valorEmAberto,
+      quantidadeTitulos:
+        detalhe.data?.titulos.length ?? resumo!.quantidadeTitulos,
+      titulos: titulos.length > 0 ? titulos : undefined,
+    });
+    if (!result.ok) {
+      toast.error(result.erro);
+      if (!aberto) setAberto(true);
+      return;
+    }
+    window.open(result.url, "_blank", "noopener,noreferrer");
+    toast.message("WhatsApp aberto com a mensagem pronta — confira e envie.");
+  }
 
   function baixarPdfEmAberto() {
     const titulos = (detalhe.data?.titulos ?? []).filter((t) => t.valorAberto > 0.009);
@@ -161,17 +195,37 @@ export function InadimplenciaClienteBadge({
     }
   }
 
+  const telefoneEfetivo =
+    detalhe.data?.telefoneWhatsapp ?? telefoneWhatsapp ?? null;
+  const temTelefone = Boolean(normalizarTelefoneWhatsapp(telefoneEfetivo));
+
   return (
     <>
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-red-800 ring-1 ring-red-200 hover:bg-red-200/80 dark:bg-red-950/50 dark:text-red-200 dark:ring-red-900"
-        title={`${resumo.quantidadeTitulos} título(s) · ${fmtMoney(resumo.valorEmAberto)}`}
-        onClick={() => setAberto(true)}
-      >
-        <AlertTriangle className="h-3 w-3" />
-        Inadimplente
-      </button>
+      <span className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-red-800 ring-1 ring-red-200 hover:bg-red-200/80 dark:bg-red-950/50 dark:text-red-200 dark:ring-red-900"
+          title={`${resumo.quantidadeTitulos} título(s) · ${fmtMoney(resumo.valorEmAberto)}`}
+          onClick={() => setAberto(true)}
+        >
+          <AlertTriangle className="h-3 w-3" />
+          Inadimplente
+        </button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200 hover:bg-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-900"
+          title="Abrir WhatsApp com mensagem de cobrança pronta (sem API)"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!aberto) setAberto(true);
+            // Se o detalhe já estiver em cache, envia na hora; senão o diálogo carrega e o botão do rodapé envia.
+            if (detalhe.data || telefoneWhatsapp) abrirWhatsapp();
+          }}
+        >
+          <MessageCircle className="h-3 w-3" />
+          WhatsApp
+        </button>
+      </span>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto sm:max-w-xl">
@@ -198,6 +252,12 @@ export function InadimplenciaClienteBadge({
                   {detalhe.data.titulos.length} título(s) em atraso ·{" "}
                   {fmtMoney(detalhe.data.valorEmAberto)}
                 </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  WhatsApp:{" "}
+                  {temTelefone
+                    ? telefoneEfetivo
+                    : "não cadastrado — preencha telefoneWhatsapp no cliente ou sincronize o Conta Azul"}
+                </p>
               </div>
 
               <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -223,15 +283,22 @@ export function InadimplenciaClienteBadge({
                   </p>
                 ) : null}
               </div>
+
+              <p className="rounded-md border border-dashed border-emerald-200 bg-emerald-50/60 px-2.5 py-2 text-[11px] text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-100">
+                O botão abre o WhatsApp Web/app com o contato e a mensagem de cobrança
+                já preenchidos. Não usa API paga — o WhatsApp precisa estar logado; você
+                só confere e envia.
+              </p>
             </div>
           ) : null}
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
               Fechar
             </Button>
             <Button
               type="button"
+              variant="outline"
               disabled={baixandoPdf || !detalhe.data || detalhe.data.titulos.length === 0}
               onClick={() => baixarPdfEmAberto()}
             >
@@ -243,9 +310,18 @@ export function InadimplenciaClienteBadge({
               ) : (
                 <>
                   <Download className="mr-1.5 h-4 w-4" />
-                  Baixar PDF em aberto
+                  Baixar PDF
                 </>
               )}
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              disabled={detalhe.isLoading || !detalhe.data}
+              onClick={() => abrirWhatsapp()}
+            >
+              <MessageCircle className="mr-1.5 h-4 w-4" />
+              WhatsApp cobrança
             </Button>
           </DialogFooter>
         </DialogContent>
