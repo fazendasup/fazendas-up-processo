@@ -210,8 +210,6 @@ function HojePlanoAcaoRow({
   avancarBusy,
   /** Na agenda do dia: só plantio/germinação; produção e colheita ficam nas torres. */
   agendaSomentePlantio = false,
-  /** Chamado ao iniciar germinação a partir do modal da agenda (fecha e segue o fluxo na operação). */
-  fecharAgendaAoIniciarGerminacao,
 }: {
   plano: PlanoAcaoHoje;
   hojeYmd: string;
@@ -222,7 +220,6 @@ function HojePlanoAcaoRow({
   onAvancar: (id: number, novoStatus: 'em_germinacao' | 'em_producao' | 'colhido') => void;
   avancarBusy: boolean;
   agendaSomentePlantio?: boolean;
-  fecharAgendaAoIniciarGerminacao?: () => void;
 }) {
   const status = plano.status;
   const stLabel = STATUS_PLANO_LABEL[status] || status;
@@ -267,10 +264,7 @@ function HojePlanoAcaoRow({
                 size="sm"
                 className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700"
                 disabled={avancarBusy}
-                onClick={() => {
-                  fecharAgendaAoIniciarGerminacao?.();
-                  onAvancar(plano.id, 'em_germinacao');
-                }}
+                onClick={() => onAvancar(plano.id, 'em_germinacao')}
               >
                 <Sprout className="w-3 h-3 mr-1" />
                 Iniciar germinação
@@ -920,12 +914,6 @@ export function HojeAgendaPanel({
     deleteTarefa.mutate({ id });
   };
 
-  const fecharAgendaAoIniciarGerminacaoPlantio = () => {
-    onCloseModal();
-    void utils.fazenda.loadAll.invalidate();
-    void refetchFazenda();
-  };
-
   const handleCreate = () => {
     setFormError('');
     if (!newTitulo.trim()) { setFormError('Título é obrigatório'); return; }
@@ -1148,7 +1136,6 @@ export function HojeAgendaPanel({
                                     hojeYmd={hojeYmdOperacao}
                                     podeOperarPlano={podeOperarPlano}
                                     agendaSomentePlantio
-                                    fecharAgendaAoIniciarGerminacao={fecharAgendaAoIniciarGerminacaoPlantio}
                                     salvarTaxaEMarcarPronta={salvarTaxaEMarcarProntaHoje}
                                     comboBusy={
                                       registrarContagemPlano.isPending || marcarGerminacaoProntaPlano.isPending
@@ -1177,7 +1164,6 @@ export function HojeAgendaPanel({
                                     hojeYmd={hojeYmdOperacao}
                                     podeOperarPlano={podeOperarPlano}
                                     agendaSomentePlantio
-                                    fecharAgendaAoIniciarGerminacao={fecharAgendaAoIniciarGerminacaoPlantio}
                                     salvarTaxaEMarcarPronta={salvarTaxaEMarcarProntaHoje}
                                     comboBusy={
                                       registrarContagemPlano.isPending || marcarGerminacaoProntaPlano.isPending
