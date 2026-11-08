@@ -297,4 +297,27 @@ export const ADMIN_OPERATION_TOOLS: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "preparar_encaminhar_alteracao_sistema",
+      description:
+        "Admin ONLY: quando o usuário pede mudança de código/UI do sistema (botão, tela, regra, layout) que o assistente operacional NÃO executa no MySQL. Enfileira o pedido para o Cursor (ERP FUP) aplicar no repositório. NÃO use para plantio, torres, tarefas ou cadastro operacional — use as outras ferramentas. Inclua o pedido claro e, se útil, trecho da conversa.",
+      parameters: {
+        type: "object",
+        properties: {
+          pedido: {
+            type: "string",
+            description: "Descrição objetiva da alteração de sistema a implementar no código.",
+          },
+          contexto_conversacao: {
+            type: "string",
+            description: "Resumo opcional das últimas mensagens relevantes.",
+          },
+        },
+        required: ["pedido"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];

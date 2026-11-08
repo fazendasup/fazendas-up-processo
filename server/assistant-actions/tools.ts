@@ -15,6 +15,7 @@ import {
   previewCriarTorre,
   previewCriarVariedade,
   previewDeslocarDatasPlanosVariedade,
+  previewEncaminharAlteracaoSistema,
   previewToggleTorreAtiva,
   previewUpsertFaseConfig,
 } from "./preview-admin";
@@ -801,6 +802,8 @@ export async function runAssistantToolCall(
         return pushPreview(pending, await previewAtualizarBancada(ctx, args));
       case "preparar_upsert_fase_config":
         return pushPreview(pending, await previewUpsertFaseConfig(ctx, args));
+      case "preparar_encaminhar_alteracao_sistema":
+        return pushPreview(pending, await previewEncaminharAlteracaoSistema(ctx, args));
       default:
         return JSON.stringify({ ok: false, error: `Ferramenta desconhecida: ${name}` });
     }

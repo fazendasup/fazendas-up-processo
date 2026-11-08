@@ -252,6 +252,18 @@ async function startServer() {
       e instanceof Error ? e.message : e,
     );
   }
+  try {
+    const { registerCursorBridgeRoutes } = await import("../cursorBridgeRoutes");
+    app.use("/api/cursor-bridge", apiLimiter);
+    app.use("/api/cursor-bridge", jsonParser);
+    registerCursorBridgeRoutes(app);
+    console.log("[Server] Rotas /api/cursor-bridge (pedidos Cursor) registradas.");
+  } catch (e) {
+    console.warn(
+      "[Server] Cursor bridge não carregado:",
+      e instanceof Error ? e.message : e,
+    );
+  }
 
   /** Site (HTML/JS/CSS) já disponível durante a inicialização da BD — evita página em branco / 404. */
   if (process.env.NODE_ENV !== "development") {

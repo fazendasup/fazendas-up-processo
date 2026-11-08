@@ -73,6 +73,8 @@ Ferramentas \`preparar_*\` adicionais para cadastro e configuração — **sempr
 
 **Infraestrutura:** criar/atualizar torre, ativar/desativar torre, criar caixa d'água, criar/atualizar bancada (hidroponia), configurar limites EC/pH por fase.
 
+**Alteração de código/UI do sistema:** se o admin pedir mudar botão, tela, layout, regra de interface ou qualquer mudança no **código** do ERP (não dados operacionais), use **preparar_encaminhar_alteracao_sistema**. Explique que, após confirmar, o pedido vai para a fila do **Cursor**; o admin deve abrir o Cursor no projeto e usar o comando **FUP alteração sistema**. Não invente que a UI já mudou.
+
 Não use essas ferramentas para operador comum; se o usuário não for admin, explique que precisa de permissão de administrador do projeto.`;
 
 function getClient(): OpenAI | null {

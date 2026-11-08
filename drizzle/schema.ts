@@ -1560,3 +1560,28 @@ export const bpfRevisoes = mysqlTable("bpf_revisoes", {
   userName: varchar("userName", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+/**
+ * Pedidos de alteração de código/UI feitos por admin no Assistente.
+ * O Cursor (skill/comando FUP) consome via /api/cursor-bridge.
+ */
+export const solicitacoesAlteracaoSistema = mysqlTable("solicitacoes_alteracao_sistema", {
+  id: int("id").autoincrement().primaryKey(),
+  projetoId: int("projetoId").notNull(),
+  solicitadoPorId: int("solicitadoPorId").notNull(),
+  solicitadoPorNome: varchar("solicitadoPorNome", { length: 255 }),
+  pedido: text("pedido").notNull(),
+  contextoConversacao: text("contextoConversacao"),
+  /** pendente | em_execucao | concluida | falhou | cancelada */
+  status: varchar("status", { length: 32 }).notNull().default("pendente"),
+  resultado: text("resultado"),
+  erro: text("erro"),
+  commitSha: varchar("commitSha", { length: 64 }),
+  claimedAt: timestamp("claimedAt"),
+  concluidoAt: timestamp("concluidoAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SolicitacaoAlteracaoSistema = typeof solicitacoesAlteracaoSistema.$inferSelect;
+export type InsertSolicitacaoAlteracaoSistema = typeof solicitacoesAlteracaoSistema.$inferInsert;

@@ -96,6 +96,12 @@ export const ENV = {
   openAiResponsesModel: (process.env.OPENAI_RESPONSES_MODEL ?? "gpt-5.4-mini").trim() || "gpt-5.4-mini",
 
   /**
+   * Segredo partilhado entre o app e o Cursor (skill FUP alteração sistema).
+   * Header: `Authorization: Bearer …` ou `X-Cursor-Bridge-Secret`.
+   */
+  cursorBridgeSecret: (process.env.CURSOR_BRIDGE_SECRET ?? "").trim(),
+
+  /**
    * Web Push (VAPID). Sem chaves o envio fica desligado; o UI mostra “não configurado”.
    * Gerar: `npx web-push generate-vapid-keys`
    */

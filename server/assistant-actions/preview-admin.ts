@@ -341,3 +341,25 @@ export async function previewUpsertFaseConfig(
     icon: String(args.icon ?? "leaf"),
   });
 }
+
+export async function previewEncaminharAlteracaoSistema(
+  ctx: AssistantPreviewCtx,
+  args: Record<string, unknown>,
+): Promise<{ action: PendingAssistantAction } | { error: string }> {
+  const denied = gate(ctx);
+  if (denied) return denied;
+  const pedido = String(args.pedido ?? "").trim();
+  if (pedido.length < 8) {
+    return { error: "Descreva o pedido de alteração com mais detalhe (mín. 8 caracteres)." };
+  }
+  const contexto =
+    typeof args.contexto_conversacao === "string" ? args.contexto_conversacao.trim() : undefined;
+  const preview = pedido.length > 280 ? `${pedido.slice(0, 277)}…` : pedido;
+  const summary =
+    `Encaminhar ao **Cursor (ERP FUP)** alteração de sistema:\n- ${preview}\n` +
+    `Após confirmar, o pedido fica na fila. No Cursor use o comando/skill **FUP alteração sistema**.`;
+  return adminAction("encaminhar_alteracao_sistema", summary, {
+    pedido,
+    contextoConversacao: contexto || undefined,
+  });
+}

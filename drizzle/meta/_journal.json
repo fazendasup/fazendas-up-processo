@@ -1,279 +1,286 @@
-{
-  "version": "7",
-  "dialect": "mysql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1774545320097,
-      "tag": "0000_watery_captain_stacy",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1774545702969,
-      "tag": "0001_perfect_justice",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1774549256233,
-      "tag": "0002_demonic_greymalkin",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1774551394326,
-      "tag": "0003_numerous_polaris",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1774630961860,
-      "tag": "0004_concerned_crystal",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1774633454907,
-      "tag": "0005_gigantic_sauron",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "5",
-      "when": 1774720301655,
-      "tag": "0006_happy_falcon",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "5",
-      "when": 1774823155937,
-      "tag": "0007_thick_iron_lad",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "5",
-      "when": 1774906877365,
-      "tag": "0008_large_the_order",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "5",
-      "when": 1775000000000,
-      "tag": "0009_planos_germinacao_cols",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "5",
-      "when": 1775100000000,
-      "tag": "0011_receitas_ph_temp_umidade_luz",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "5",
-      "when": 1775200000000,
-      "tag": "0013_estoque_itens",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "5",
-      "when": 1775300000000,
-      "tag": "0014_multi_projetos",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "5",
-      "when": 1775400000000,
-      "tag": "0016_bancadas_fase_slug",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "5",
-      "when": 1775500000000,
-      "tag": "0017_bancadas_compartilhada",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "5",
-      "when": 1775600000000,
-      "tag": "0018_bancadas_plantio",
-      "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "5",
-      "when": 1775700000000,
-      "tag": "0019_projetos_microverdes",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "5",
-      "when": 1775800000000,
-      "tag": "0020_perfis_cultivo_status",
-      "breakpoints": true
-    },
-    {
-      "idx": 18,
-      "version": "5",
-      "when": 1775900000000,
-      "tag": "0021_perfis_receita_id",
-      "breakpoints": true
-    },
-    {
-      "idx": 19,
-      "version": "5",
-      "when": 1776000000000,
-      "tag": "0022_vision_cultivo",
-      "breakpoints": true
-    },
-    {
-      "idx": 20,
-      "version": "5",
-      "when": 1776100000000,
-      "tag": "0023_projeto_modulos",
-      "breakpoints": true
-    },
-    {
-      "idx": 21,
-      "version": "5",
-      "when": 1776200000000,
-      "tag": "0024_users_role_platform_admin",
-      "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "5",
-      "when": 1776300000000,
-      "tag": "0025_estoque_kg_l_embalagem",
-      "breakpoints": true
-    },
-    {
-      "idx": 23,
-      "version": "5",
-      "when": 1776400000000,
-      "tag": "0026_torres_numero_estrutura",
-      "breakpoints": true
-    },
-    {
-      "idx": 25,
-      "version": "5",
-      "when": 1776600000000,
-      "tag": "0028_custos_producao_itens",
-      "breakpoints": true
-    },
-    {
-      "idx": 26,
-      "version": "5",
-      "when": 1776700000000,
-      "tag": "0029_projeto_modulo_custos_producao",
-      "breakpoints": true
-    },
-    {
-      "idx": 27,
-      "version": "5",
-      "when": 1776800000000,
-      "tag": "0030_custos_producao_rateio",
-      "breakpoints": true
-    },
-    {
-      "idx": 28,
-      "version": "5",
-      "when": 1776900000000,
-      "tag": "0031_custos_produtos_fichas",
-      "breakpoints": true
-    },
-    {
-      "idx": 39,
-      "version": "5",
-      "when": 1777100000000,
-      "tag": "0039_custos_rentabilidade",
-      "breakpoints": true
-    },
-    {
-      "idx": 40,
-      "version": "5",
-      "when": 1777200000000,
-      "tag": "0040_mo_equipes_etapas_tempo",
-      "breakpoints": true
-    },
-    {
-      "idx": 41,
-      "version": "5",
-      "when": 1777300000000,
-      "tag": "0041_rentabilidade_overhead_itens",
-      "breakpoints": true
-    },
-    {
-      "idx": 42,
-      "version": "5",
-      "when": 1777400000000,
-      "tag": "0042_mo_equipes_prolabore_cargo",
-      "breakpoints": true
-    },
-    {
-      "idx": 43,
-      "version": "5",
-      "when": 1777500000000,
-      "tag": "0043_mo_equipes_liquido_config",
-      "breakpoints": true
-    },
-    {
-      "idx": 44,
-      "version": "5",
-      "when": 1777600000000,
-      "tag": "0044_custos_produtos_processo_config",
-      "breakpoints": true
-    },
-    {
-      "idx": 45,
-      "version": "5",
-      "when": 1777700000000,
-      "tag": "0045_custos_produtos_comercial_map",
-      "breakpoints": true
-    },
-    {
-      "idx": 46,
-      "version": "5",
-      "when": 1777800000000,
-      "tag": "0046_fichas_modo_compra_mp",
-      "breakpoints": true
-    },
-    {
-      "idx": 47,
-      "version": "5",
-      "when": 1777900000000,
-      "tag": "0047_comercial_map_modo_compra_mp",
-      "breakpoints": true
-    },
-    {
-      "idx": 48,
-      "version": "5",
-      "when": 1778000000000,
-      "tag": "0048_processo_linha_json",
-      "breakpoints": true
-    },
-    {
-      "idx": 49,
-      "version": "5",
-      "when": 1778100000000,
-      "tag": "0049_processo_modelos",
-      "breakpoints": true
-    }
-  ]
+﻿{
+    "version":  "7",
+    "dialect":  "mysql",
+    "entries":  [
+                    {
+                        "idx":  0,
+                        "version":  "5",
+                        "when":  1774545320097,
+                        "tag":  "0000_watery_captain_stacy",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  1,
+                        "version":  "5",
+                        "when":  1774545702969,
+                        "tag":  "0001_perfect_justice",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  2,
+                        "version":  "5",
+                        "when":  1774549256233,
+                        "tag":  "0002_demonic_greymalkin",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  3,
+                        "version":  "5",
+                        "when":  1774551394326,
+                        "tag":  "0003_numerous_polaris",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  4,
+                        "version":  "5",
+                        "when":  1774630961860,
+                        "tag":  "0004_concerned_crystal",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  5,
+                        "version":  "5",
+                        "when":  1774633454907,
+                        "tag":  "0005_gigantic_sauron",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  6,
+                        "version":  "5",
+                        "when":  1774720301655,
+                        "tag":  "0006_happy_falcon",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  7,
+                        "version":  "5",
+                        "when":  1774823155937,
+                        "tag":  "0007_thick_iron_lad",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  8,
+                        "version":  "5",
+                        "when":  1774906877365,
+                        "tag":  "0008_large_the_order",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  9,
+                        "version":  "5",
+                        "when":  1775000000000,
+                        "tag":  "0009_planos_germinacao_cols",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  10,
+                        "version":  "5",
+                        "when":  1775100000000,
+                        "tag":  "0011_receitas_ph_temp_umidade_luz",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  11,
+                        "version":  "5",
+                        "when":  1775200000000,
+                        "tag":  "0013_estoque_itens",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  12,
+                        "version":  "5",
+                        "when":  1775300000000,
+                        "tag":  "0014_multi_projetos",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  13,
+                        "version":  "5",
+                        "when":  1775400000000,
+                        "tag":  "0016_bancadas_fase_slug",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  14,
+                        "version":  "5",
+                        "when":  1775500000000,
+                        "tag":  "0017_bancadas_compartilhada",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  15,
+                        "version":  "5",
+                        "when":  1775600000000,
+                        "tag":  "0018_bancadas_plantio",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  16,
+                        "version":  "5",
+                        "when":  1775700000000,
+                        "tag":  "0019_projetos_microverdes",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  17,
+                        "version":  "5",
+                        "when":  1775800000000,
+                        "tag":  "0020_perfis_cultivo_status",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  18,
+                        "version":  "5",
+                        "when":  1775900000000,
+                        "tag":  "0021_perfis_receita_id",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  19,
+                        "version":  "5",
+                        "when":  1776000000000,
+                        "tag":  "0022_vision_cultivo",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  20,
+                        "version":  "5",
+                        "when":  1776100000000,
+                        "tag":  "0023_projeto_modulos",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  21,
+                        "version":  "5",
+                        "when":  1776200000000,
+                        "tag":  "0024_users_role_platform_admin",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  22,
+                        "version":  "5",
+                        "when":  1776300000000,
+                        "tag":  "0025_estoque_kg_l_embalagem",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  23,
+                        "version":  "5",
+                        "when":  1776400000000,
+                        "tag":  "0026_torres_numero_estrutura",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  25,
+                        "version":  "5",
+                        "when":  1776600000000,
+                        "tag":  "0028_custos_producao_itens",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  26,
+                        "version":  "5",
+                        "when":  1776700000000,
+                        "tag":  "0029_projeto_modulo_custos_producao",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  27,
+                        "version":  "5",
+                        "when":  1776800000000,
+                        "tag":  "0030_custos_producao_rateio",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  28,
+                        "version":  "5",
+                        "when":  1776900000000,
+                        "tag":  "0031_custos_produtos_fichas",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  39,
+                        "version":  "5",
+                        "when":  1777100000000,
+                        "tag":  "0039_custos_rentabilidade",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  40,
+                        "version":  "5",
+                        "when":  1777200000000,
+                        "tag":  "0040_mo_equipes_etapas_tempo",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  41,
+                        "version":  "5",
+                        "when":  1777300000000,
+                        "tag":  "0041_rentabilidade_overhead_itens",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  42,
+                        "version":  "5",
+                        "when":  1777400000000,
+                        "tag":  "0042_mo_equipes_prolabore_cargo",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  43,
+                        "version":  "5",
+                        "when":  1777500000000,
+                        "tag":  "0043_mo_equipes_liquido_config",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  44,
+                        "version":  "5",
+                        "when":  1777600000000,
+                        "tag":  "0044_custos_produtos_processo_config",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  45,
+                        "version":  "5",
+                        "when":  1777700000000,
+                        "tag":  "0045_custos_produtos_comercial_map",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  46,
+                        "version":  "5",
+                        "when":  1777800000000,
+                        "tag":  "0046_fichas_modo_compra_mp",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  47,
+                        "version":  "5",
+                        "when":  1777900000000,
+                        "tag":  "0047_comercial_map_modo_compra_mp",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  48,
+                        "version":  "5",
+                        "when":  1778000000000,
+                        "tag":  "0048_processo_linha_json",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  49,
+                        "version":  "5",
+                        "when":  1778100000000,
+                        "tag":  "0049_processo_modelos",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  50,
+                        "version":  "5",
+                        "when":  1794159232624,
+                        "tag":  "0063_solicitacoes_alteracao_sistema",
+                        "breakpoints":  true
+                    }
+                ]
 }

@@ -25,6 +25,7 @@ const ADMIN_TYPES = new Set<AssistantActionType>([
   "criar_bancada",
   "atualizar_bancada",
   "upsert_fase_config",
+  "encaminhar_alteracao_sistema",
 ]);
 
 export function isAdminAssistantAction(type: AssistantActionType): boolean {
@@ -218,6 +219,22 @@ export async function runAdminAssistantAction(
       const p = parseAssistantActionParams("upsert_fase_config", params);
       await db.upsertFaseConfig({ ...p, projetoId: pid });
       return `Configuração da fase ${p.fase} guardada.`;
+    }
+    case "encaminhar_alteracao_sistema": {
+      const p = parseAssistantActionParams("encaminhar_alteracao_sistema", params);
+      const { createSolicitacaoAlteracaoSistema } = await import("../cursorBridgeDb");
+      const row = await createSolicitacaoAlteracaoSistema({
+        projetoId: pid,
+        solicitadoPorId: ctx.userId,
+        solicitadoPorNome: ctx.userName ?? null,
+        pedido: p.pedido,
+        contextoConversacao: p.contextoConversacao ?? null,
+        status: "pendente",
+      });
+      return (
+        `Pedido #${row.id} enfileirado para o Cursor (status pendente). ` +
+        `No Cursor (projeto ERP FUP), rode o comando/skill **FUP alteração sistema** para aplicar e subir o código.`
+      );
     }
     default:
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Acção admin desconhecida." });
