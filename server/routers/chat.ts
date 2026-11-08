@@ -770,10 +770,56 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
 }
 
 export const chatRouter = router({
-  /** Indica se o servidor tem chave OpenAI (sem expor segredos). */
-  assistantStatus: projectProcedure.query(() => ({
-    configured: Boolean(ENV.openAiApiKey?.trim()),
-  })),
+  /** Estado do assistente: OpenAI (chat) + comandos estruturados comerciais (sem LLM). */
+  assistantStatus: projectProcedure.query(async ({ ctx }) => {
+    const writeComercial = ctx.user
+      ? await assertAssistentePodeAlterarComercialPedidos(ctx.user)
+      : { ok: false as const, error: "Não autenticado" };
+    return {
+      configured: Boolean(ENV.openAiApiKey?.trim()),
+      canWriteComercialPedidos: writeComercial.ok,
+      comandosComerciaisDisponiveis: writeComercial.ok,
+    };
+  }),
+
+  /**
+   * Prepara ação Comercial→Pedidos a partir de formulário estruturado (sem OpenAI).
+   * O cliente confirma com `confirmActions`.
+   */
+  prepararComandoComercial: projectProcedure
+    .input(
+      z.object({
+        toolName: z.string().min(1),
+        args: z.record(z.string(), z.unknown()).default({}),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Não autenticado" });
+      }
+      const write = await assertAssistentePodeAlterarComercialPedidos(ctx.user);
+      if (!write.ok) {
+        throw new TRPCError({ code: "FORBIDDEN", message: write.error });
+      }
+      const pid = projetoIdFromCtx(ctx);
+      const projeto = await db.getProjetoRow(pid);
+      const { previewComercialPedidosTool } = await import("../assistant-actions/preview-comercial-pedidos");
+      const result = await previewComercialPedidosTool(
+        {
+          projetoId: pid,
+          projetoTipo: projeto?.tipo ?? null,
+          isAdmin: isOperationalAdminRole(ctx.user.role),
+          canWriteComercialPedidos: true,
+          user: ctx.user,
+        },
+        input.toolName,
+        input.args,
+      );
+      if ("error" in result) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
+      }
+      return { pendingActions: [result.action] };
+    }),
 
   sendMessage: projectProcedure
     .input(

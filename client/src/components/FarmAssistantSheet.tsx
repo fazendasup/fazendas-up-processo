@@ -19,6 +19,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Message } from "@/components/AIChatBox";
 import type { PendingAssistantAction } from "@shared/assistant-actions";
+import { ComandosComerciaisPanel } from "@/components/ComandosComerciaisPanel";
 
 /** streamdown/shiki são pesados — só carregar o chunk quando o sheet abre. */
 const AIChatBox = lazy(() =>
@@ -34,11 +35,14 @@ export type FarmAssistantSheetProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+type ModoAssistente = "comandos" | "chat";
+
 export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetProps) {
   const { activeProjetoId } = useProjeto();
   const [messages, setMessages] = useState<Message[]>([]);
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [pendingActions, setPendingActions] = useState<PendingAssistantAction[]>([]);
+  const [modo, setModo] = useState<ModoAssistente>("comandos");
 
   const utils = trpc.useUtils();
 
@@ -60,11 +64,20 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
     staleTime: 60_000,
   });
 
+  const openaiOk = Boolean(assistantStatus.data?.configured);
+  const comandosOk = Boolean(assistantStatus.data?.comandosComerciaisDisponiveis);
+
+  useEffect(() => {
+    if (!assistantStatus.data) return;
+    if (!openaiOk && comandosOk) setModo("comandos");
+    else if (openaiOk && !comandosOk) setModo("chat");
+  }, [assistantStatus.data, openaiOk, comandosOk]);
+
   const handleSend = useCallback(
     (content: string) => {
       if (assistantStatus.data && !assistantStatus.data.configured) {
         toast.error(
-          "Assistente indisponível: defina OPENAI_API_KEY no servidor (ex.: variáveis do Railway).",
+          "Chat com IA indisponível. Use a aba Comandos (sem OpenAI) ou configure OPENAI_API_KEY.",
         );
         return;
       }
@@ -116,25 +129,32 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
               ok.length === 1 ? ok[0]!.message : `${ok.length} ação(ões) executada(s) com sucesso.`,
             );
             await utils.fazenda.loadAll.invalidate();
+            try {
+              await utils.comercial.invalidate();
+            } catch {
+              /* módulo comercial pode não estar no client tree */
+            }
           }
           for (const f of fail) {
             toast.error(f.message);
           }
           setPendingActions([]);
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content:
-                fail.length === 0
-                  ? `✅ Executado: ${ok.map((r) => r.message).join(" ")}`
-                  : `Resultado: ${data.results.map((r) => (r.ok ? "✅" : "❌") + " " + r.message).join("\n")}`,
-            },
-          ]);
+          if (modo === "chat") {
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content:
+                  fail.length === 0
+                    ? `Executado: ${ok.map((r) => r.message).join(" ")}`
+                    : `Resultado: ${data.results.map((r) => (r.ok ? "OK" : "ERRO") + " " + r.message).join("\n")}`,
+              },
+            ]);
+          }
         },
       },
     );
-  }, [confirmMutation, pendingActions, utils.fazenda.loadAll]);
+  }, [confirmMutation, modo, pendingActions, utils.comercial, utils.fazenda.loadAll]);
 
   const operationsDisabled = useWebSearch || sendMutation.isPending || confirmMutation.isPending;
 
@@ -147,29 +167,53 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
             Assistente Fazendas Up
           </SheetTitle>
           <SheetDescription className="text-xs">
-            Enxerga o resumo operacional e comercial disponível para o seu perfil. Operações continuam
-            sempre com confirmação antes de gravar; o assistente não apaga dados.
+            Comandos estruturados funcionam sem OpenAI. Chat com IA é opcional (precisa de chave).
+            Operações sempre pedem confirmação antes de gravar.
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex shrink-0 flex-col gap-2 border-b px-4 py-2">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="farm-assistant-web"
-              checked={useWebSearch}
-              onCheckedChange={setUseWebSearch}
-              disabled={
-                sendMutation.isPending ||
-                confirmMutation.isPending ||
-                assistantStatus.isLoading ||
-                (assistantStatus.data != null && !assistantStatus.data.configured)
-              }
-            />
-            <Label htmlFor="farm-assistant-web" className="cursor-pointer text-xs font-normal leading-snug">
-              Pesquisa na web (desativa execução de operações)
-            </Label>
+        {(comandosOk || openaiOk) && (
+          <div className="flex shrink-0 gap-1 border-b px-4 py-2">
+            {comandosOk && (
+              <Button
+                type="button"
+                size="sm"
+                variant={modo === "comandos" ? "default" : "ghost"}
+                className="h-8 text-xs"
+                onClick={() => setModo("comandos")}
+              >
+                Comandos
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant={modo === "chat" ? "default" : "ghost"}
+              className="h-8 text-xs"
+              disabled={!openaiOk}
+              title={!openaiOk ? "Configure OPENAI_API_KEY para o chat" : undefined}
+              onClick={() => openaiOk && setModo("chat")}
+            >
+              Chat IA
+            </Button>
           </div>
-        </div>
+        )}
+
+        {modo === "chat" && openaiOk && (
+          <div className="flex shrink-0 flex-col gap-2 border-b px-4 py-2">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="farm-assistant-web"
+                checked={useWebSearch}
+                onCheckedChange={setUseWebSearch}
+                disabled={sendMutation.isPending || confirmMutation.isPending}
+              />
+              <Label htmlFor="farm-assistant-web" className="cursor-pointer text-xs font-normal leading-snug">
+                Pesquisa na web (desativa execução de operações)
+              </Label>
+            </div>
+          </div>
+        )}
 
         {pendingActions.length > 0 && (
           <div className="shrink-0 space-y-2 border-b bg-amber-500/10 px-4 py-3">
@@ -222,17 +266,24 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
             >
               <Spinner className="size-8 text-muted-foreground" />
             </div>
-          ) : assistantStatus.data && !assistantStatus.data.configured ? (
+          ) : !comandosOk && !openaiOk ? (
             <Alert variant="destructive" className="m-1 border-destructive/80">
               <AlertCircle className="h-4 w-4" aria-hidden />
-              <AlertTitle>Assistente não configurado</AlertTitle>
-              <AlertDescription className="text-destructive/95">
-                O servidor precisa da variável de ambiente{" "}
-                <code className="rounded bg-destructive/15 px-1 py-0.5 text-xs">OPENAI_API_KEY</code>{" "}
-                (ex.: painel do Railway → Variables).
+              <AlertTitle>Assistente indisponível</AlertTitle>
+              <AlertDescription className="text-destructive/95 space-y-2">
+                <p>
+                  Sem OpenAI e sem permissão de escrita comercial. Peça acesso comercial
+                  (COMERCIAL/OPERACOES/GERENTE/ADMIN) ou configure{" "}
+                  <code className="rounded bg-destructive/15 px-1 py-0.5 text-xs">OPENAI_API_KEY</code>.
+                </p>
               </AlertDescription>
             </Alert>
-          ) : (
+          ) : modo === "comandos" && comandosOk ? (
+            <ComandosComerciaisPanel
+              disabled={confirmMutation.isPending}
+              onPrepared={(actions) => setPendingActions(actions)}
+            />
+          ) : modo === "chat" && openaiOk ? (
             <Suspense
               fallback={
                 <div
@@ -251,18 +302,22 @@ export function FarmAssistantSheet({ open, onOpenChange }: FarmAssistantSheetPro
                 placeholder="Pergunte sobre dados do projeto, peça um resumo ou um insight…"
                 height="calc(100vh - 11rem)"
                 className="h-full min-h-[280px] rounded-lg border-0 shadow-none"
-                emptyStateMessage="Ex.: “Quais clientes merecem ação comercial hoje?” ou “Resumo objetivo do projeto agora” — respostas usam os dados operacionais e comerciais enviados com a mensagem."
+                emptyStateMessage="Ex.: “Quais clientes merecem ação comercial hoje?” — ou use a aba Comandos para alterar Pedidos sem IA."
                 suggestedPrompts={[
                   "Resumo operacional objetivo do projeto neste momento.",
                   "Quais são os principais insights comerciais dos últimos 90 dias? Priorize ações práticas.",
                   "Liste clientes em risco, oportunidades abertas e produtos com maior potencial de venda.",
-                  "Quais produtos e categorias lideram faturamento, quantidade e margem?",
-                  "Quais planos de plantio estão ativos, em que status, e quais estão na fila de germinação / plantio inicial?",
-                  "Como está a ocupação por fase (torres ou bancadas)? Há capacidade livre ou gargalos a destacar?",
-                  "Um único insight de gestão a partir dos dados: maior risco ou oportunidade operacional hoje.",
                 ]}
               />
             </Suspense>
+          ) : (
+            <Alert className="m-1">
+              <AlertCircle className="h-4 w-4" aria-hidden />
+              <AlertTitle>Chat IA desligado</AlertTitle>
+              <AlertDescription>
+                Use a aba <strong>Comandos</strong> para alterar Pedidos sem OpenAI.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </SheetContent>
