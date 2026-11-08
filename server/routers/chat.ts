@@ -10,7 +10,10 @@ import { runFarmAssistantChat } from "../chat-assistant";
 import { classificarStatusPedido } from "../comercial/lib/pedido-status";
 import { getComercialPrisma } from "../comercial/db";
 import { resolveComercialUsuario } from "../comercial/resolve-usuario";
-import { buildProdutosSerieMensalSnapshot } from "../comercial/services/assistente-relatorios";
+import {
+  assertAssistentePodeAlterarComercialPedidos,
+  buildProdutosSerieMensalSnapshot,
+} from "../comercial/services/assistente-relatorios";
 import { buildCompactFazendaSnapshotMarkdown } from "../chat-context";
 import {
   buildAutomacaoAssistantResumo,
@@ -631,13 +634,25 @@ async function buildComercialAssistantResumo(enabled: boolean, user: User) {
           produtos: produtosResumo,
           regrasComerciais: regrasComerciais.slice(0, 40).map(r => ({
             cliente: r.cliente?.nome ?? r.contaAzulCustomerId,
+            contaAzulCustomerId: r.contaAzulCustomerId,
             periodoEntrega: r.periodoEntrega,
+            diasEntrega: r.diasEntrega,
             horarioMaximoEntrega: r.horarioMaximoEntrega,
             cobraTaxaEntrega: r.cobraTaxaEntrega,
+            valorTaxaEntrega: r.valorTaxaEntrega == null ? null : num(r.valorTaxaEntrega),
             prazoBoletoDias: r.prazoBoletoDias,
+            descontoBoletoPercentual:
+              r.descontoBoletoPercentual == null ? null : num(r.descontoBoletoPercentual),
             acumulaPedidos: r.acumulaPedidos,
+            diasAcumulo: r.diasAcumulo,
+            tipoVendaPadrao: r.tipoVendaPadrao,
             observacoes: resumoTexto(r.observacoesGerais),
-            precosEspeciais: r.precosEspeciais.map(p => ({ produto: p.produto.nome, categoria: p.produto.categoria, preco: num(p.preco) })),
+            precosEspeciais: r.precosEspeciais.map(p => ({
+              produtoId: p.produtoId,
+              produto: p.produto.nome,
+              categoria: p.produto.categoria,
+              preco: num(p.preco),
+            })),
           })),
         },
         Mensagens: {
@@ -850,6 +865,7 @@ export const chatRouter = router({
       }));
 
       try {
+        const writeComercial = await assertAssistentePodeAlterarComercialPedidos(ctx.user);
         const result = await runFarmAssistantChat({
           resumoOperacionalMarkdown,
           messages,
@@ -858,6 +874,7 @@ export const chatRouter = router({
             projetoId: pid,
             projetoTipo: projeto?.tipo ?? null,
             isAdmin: isOperationalAdminRole(ctx.user.role),
+            canWriteComercialPedidos: writeComercial.ok,
             user: ctx.user,
           },
         });
@@ -899,6 +916,7 @@ export const chatRouter = router({
           isAdmin: isOperationalAdminRole(ctx.user.role),
           userId: ctx.user.id,
           userName: ctx.user.name || "Usuário",
+          user: ctx.user,
         },
         input.actions,
       );

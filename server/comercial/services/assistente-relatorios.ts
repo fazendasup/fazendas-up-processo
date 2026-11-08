@@ -95,6 +95,41 @@ export async function assertAssistentePodeConsultarComercial(
   return { ok: true };
 }
 
+/** Escrita no assistente = perfis que já operam Pedidos/regras na UI (não promoter/financeiro/logística). */
+export async function assertAssistentePodeAlterarComercialPedidos(
+  user: User | null | undefined
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!user) return { ok: false, error: "Usuário não autenticado." };
+  if (!isCommercialAccessRole(user.role)) {
+    return {
+      ok: false,
+      error: "Sem papel comercial/admin para alterar Pedidos no assistente.",
+    };
+  }
+  const comercialUsuario = await resolveComercialUsuario(user);
+  if (!comercialUsuario) {
+    return {
+      ok: false,
+      error: "Nenhum usuário comercial ativo vinculado ao usuário logado.",
+    };
+  }
+  const perfil = comercialUsuario.perfil;
+  if (
+    perfil === "PROMOTER" ||
+    perfil === "VENDEDOR" ||
+    perfil === "LIDER_COLHEITA" ||
+    perfil === "LOGISTICA" ||
+    perfil === "FINANCEIRO"
+  ) {
+    return {
+      ok: false,
+      error:
+        "Perfil sem permissão de escrita no Assistente para Pedidos. Use COMERCIAL, OPERACOES, GERENTE_COMERCIAL ou ADMIN.",
+    };
+  }
+  return { ok: true };
+}
+
 type ProdutoAgg = {
   produto: string;
   categoria: string | null;

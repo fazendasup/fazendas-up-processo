@@ -24,6 +24,8 @@ export type ExecuteActionsCtx = {
   isAdmin: boolean;
   userId: number;
   userName: string;
+  /** Usuário completo — necessário para createCaller comercial. */
+  user?: import("../../drizzle/schema").User | null;
 };
 
 export type ExecuteActionResult = {
@@ -54,6 +56,25 @@ export async function executeAssistantAction(
     if (isAdminAssistantAction(action.type)) {
       const msg = await runAdminAssistantAction(ctx, action.type, action.params);
       return { ...base, ok: true, message: msg };
+    }
+
+    if (action.type === "comercial_pedidos_operacao") {
+      const { isComercialPedidosAssistantProcedure, COMERCIAL_PEDIDOS_PROCEDURE_LABEL } =
+        await import("../comercial/assistant-pedidos-allowlist");
+      const { runComercialPedidosMutation } = await import("./comercial-caller");
+      const p = parseAssistantActionParams("comercial_pedidos_operacao", action.params);
+      if (!isComercialPedidosAssistantProcedure(p.procedure)) {
+        return { ...base, ok: false, message: `Operação comercial não permitida: ${p.procedure}` };
+      }
+      if (!ctx.user) {
+        return { ...base, ok: false, message: "Usuário não autenticado para operação comercial." };
+      }
+      await runComercialPedidosMutation(ctx.user, pid, p.procedure, p.input);
+      return {
+        ...base,
+        ok: true,
+        message: `${COMERCIAL_PEDIDOS_PROCEDURE_LABEL[p.procedure]} concluída.`,
+      };
     }
 
     switch (action.type) {

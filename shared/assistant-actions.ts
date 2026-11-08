@@ -48,6 +48,8 @@ export const assistantActionTypeSchema = z.enum([
   "upsert_fase_config",
   /** Admin: encaminha pedido de alteração de código/UI para o Cursor (fila). */
   "encaminhar_alteracao_sistema",
+  /** Comercial → Pedidos: executa mutation allowlist via createCaller. */
+  "comercial_pedidos_operacao",
 ]);
 
 export type AssistantActionType = z.infer<typeof assistantActionTypeSchema>;
@@ -380,6 +382,11 @@ export const encaminharAlteracaoSistemaParamsSchema = z.object({
   contextoConversacao: z.string().max(16000).optional(),
 });
 
+export const comercialPedidosOperacaoParamsSchema = z.object({
+  procedure: z.string().min(1),
+  input: z.record(z.string(), z.unknown()),
+});
+
 const paramsByType = {
   transplantar_distribuido: transplantarDistribuidoParamsSchema,
   concluir_tarefas: concluirTarefasParamsSchema,
@@ -424,6 +431,7 @@ const paramsByType = {
   atualizar_bancada: atualizarBancadaParamsSchema,
   upsert_fase_config: upsertFaseConfigParamsSchema,
   encaminhar_alteracao_sistema: encaminharAlteracaoSistemaParamsSchema,
+  comercial_pedidos_operacao: comercialPedidosOperacaoParamsSchema,
 } as const;
 
 export const pendingAssistantActionSchema = z.object({

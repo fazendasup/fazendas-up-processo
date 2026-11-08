@@ -77,6 +77,19 @@ Ferramentas \`preparar_*\` adicionais para cadastro e configuração — **sempr
 
 Não use essas ferramentas para operador comum; se o usuário não for admin, explique que precisa de permissão de administrador do projeto.`;
 
+const COMERCIAL_PEDIDOS_INSTRUCTIONS_PT = `
+
+### Comercial → Pedidos (escrita com confirmação)
+Você tem ferramentas \`preparar_*\` equivalentes às ações manuais da página **Comercial → Pedidos** (abas operacional, agenda, conciliação, regras, produtos, estoque vivo/compras), mais envio Conta Azul.
+
+**Regras comerciais:** \`preparar_salvar_regra_comercial\` (dias_entrega 0=Dom…6=Sáb, período, taxa, boleto, acúmulo).
+**Pedidos:** salvar/criar, cancelar, reativar, alterar data, copiar, status/prioridade do cliente no dia, item pronto, qtd pronta.
+**Semana:** copiar semana anterior, fechar, reabrir.
+**Produtos / compras:** salvar, excluir, atualizar compra.
+**Demais (conciliação CA, sync catálogo, envio CA, etc.):** \`preparar_operacao_comercial_pedidos\` com \`operacao\` = nome camelCase da mutation e \`input\` no formato da API.
+
+Sempre **prepare** e peça confirmação. Não diga que já gravou antes da confirmação. Se faltar id/nome inequívoco, pergunte.`;
+
 function getClient(): OpenAI | null {
   const key = ENV.openAiApiKey?.trim();
   if (!key) return null;
@@ -124,7 +137,10 @@ export async function runFarmAssistantChat(params: {
   }
 
   const isAdmin = Boolean(params.operationCtx?.isAdmin);
-  const instructions = `${BASE_INSTRUCTIONS_PT}${isAdmin ? ADMIN_INSTRUCTIONS_PT : ""}
+  const canWriteComercial = Boolean(params.operationCtx?.canWriteComercialPedidos);
+  const instructions = `${BASE_INSTRUCTIONS_PT}${isAdmin ? ADMIN_INSTRUCTIONS_PT : ""}${
+    canWriteComercial ? COMERCIAL_PEDIDOS_INSTRUCTIONS_PT : ""
+  }
 
 ---
 
@@ -160,7 +176,12 @@ ${params.resumoOperacionalMarkdown}`;
     const completion = await client.chat.completions.create({
       model: ENV.openAiChatModel,
       messages: chatMessages,
-      tools: opCtx ? getAssistantOperationTools(Boolean(opCtx.isAdmin)) : undefined,
+      tools: opCtx
+        ? getAssistantOperationTools({
+            isAdmin: Boolean(opCtx.isAdmin),
+            canWriteComercialPedidos: Boolean(opCtx.canWriteComercialPedidos),
+          })
+        : undefined,
       max_completion_tokens: 4096,
     });
 

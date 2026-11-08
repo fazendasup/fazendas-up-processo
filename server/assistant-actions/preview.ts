@@ -19,7 +19,9 @@ export type AssistantPreviewCtx = {
   projetoId: number;
   projetoTipo: string | null;
   isAdmin?: boolean;
-  /** Usuário logado — necessário para consultas comerciais somente-leitura. */
+  /** Pode preparar escritas Comercial → Pedidos (perfil + vínculo). */
+  canWriteComercialPedidos?: boolean;
+  /** Usuário logado — necessário para consultas/escritas comerciais. */
   user?: User | null;
 };
 

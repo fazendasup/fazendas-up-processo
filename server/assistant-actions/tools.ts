@@ -20,6 +20,11 @@ import {
   previewUpsertFaseConfig,
 } from "./preview-admin";
 import { ADMIN_OPERATION_TOOLS } from "./tools-admin";
+import {
+  COMERCIAL_PEDIDOS_OPERATION_TOOLS,
+  COMERCIAL_PEDIDOS_TOOL_NAMES,
+} from "./tools-comercial-pedidos";
+import { previewComercialPedidosTool } from "./preview-comercial-pedidos";
 import type { AssistantPreviewCtx } from "./preview";
 import {
   previewAtualizarPerfis,
@@ -612,9 +617,14 @@ const OPERATOR_OPERATION_TOOLS: ChatCompletionTool[] = [
   },
 ];
 
-export function getAssistantOperationTools(isAdmin: boolean): ChatCompletionTool[] {
-  if (!isAdmin) return OPERATOR_OPERATION_TOOLS;
-  return [...OPERATOR_OPERATION_TOOLS, ...ADMIN_OPERATION_TOOLS];
+export function getAssistantOperationTools(opts: {
+  isAdmin: boolean;
+  canWriteComercialPedidos?: boolean;
+}): ChatCompletionTool[] {
+  const tools = [...OPERATOR_OPERATION_TOOLS];
+  if (opts.isAdmin) tools.push(...ADMIN_OPERATION_TOOLS);
+  if (opts.canWriteComercialPedidos) tools.push(...COMERCIAL_PEDIDOS_OPERATION_TOOLS);
+  return tools;
 }
 
 export async function runAssistantToolCall(
@@ -804,8 +814,12 @@ export async function runAssistantToolCall(
         return pushPreview(pending, await previewUpsertFaseConfig(ctx, args));
       case "preparar_encaminhar_alteracao_sistema":
         return pushPreview(pending, await previewEncaminharAlteracaoSistema(ctx, args));
-      default:
+      default: {
+        if (COMERCIAL_PEDIDOS_TOOL_NAMES.has(name)) {
+          return pushPreview(pending, await previewComercialPedidosTool(ctx, name, args));
+        }
         return JSON.stringify({ ok: false, error: `Ferramenta desconhecida: ${name}` });
+      }
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
