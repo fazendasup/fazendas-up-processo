@@ -547,6 +547,8 @@ model PortalCadastro {
   inscricaoEstadual  String?  @map("inscricao_estadual")
   status             String   @default("RECEBIDO")
   erro               String?  @db.Text
+  /// Senha escolhida no cadastro do site (hash). Usada ao liberar o acesso.
+  senhaHash          String?  @map("senha_hash")
   contaAzulId        String?  @map("conta_azul_id")
   criadoEm           DateTime @default(now()) @map("criado_em")
   atualizadoEm       DateTime @updatedAt @map("atualizado_em")

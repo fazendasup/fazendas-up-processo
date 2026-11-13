@@ -22,6 +22,8 @@ export type DadosEmpresa = {
   cidade: string;
   estado: string;
   inscricaoEstadual: string | null;
+  /** Hash bcrypt da senha escolhida no cadastro do site. */
+  senhaHash?: string | null;
 };
 
 /** Produto exclusivo só entra para o cliente que já tem o preço dele na regra comercial. */
@@ -269,16 +271,38 @@ function enderecoLinha(dados: DadosEmpresa): string {
   return `${dados.logradouro}, ${dados.numero}${complemento} - ${dados.bairro}, ${dados.cidade}/${dados.estado}, ${formatarCep(dados.cep)}`;
 }
 
-async function garantirAcesso(prisma: PrismaClient, clienteId: string, emailInformado: string, cnpj: string) {
+async function garantirAcesso(
+  prisma: PrismaClient,
+  clienteId: string,
+  emailInformado: string,
+  cnpj: string,
+  senhaHash?: string | null,
+) {
   const existente = await prisma.portalAcesso.findUnique({ where: { clienteId } });
-  if (existente) return existente;
+  if (existente) {
+    if (senhaHash && !existente.senhaHash) {
+      return prisma.portalAcesso.update({
+        where: { id: existente.id },
+        data: { senhaHash, ativo: true },
+      });
+    }
+    return existente;
+  }
   let email = emailInformado.includes("@") ? emailInformado.toLowerCase() : `${cnpj}@cnpj.fazendasup.com.br`;
   const ocupado = await prisma.portalAcesso.findUnique({ where: { email } });
   if (ocupado) email = `${cnpj}@cnpj.fazendasup.com.br`;
-  return prisma.portalAcesso.create({ data: { clienteId, email, ativo: true, perfil: "EMPRESA" } });
+  return prisma.portalAcesso.create({
+    data: {
+      clienteId,
+      email,
+      ativo: true,
+      perfil: "EMPRESA",
+      ...(senhaHash ? { senhaHash } : {}),
+    },
+  });
 }
 
-/** Grava a empresa, envia ao Conta Azul e abre o acesso com a senha inicial. */
+/** Grava a empresa, envia ao Conta Azul e abre o acesso com a senha cadastrada. */
 export async function registrarEmpresa(dados: DadosEmpresa): Promise<{ pendente: boolean; mensagem: string }> {
   const prisma = getComercialPrisma();
   const ids = await prisma.$queryRaw<Array<{ id: string }>>`
@@ -309,6 +333,7 @@ export async function registrarEmpresa(dados: DadosEmpresa): Promise<{ pendente:
       cidade: dados.cidade,
       estado: dados.estado,
       inscricaoEstadual: dados.inscricaoEstadual,
+      senhaHash: dados.senhaHash ?? null,
       status: "RECEBIDO",
     },
   });
@@ -322,7 +347,7 @@ export async function registrarEmpresa(dados: DadosEmpresa): Promise<{ pendente:
       where: { id: pedido.id },
       data: { status: "ERRO", erro: texto.slice(0, 2000) },
     });
-    return { pendente: true, mensagem: "Recebemos os dados. A fazenda conclui o cadastro e libera a entrada." };
+    return { pendente: true, mensagem: "Recebemos os dados. A fazenda conclui o cadastro e libera a entrada com a senha que você cadastrou." };
   }
 
   const cliente = existente
@@ -353,7 +378,7 @@ export async function registrarEmpresa(dados: DadosEmpresa): Promise<{ pendente:
           tags: ["site"],
         },
       });
-  await garantirAcesso(prisma, cliente.id, dados.email, dados.cnpj);
+  await garantirAcesso(prisma, cliente.id, dados.email, dados.cnpj, dados.senhaHash);
   await prisma.portalConta.upsert({
     where: { clienteId: cliente.id },
     create: {
@@ -387,11 +412,11 @@ export async function registrarEmpresa(dados: DadosEmpresa): Promise<{ pendente:
   await sincronizarContratoPendente(prisma, cliente);
   await prisma.portalCadastro.update({
     where: { id: pedido.id },
-    data: { status: "ENVIADO", contaAzulId, erro: null },
+    data: { status: "ENVIADO", contaAzulId, erro: null, senhaHash: null },
   });
   return {
     pendente: false,
-    mensagem: "Empresa cadastrada. Entre com o CNPJ. A primeira senha são os 5 primeiros dígitos.",
+    mensagem: "Empresa cadastrada. Entre com o CNPJ e a senha que você criou.",
   };
 }
 
@@ -438,10 +463,10 @@ export async function reenviarCadastro(id: string): Promise<void> {
           tags: ["site"],
         },
       });
-  await garantirAcesso(prisma, cliente.id, dados.email, dados.cnpj);
+  await garantirAcesso(prisma, cliente.id, dados.email, dados.cnpj, pedido.senhaHash);
   await sincronizarContratoPendente(prisma, cliente);
   await prisma.portalCadastro.update({
     where: { id: pedido.id },
-    data: { status: "ENVIADO", contaAzulId, erro: null },
+    data: { status: "ENVIADO", contaAzulId, erro: null, senhaHash: null },
   });
 }

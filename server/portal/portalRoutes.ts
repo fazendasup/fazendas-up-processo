@@ -396,10 +396,11 @@ export function registerPortalRoutes(app: Express): void {
         cidade: z.string().trim().min(2).max(80),
         estado: z.string().trim().length(2),
         inscricaoEstadual: z.string().trim().max(20).optional(),
+        senha: z.string().min(8, "A senha precisa ter pelo menos 8 caracteres.").max(72),
       })
       .safeParse(req.body);
     if (!parsed.success) {
-      falha(res, 400, "Confira os dados da empresa. CNPJ, endereço e contato são necessários.");
+      falha(res, 400, parsed.error.issues[0]?.message ?? "Confira os dados da empresa. CNPJ, endereço, contato e senha são necessários.");
       return;
     }
     const cnpj = parsed.data.cnpj.replace(/\D/g, "");
@@ -409,7 +410,12 @@ export function registerPortalRoutes(app: Express): void {
       falha(res, 400, "Confira o CNPJ, o CEP e o telefone.");
       return;
     }
+    if (parsed.data.senha === senhaInicialDoCnpj(cnpj)) {
+      falha(res, 400, "Escolha uma senha diferente dos 5 primeiros dígitos do CNPJ.");
+      return;
+    }
     try {
+      const senhaHash = await hashPassword(parsed.data.senha);
       const resultado = await registrarEmpresa({
         nome: parsed.data.nome,
         nomeFantasia: parsed.data.nomeFantasia?.trim() || null,
@@ -425,6 +431,7 @@ export function registerPortalRoutes(app: Express): void {
         cidade: parsed.data.cidade,
         estado: parsed.data.estado.toUpperCase(),
         inscricaoEstadual: parsed.data.inscricaoEstadual?.trim() || null,
+        senhaHash,
       });
       res.status(resultado.pendente ? 202 : 201).json(resultado);
     } catch (error) {
