@@ -23,7 +23,6 @@ import { caixaElegivelProgramacao, idCaixaMudasCompartilhada } from '@shared/mud
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
 import ProtocoloFases14d from '@/components/ProtocoloFases14d';
-import QuadroAplicacoesProtocolo from '@/components/QuadroAplicacoesProtocolo';
 import ApontamentoOperadorCiclos from '@/components/ApontamentoOperadorCiclos';
 import CiclosTorresPainel from '@/components/CiclosTorresPainel';
 import {
@@ -799,7 +798,7 @@ export default function CiclosPage() {
 
         <details className="mb-8 rounded-xl border bg-card">
           <summary className="cursor-pointer list-none px-4 py-3 font-display text-sm font-bold text-muted-foreground hover:text-foreground">
-            Configuração avançada (cadastro, protocolo, quadro)
+            Configuração avançada (cadastro, protocolo)
           </summary>
           <div className="space-y-6 border-t px-4 py-4">
         <div className="flex items-center justify-between mb-2">
@@ -1201,8 +1200,6 @@ export default function CiclosPage() {
         <AplicacaoFoliar ciclos={data.ciclos} onAgendar={agendarCalda} />
 
         <ProtocoloFases14d />
-
-        <QuadroAplicacoesProtocolo />
 
         {/* Protocolo esperado × o que está ativo nesta fazenda */}
         <section className="mb-6 rounded-xl border bg-card p-4">

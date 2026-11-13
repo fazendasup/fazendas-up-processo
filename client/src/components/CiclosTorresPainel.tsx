@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CalendarClock, CheckCircle2, Droplets, Plus } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Droplets,
+  Plus,
+} from "lucide-react";
 import { useFazenda } from "@/contexts/FazendaContext";
 import { useDbIdResolver } from "@/hooks/useDbIdResolver";
 import { trpc } from "@/lib/trpc";
@@ -22,6 +29,9 @@ import {
   torreEhMicroverdesCultivo,
 } from "@shared/mudasBandejas";
 import { hojeYmdSaoPaulo } from "@shared/cicloSequencia";
+
+const STORAGE_TORRES_MIN = "ciclos.torresMinimizadas";
+const STORAGE_PAINEL_MIN = "ciclos.painelTorresMinimizado";
 
 function dateAtLocalNoonFromYmd(ymd: string): Date {
   const [y, m, d] = ymd.split("-").map(Number);
@@ -55,6 +65,23 @@ export default function CiclosTorresPainel() {
   const [torreFoco, setTorreFoco] = useState<Torre | null>(null);
   const [cicloIdFront, setCicloIdFront] = useState("");
   const [dataAplicacaoYmd, setDataAplicacaoYmd] = useState(hoje);
+  const [painelMinimizado, setPainelMinimizado] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_PAINEL_MIN) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [torresMinimizadas, setTorresMinimizadas] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_TORRES_MIN);
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw) as unknown;
+      return Array.isArray(arr) ? new Set(arr.map(String)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   const caixaMudasId = useMemo(
     () => idCaixaMudasCompartilhada(data.torres),
@@ -75,6 +102,49 @@ export default function CiclosTorresPainel() {
     () => data.ciclos.filter((c) => c.ativo !== false),
     [data.ciclos],
   );
+
+  function persistPainelMin(v: boolean) {
+    setPainelMinimizado(v);
+    try {
+      localStorage.setItem(STORAGE_PAINEL_MIN, v ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function toggleTorreMin(id: string) {
+    setTorresMinimizadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        localStorage.setItem(STORAGE_TORRES_MIN, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
+  function minimizarTodas() {
+    const ids = torres.map((t) => t.id);
+    const next = new Set(ids);
+    setTorresMinimizadas(next);
+    try {
+      localStorage.setItem(STORAGE_TORRES_MIN, JSON.stringify(ids));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function expandirTodas() {
+    setTorresMinimizadas(new Set());
+    try {
+      localStorage.setItem(STORAGE_TORRES_MIN, "[]");
+    } catch {
+      /* ignore */
+    }
+  }
 
   function abrirRegistrar(torre: Torre) {
     setTorreFoco(torre);
@@ -160,18 +230,66 @@ export default function CiclosTorresPainel() {
 
   return (
     <section className="mb-8 space-y-4">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Ciclos e aplicações</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Todas as torres, histórico com data e registro (inclusive retroativo) sem
-          apagar o que já foi feito.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-bold">Ciclos e aplicações</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Todas as torres, histórico com data e registro (inclusive retroativo) sem
+            apagar o que já foi feito.
+          </p>
+        </div>
+        {torres.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {!painelMinimizado ? (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  onClick={minimizarTodas}
+                >
+                  Minimizar todas
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  onClick={expandirTodas}
+                >
+                  Expandir todas
+                </Button>
+              </>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-8 gap-1 text-xs"
+              onClick={() => persistPainelMin(!painelMinimizado)}
+            >
+              {painelMinimizado ? (
+                <ChevronRight className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+              {painelMinimizado
+                ? `Mostrar torres (${torres.length})`
+                : "Ocultar torres"}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {torres.length === 0 ? (
         <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
           Nenhuma torre ativa cadastrada.
         </div>
+      ) : painelMinimizado ? (
+        <p className="rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+          Torres ocultas. Use &quot;Mostrar torres&quot; para expandir de novo.
+        </p>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {torres.map((torre) => {
@@ -186,21 +304,38 @@ export default function CiclosTorresPainel() {
               return (c.caixaIds ?? []).includes(caixa.id);
             });
             const micro = torreEhMicroverdesCultivo(torre);
+            const minimizada = torresMinimizadas.has(torre.id);
+            const ultimaHist = recentes[0];
 
             return (
               <article
                 key={torre.id}
                 className="flex flex-col rounded-xl border bg-card p-3 shadow-sm"
               >
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h2 className="truncate font-display text-sm font-bold">{torre.nome}</h2>
-                    <p className="text-[11px] text-muted-foreground">
-                      {FASES_CONFIG[torre.fase]?.label ?? torre.fase}
-                      {micro ? " · Microverdes (só manual)" : null}
-                      {caixa ? ` · ${caixa.nome}` : " · Sem caixa"}
-                    </p>
-                  </div>
+                <div className="flex items-start justify-between gap-2">
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-start gap-1.5 text-left"
+                    onClick={() => toggleTorreMin(torre.id)}
+                    title={minimizada ? "Expandir torre" : "Minimizar torre"}
+                  >
+                    {minimizada ? (
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <div className="min-w-0">
+                      <h2 className="truncate font-display text-sm font-bold">{torre.nome}</h2>
+                      <p className="text-[11px] text-muted-foreground">
+                        {FASES_CONFIG[torre.fase]?.label ?? torre.fase}
+                        {micro ? " · Microverdes (só manual)" : null}
+                        {caixa ? ` · ${caixa.nome}` : " · Sem caixa"}
+                        {minimizada && ultimaHist
+                          ? ` · Última: ${formatarDataHora(ultimaHist.dataHora)}`
+                          : null}
+                      </p>
+                    </div>
+                  </button>
                   {!micro ? (
                     <Button
                       type="button"
@@ -215,68 +350,72 @@ export default function CiclosTorresPainel() {
                   ) : null}
                 </div>
 
-                <div className="mb-2 space-y-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Ciclos nesta torre
-                  </p>
-                  {ciclosTorre.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">Nenhum ciclo ativo ligado.</p>
-                  ) : (
-                    <ul className="space-y-1">
-                      {ciclosTorre.map((c) => {
-                        const ult = ultimaAplicacaoYmd(c, caixa?.id);
-                        return (
-                          <li
-                            key={c.id}
-                            className="flex items-baseline justify-between gap-2 text-xs"
-                          >
-                            <span className="min-w-0 truncate font-medium">{c.nome}</span>
-                            <span className="shrink-0 tabular-nums text-muted-foreground">
-                              {ult ? `Última ${fmtYmdBr(ult)}` : "Sem registro"}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
+                {!minimizada ? (
+                  <>
+                    <div className="mb-2 mt-2 space-y-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Ciclos nesta torre
+                      </p>
+                      {ciclosTorre.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">Nenhum ciclo ativo ligado.</p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {ciclosTorre.map((c) => {
+                            const ult = ultimaAplicacaoYmd(c, caixa?.id);
+                            return (
+                              <li
+                                key={c.id}
+                                className="flex items-baseline justify-between gap-2 text-xs"
+                              >
+                                <span className="min-w-0 truncate font-medium">{c.nome}</span>
+                                <span className="shrink-0 tabular-nums text-muted-foreground">
+                                  {ult ? `Última ${fmtYmdBr(ult)}` : "Sem registro"}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
 
-                <div className="mt-auto border-t pt-2">
-                  <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    <Droplets className="h-3 w-3" />
-                    Histórico da caixa
-                  </p>
-                  {recentes.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      {caixa
-                        ? "Nenhuma aplicação registrada ainda."
-                        : "Sem caixa — histórico aparece ao registrar em outra torre da mesma caixa."}
-                    </p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {recentes.map((a) => (
-                        <li key={a.id} className="text-xs leading-snug">
-                          <span className="font-semibold tabular-nums text-foreground">
-                            {formatarDataHora(a.dataHora)}
-                          </span>
-                          <span className="text-muted-foreground"> · </span>
-                          <span className="font-medium">{a.produto}</span>
-                          {a.quantidade ? (
-                            <span className="text-muted-foreground"> ({a.quantidade})</span>
+                    <div className="mt-auto border-t pt-2">
+                      <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        <Droplets className="h-3 w-3" />
+                        Histórico da caixa
+                      </p>
+                      {recentes.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {caixa
+                            ? "Nenhuma aplicação registrada ainda."
+                            : "Sem caixa — histórico aparece ao registrar em outra torre da mesma caixa."}
+                        </p>
+                      ) : (
+                        <ul className="space-y-1.5">
+                          {recentes.map((a) => (
+                            <li key={a.id} className="text-xs leading-snug">
+                              <span className="font-semibold tabular-nums text-foreground">
+                                {formatarDataHora(a.dataHora)}
+                              </span>
+                              <span className="text-muted-foreground"> · </span>
+                              <span className="font-medium">{a.produto}</span>
+                              {a.quantidade ? (
+                                <span className="text-muted-foreground"> ({a.quantidade})</span>
+                              ) : null}
+                              {a.executadoPorNome ? (
+                                <span className="text-muted-foreground"> — {a.executadoPorNome}</span>
+                              ) : null}
+                            </li>
+                          ))}
+                          {apps.length > recentes.length ? (
+                            <li className="text-[10px] text-muted-foreground">
+                              +{apps.length - recentes.length} registro(s) anteriores
+                            </li>
                           ) : null}
-                          {a.executadoPorNome ? (
-                            <span className="text-muted-foreground"> — {a.executadoPorNome}</span>
-                          ) : null}
-                        </li>
-                      ))}
-                      {apps.length > recentes.length ? (
-                        <li className="text-[10px] text-muted-foreground">
-                          +{apps.length - recentes.length} registro(s) anteriores
-                        </li>
-                      ) : null}
-                    </ul>
-                  )}
-                </div>
+                        </ul>
+                      )}
+                    </div>
+                  </>
+                ) : null}
               </article>
             );
           })}
