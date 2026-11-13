@@ -382,19 +382,24 @@ export async function garantirCobrancaPedidoSiteAprovado(input: {
   });
 
   if (input.usuario) {
-    await input.prisma.pedidoOperacionalAuditoria.create({
-      data: {
-        pedidoId: pedido.id,
-        usuarioId: input.usuario.id,
-        usuarioNome: input.usuario.nome,
-        acao: "portal_pedido_cobranca_reparada",
-        antes: { observacoes: obs, pagamento: pagamentoExistente?.status ?? null },
-        depois: {
-          observacoes: novasObs,
-          cobranca: { status: cobranca.status, total: cobranca.total, forma: cobranca.formaPagamento },
+    try {
+      await input.prisma.pedidoOperacionalAuditoria.create({
+        data: {
+          pedidoId: pedido.id,
+          usuarioId: input.usuario.id,
+          usuarioNome: input.usuario.nome,
+          acao: "portal_pedido_cobranca_reparada",
+          antes: { observacoes: obs, pagamento: pagamentoExistente?.status ?? null },
+          depois: {
+            observacoes: novasObs,
+            cobranca: { status: cobranca.status, total: cobranca.total, forma: cobranca.formaPagamento },
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      // Cobrança já está salva — não desfaz por falha de auditoria (ex.: usuário inválido em script).
+      console.warn("[portal] auditoria cobranca reparada", pedido.id, error);
+    }
   }
 
   return { ok: true, pagamento: cobranca };
