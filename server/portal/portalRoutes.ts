@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as db from "../db";
 import { getComercialPrisma } from "../comercial/db";
 import type { PrismaClient } from "../comercial/generated/prisma/index.js";
+import { mensagemErroContaAzulFinanceiro } from "../comercial/integrations/conta-azul/conta-azul-date-window";
 import { detalheInadimplenciaCliente, extratoReceberClienteCa } from "../comercial/lib/cliente-inadimplencia-ca";
 import { hashPassword, verifyPassword } from "../comercial/lib/password";
 import {
@@ -1506,7 +1507,14 @@ export function registerPortalRoutes(app: Express): void {
       });
     } catch (error) {
       console.error("[portal] financeiro", error);
-      falha(res, 503, "Os pagamentos não carregaram agora. Tente de novo em instantes.");
+      falha(
+        res,
+        503,
+        mensagemErroContaAzulFinanceiro(
+          error,
+          "Os pagamentos não carregaram agora. Tente de novo em instantes.",
+        ),
+      );
     }
   });
 

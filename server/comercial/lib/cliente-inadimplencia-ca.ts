@@ -5,6 +5,12 @@ import {
   contaAzulGet,
   createContaAzulHttp,
 } from "../integrations/conta-azul/conta-azul.client";
+import {
+  CA_MAX_INTERVALO_DIAS,
+  addDaysYmd,
+  janelasContaAzul,
+  limitarJanelaCa,
+} from "../integrations/conta-azul/conta-azul-date-window";
 import { ensureValidAccessToken } from "../integrations/conta-azul/sync.service";
 import { logger } from "../lib/logger";
 
@@ -236,11 +242,7 @@ export async function listarTitulosEmAtrasoCa(opts?: {
   const http = await httpCa();
   const hoje = isoHoje();
   // Conta Azul limita o intervalo de vencimento a 365 dias (inclusive).
-  const vencDe = (() => {
-    const base = new Date(`${hoje}T12:00:00-03:00`);
-    base.setDate(base.getDate() - 364);
-    return diaIsoAmericaSp(base);
-  })();
+  const vencDe = addDaysYmd(hoje, -CA_MAX_INTERVALO_DIAS);
 
   let raw: ParcelaRaw[] = [];
   try {
@@ -381,8 +383,9 @@ export async function extratoReceberClienteCa(input: {
   const id = input.contaAzulCustomerId.trim();
   const http = await httpCa();
   const hoje = isoHoje();
+  const periodo = limitarJanelaCa(input.dataInicio, input.dataFim);
 
-  // Conta Azul exige data_vencimento_*; filtramos cliente e unimos vencimento + pagamento.
+  // Conta Azul exige data_vencimento_* (máx. 365 dias) e permite filtrar pagamento.
   const porId = new Map<string, TituloReceberCa>();
 
   const coletar = async (buildQs: () => URLSearchParams) => {
@@ -399,38 +402,30 @@ export async function extratoReceberClienteCa(input: {
     }
   };
 
-  await coletar(
-    () =>
-      new URLSearchParams({
-        data_vencimento_de: input.dataInicio,
-        data_vencimento_ate: input.dataFim,
-      }),
-  );
+  for (const janela of janelasContaAzul(periodo.de, periodo.ate)) {
+    await coletar(
+      () =>
+        new URLSearchParams({
+          data_vencimento_de: janela.de,
+          data_vencimento_ate: janela.ate,
+        }),
+    );
+  }
 
-  const vencAmploDe = diaIsoAmericaSp(
-    new Date(
-      Number(input.dataInicio.slice(0, 4)) - 2,
-      Number(input.dataInicio.slice(5, 7)) - 1,
-      Number(input.dataInicio.slice(8, 10)),
-    ),
-  );
-  const vencAmploAte = diaIsoAmericaSp(
-    new Date(
-      Number(input.dataFim.slice(0, 4)) + 2,
-      Number(input.dataFim.slice(5, 7)) - 1,
-      Number(input.dataFim.slice(8, 10)),
-    ),
-  );
-
-  await coletar(
-    () =>
-      new URLSearchParams({
-        data_vencimento_de: vencAmploDe,
-        data_vencimento_ate: vencAmploAte,
-        data_pagamento_de: input.dataInicio,
-        data_pagamento_ate: input.dataFim,
-      }),
-  );
+  // Baixas no período com vencimento fora: varre ±2 anos em fatias ≤364 dias.
+  const vencAmploDe = addDaysYmd(periodo.de, -(CA_MAX_INTERVALO_DIAS * 2));
+  const vencAmploAte = addDaysYmd(periodo.ate, CA_MAX_INTERVALO_DIAS * 2);
+  for (const janela of janelasContaAzul(vencAmploDe, vencAmploAte)) {
+    await coletar(
+      () =>
+        new URLSearchParams({
+          data_vencimento_de: janela.de,
+          data_vencimento_ate: janela.ate,
+          data_pagamento_de: periodo.de,
+          data_pagamento_ate: periodo.ate,
+        }),
+    );
+  }
 
   const titulos = Array.from(porId.values()).sort((a, b) => {
     const da = a.dataPagamento || a.dataVencimento || "";
@@ -450,7 +445,7 @@ export async function extratoReceberClienteCa(input: {
   return {
     contaAzulCustomerId: id,
     clienteNome: titulos[0]?.clienteNome ?? null,
-    periodo: { inicio: input.dataInicio, fim: input.dataFim },
+    periodo: { inicio: periodo.de, fim: periodo.ate },
     titulos,
     totais: {
       recebido: Math.round(recebido * 100) / 100,

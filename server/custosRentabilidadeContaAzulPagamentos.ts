@@ -2,6 +2,10 @@ import { inferirGrupoCustoDeTextoContaAzul } from "@shared/custosRentabilidadeOv
 import { getComercialEnv } from "./comercial/env";
 import { getComercialPrisma } from "./comercial/db";
 import { createContaAzulHttp, contaAzulGet } from "./comercial/integrations/conta-azul/conta-azul.client";
+import {
+  janelasContaAzul,
+  limitarJanelaCa,
+} from "./comercial/integrations/conta-azul/conta-azul-date-window";
 import { ensureValidAccessToken } from "./comercial/integrations/conta-azul/sync.service";
 import { AcaoApi } from "./comercial/generated/prisma/index.js";
 
@@ -93,53 +97,56 @@ async function fetchTodasParcelasPagar(
   }
 
   const http = createContaAzulHttp(env, cred.accessToken);
-  const vencDe = isoDateLocal(inicio);
-  const vencAte = isoDateLocal(fim);
-  const pagDe = isoDateLocal(inicio);
-  const pagAte = isoDateLocal(fim);
+  const periodo = limitarJanelaCa(isoDateLocal(inicio), isoDateLocal(fim));
+  const vencDe = periodo.de;
+  const vencAte = periodo.ate;
+  const pagDe = periodo.de;
+  const pagAte = periodo.ate;
 
   const itens: ContaAzulParcelaPagar[] = [];
   const tamanho = 200;
   const maxPaginas = 50;
   let aviso: string | undefined;
 
-  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-    const qs = new URLSearchParams({
-      pagina: String(pagina),
-      tamanho_pagina: String(tamanho),
-      data_vencimento_de: vencDe,
-      data_vencimento_ate: vencAte,
-      data_pagamento_de: pagDe,
-      data_pagamento_ate: pagAte,
-    });
-    let res: ContaAzulBuscaPagarResponse;
-    try {
-      res = await contaAzulGet<ContaAzulBuscaPagarResponse>(
-        http,
-        `/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar?${qs.toString()}`,
-      );
-    } catch (e) {
-      if (pagina === 1 && /\(400\)/.test(e instanceof Error ? e.message : "")) {
-        const qs2 = new URLSearchParams({
-          pagina: String(pagina),
-          tamanho_pagina: String(tamanho),
-          data_vencimento_de: vencDe,
-          data_vencimento_ate: vencAte,
-        });
+  for (const janela of janelasContaAzul(vencDe, vencAte)) {
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        data_vencimento_de: janela.de,
+        data_vencimento_ate: janela.ate,
+        data_pagamento_de: pagDe,
+        data_pagamento_ate: pagAte,
+      });
+      let res: ContaAzulBuscaPagarResponse;
+      try {
         res = await contaAzulGet<ContaAzulBuscaPagarResponse>(
           http,
-          `/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar?${qs2.toString()}`,
+          `/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar?${qs.toString()}`,
         );
-        aviso =
-          "Filtro por data de pagamento indisponível; listagem por vencimento — confira itens antes de incluir.";
-      } else {
-        throw e;
+      } catch (e) {
+        if (pagina === 1 && /\(400\)/.test(e instanceof Error ? e.message : "")) {
+          const qs2 = new URLSearchParams({
+            pagina: String(pagina),
+            tamanho_pagina: String(tamanho),
+            data_vencimento_de: janela.de,
+            data_vencimento_ate: janela.ate,
+          });
+          res = await contaAzulGet<ContaAzulBuscaPagarResponse>(
+            http,
+            `/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar?${qs2.toString()}`,
+          );
+          aviso =
+            "Filtro por data de pagamento indisponível; listagem por vencimento — confira itens antes de incluir.";
+        } else {
+          throw e;
+        }
       }
-    }
 
-    const batch = res.itens ?? [];
-    itens.push(...batch);
-    if (batch.length < tamanho) break;
+      const batch = res.itens ?? [];
+      itens.push(...batch);
+      if (batch.length < tamanho) break;
+    }
   }
 
   return { itens, aviso };

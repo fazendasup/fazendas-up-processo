@@ -15,6 +15,11 @@ import {
   createContaAzulHttp,
   contaAzulGet,
 } from "./comercial/integrations/conta-azul/conta-azul.client";
+import {
+  CA_MAX_INTERVALO_DIAS,
+  addDaysYmd,
+  janelasContaAzul,
+} from "./comercial/integrations/conta-azul/conta-azul-date-window";
 import { ensureValidAccessToken } from "./comercial/integrations/conta-azul/sync.service";
 import { diaIsoAmericaSp } from "@shared/comercial/periodo-america-sp";
 import {
@@ -118,38 +123,40 @@ async function somarBaixasTodasContasDesde(
   }
   const http = createContaAzulHttp(env, cred.accessToken);
   const hoje = diaIsoAmericaSp();
-  const anoDe = Math.max(2000, Number(dataDe.slice(0, 4)) - 2);
-  const anoAte = Number(hoje.slice(0, 4)) + 2;
-  const vencAmploDe = `${anoDe}-01-01`;
-  const vencAmploAte = `${anoAte}-12-31`;
 
   const somarPath = async (pathBase: string, lado: LadoSaldo): Promise<number> => {
     let total = 0;
     const tamanho = 200;
-    for (let pagina = 1; pagina <= 80; pagina++) {
-      const qs = new URLSearchParams({
-        pagina: String(pagina),
-        tamanho_pagina: String(tamanho),
-        data_vencimento_de: vencAmploDe,
-        data_vencimento_ate: vencAmploAte,
-        data_pagamento_de: dataDe,
-        data_pagamento_ate: hoje,
-      });
-      let res: BuscaParcelasResponse;
-      try {
-        res = await contaAzulGet<BuscaParcelasResponse>(
-          http,
-          `${pathBase}?${qs.toString()}`,
-        );
-      } catch {
-        break;
+    for (const pagJanela of janelasContaAzul(dataDe, hoje)) {
+      const vencAmploDe = addDaysYmd(pagJanela.de, -(CA_MAX_INTERVALO_DIAS * 2));
+      const vencAmploAte = addDaysYmd(pagJanela.ate, CA_MAX_INTERVALO_DIAS * 2);
+      for (const janela of janelasContaAzul(vencAmploDe, vencAmploAte)) {
+        for (let pagina = 1; pagina <= 80; pagina++) {
+          const qs = new URLSearchParams({
+            pagina: String(pagina),
+            tamanho_pagina: String(tamanho),
+            data_vencimento_de: janela.de,
+            data_vencimento_ate: janela.ate,
+            data_pagamento_de: pagJanela.de,
+            data_pagamento_ate: pagJanela.ate,
+          });
+          let res: BuscaParcelasResponse;
+          try {
+            res = await contaAzulGet<BuscaParcelasResponse>(
+              http,
+              `${pathBase}?${qs.toString()}`,
+            );
+          } catch {
+            break;
+          }
+          const batch = res.itens ?? [];
+          for (const item of batch) {
+            if (!parcelaEntraNoSaldo(item, lado)) continue;
+            total += Number(item.pago ?? 0);
+          }
+          if (batch.length < tamanho) break;
+        }
       }
-      const batch = res.itens ?? [];
-      for (const item of batch) {
-        if (!parcelaEntraNoSaldo(item, lado)) continue;
-        total += Number(item.pago ?? 0);
-      }
-      if (batch.length < tamanho) break;
     }
     return round2(total);
   };

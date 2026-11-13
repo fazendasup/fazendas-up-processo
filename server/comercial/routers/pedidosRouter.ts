@@ -4290,14 +4290,14 @@ export const pedidosRouter = router({
       const { extratoReceberClienteCa } = await import(
         "../lib/cliente-inadimplencia-ca.js"
       );
-      const hoje = new Date();
-      const fim =
-        input.dataFim ??
-        `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
-      const inicioDate = new Date(hoje.getFullYear() - 1, hoje.getMonth(), hoje.getDate());
-      const inicio =
-        input.dataInicio ??
-        `${inicioDate.getFullYear()}-${String(inicioDate.getMonth() + 1).padStart(2, "0")}-${String(inicioDate.getDate()).padStart(2, "0")}`;
+      const { addDaysYmd, CA_MAX_INTERVALO_DIAS } = await import(
+        "../integrations/conta-azul/conta-azul-date-window.js"
+      );
+      const { diaIsoAmericaSp } = await import(
+        "@shared/comercial/periodo-america-sp"
+      );
+      const fim = input.dataFim ?? diaIsoAmericaSp();
+      const inicio = input.dataInicio ?? addDaysYmd(fim, -CA_MAX_INTERVALO_DIAS);
       try {
         return await extratoReceberClienteCa({
           contaAzulCustomerId: input.contaAzulCustomerId,

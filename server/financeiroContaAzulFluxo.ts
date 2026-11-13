@@ -4,6 +4,12 @@ import {
   createContaAzulHttp,
   contaAzulGet,
 } from "./comercial/integrations/conta-azul/conta-azul.client";
+import {
+  CA_MAX_INTERVALO_DIAS,
+  addDaysYmd,
+  janelasContaAzul,
+  limitarJanelaCa,
+} from "./comercial/integrations/conta-azul/conta-azul-date-window";
 import { ensureValidAccessToken } from "./comercial/integrations/conta-azul/sync.service";
 import { AcaoApi } from "./comercial/generated/prisma/index.js";
 import {
@@ -294,18 +300,15 @@ async function fetchParcelasPaginated(
   }
 
   const http = createContaAzulHttp(env, cred.accessToken);
-  const vencDe = isoDateLocal(inicio);
-  const vencAte = isoDateLocal(fim);
+  const periodo = limitarJanelaCa(isoDateLocal(inicio), isoDateLocal(fim));
+  const vencDe = periodo.de;
+  const vencAte = periodo.ate;
   const pagDe = vencDe;
   const pagAte = vencAte;
   // Janela ampla de vencimento p/ achar baixas no mês com vencimento fora do mês
-  // (atrasados de antes e antecipações com vencimento futuro).
-  const vencAmploDe = isoDateLocal(
-    new Date(inicio.getFullYear() - 2, inicio.getMonth(), inicio.getDate()),
-  );
-  const vencAmploAte = isoDateLocal(
-    new Date(fim.getFullYear() + 2, fim.getMonth(), fim.getDate()),
-  );
+  // (atrasados de antes e antecipações com vencimento futuro) — fatiada ≤364 dias.
+  const vencAmploDe = addDaysYmd(periodo.de, -(CA_MAX_INTERVALO_DIAS * 2));
+  const vencAmploAte = addDaysYmd(periodo.ate, CA_MAX_INTERVALO_DIAS * 2);
 
   const tamanho = 200;
   const maxPaginas = 40;
@@ -340,15 +343,17 @@ async function fetchParcelasPaginated(
     }
   };
 
-  await coletar("vencimento", pagina => {
-    const qs = new URLSearchParams({
-      pagina: String(pagina),
-      tamanho_pagina: String(tamanho),
-      data_vencimento_de: vencDe,
-      data_vencimento_ate: vencAte,
+  for (const janela of janelasContaAzul(vencDe, vencAte)) {
+    await coletar("vencimento", pagina => {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        data_vencimento_de: janela.de,
+        data_vencimento_ate: janela.ate,
+      });
+      return qs;
     });
-    return qs;
-  });
+  }
 
   if (opts?.somenteVencimento) {
     return {
@@ -357,17 +362,19 @@ async function fetchParcelasPaginated(
     };
   }
 
-  await coletar("pagamento", pagina => {
-    const qs = new URLSearchParams({
-      pagina: String(pagina),
-      tamanho_pagina: String(tamanho),
-      data_vencimento_de: vencAmploDe,
-      data_vencimento_ate: vencAmploAte,
-      data_pagamento_de: pagDe,
-      data_pagamento_ate: pagAte,
+  for (const janela of janelasContaAzul(vencAmploDe, vencAmploAte)) {
+    await coletar("pagamento", pagina => {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        data_vencimento_de: janela.de,
+        data_vencimento_ate: janela.ate,
+        data_pagamento_de: pagDe,
+        data_pagamento_ate: pagAte,
+      });
+      return qs;
     });
-    return qs;
-  });
+  }
 
   return {
     itens: Array.from(porId.values()),
@@ -393,53 +400,59 @@ async function fetchBaixasPagarPorPagamento(
     );
   }
   const http = createContaAzulHttp(env, cred.accessToken);
-  const pagDe = isoDateLocal(inicio);
-  const pagAte = isoDateLocal(fim);
-  const anoDe = Math.max(2000, Number(pagDe.slice(0, 4)) - 2);
-  const anoAte = Number(pagAte.slice(0, 4)) + 2;
-  const vencAmploDe = `${anoDe}-01-01`;
-  const vencAmploAte = `${anoAte}-12-31`;
+  const periodo = limitarJanelaCa(isoDateLocal(inicio), isoDateLocal(fim));
+  const pagDe = periodo.de;
+  const pagAte = periodo.ate;
+  const vencAmploDe = addDaysYmd(pagDe, -(CA_MAX_INTERVALO_DIAS * 2));
+  const vencAmploAte = addDaysYmd(pagAte, CA_MAX_INTERVALO_DIAS * 2);
   const tamanho = 200;
   const maxPaginas = 40;
   const porId = new Map<string, ParcelaCaRaw>();
 
-  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-    const qs = new URLSearchParams({
-      pagina: String(pagina),
-      tamanho_pagina: String(tamanho),
-      data_vencimento_de: vencAmploDe,
-      data_vencimento_ate: vencAmploAte,
-      data_pagamento_de: pagDe,
-      data_pagamento_ate: pagAte,
-    });
-    let res: BuscaParcelasResponse;
-    try {
-      res = await fetchParcelasPagina(
-        http,
-        "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
-        qs,
-      );
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      const carregadas = porId.size;
+  for (const janela of janelasContaAzul(vencAmploDe, vencAmploAte)) {
+    let esgotouPaginas = true;
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        data_vencimento_de: janela.de,
+        data_vencimento_ate: janela.ate,
+        data_pagamento_de: pagDe,
+        data_pagamento_ate: pagAte,
+      });
+      let res: BuscaParcelasResponse;
+      try {
+        res = await fetchParcelasPagina(
+          http,
+          "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+          qs,
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        const carregadas = porId.size;
+        throw new Error(
+          carregadas > 0
+            ? `A lista de despesas parou no meio (${carregadas} já lidas). ${msg}`
+            : msg,
+        );
+      }
+      const batch = res.itens ?? [];
+      for (const item of batch) {
+        if (item.id) porId.set(item.id, item);
+      }
+      if (batch.length < tamanho) {
+        esgotouPaginas = false;
+        break;
+      }
+    }
+    if (esgotouPaginas) {
       throw new Error(
-        carregadas > 0
-          ? `A lista de despesas parou no meio (${carregadas} já lidas). ${msg}`
-          : msg,
+        "A Conta Azul devolveu só parte das despesas pagas do mês. Atualize a base de novo.",
       );
-    }
-    const batch = res.itens ?? [];
-    for (const item of batch) {
-      if (item.id) porId.set(item.id, item);
-    }
-    if (batch.length < tamanho) {
-      return { itens: Array.from(porId.values()) };
     }
   }
 
-  throw new Error(
-    "A Conta Azul devolveu só parte das despesas pagas do mês. Atualize a base de novo.",
-  );
+  return { itens: Array.from(porId.values()) };
 }
 
 function resolverEntradaDre(
@@ -1186,30 +1199,32 @@ export async function buscarParcelasPagarHistoricoVencimento(
   const porId = new Map<string, ParcelaCaRaw>();
 
   const coletar = async (status: string | null, maxPaginas: number) => {
-    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-      const qs = new URLSearchParams({
-        pagina: String(pagina),
-        tamanho_pagina: String(tamanho),
-        data_vencimento_de: vencDe,
-        data_vencimento_ate: vencAte,
-      });
-      if (status) qs.set("status", status);
-      let res: BuscaParcelasResponse;
-      try {
-        res = await fetchParcelasPagina(
-          http,
-          "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
-          qs,
-        );
-      } catch (e) {
-        if (pagina === 1) throw e;
-        break;
+    for (const janela of janelasContaAzul(vencDe, vencAte)) {
+      for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+        const qs = new URLSearchParams({
+          pagina: String(pagina),
+          tamanho_pagina: String(tamanho),
+          data_vencimento_de: janela.de,
+          data_vencimento_ate: janela.ate,
+        });
+        if (status) qs.set("status", status);
+        let res: BuscaParcelasResponse;
+        try {
+          res = await fetchParcelasPagina(
+            http,
+            "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+            qs,
+          );
+        } catch (e) {
+          if (pagina === 1) throw e;
+          break;
+        }
+        const batch = res.itens ?? [];
+        for (const item of batch) {
+          if (item.id) porId.set(item.id, item);
+        }
+        if (batch.length < tamanho) break;
       }
-      const batch = res.itens ?? [];
-      for (const item of batch) {
-        if (item.id) porId.set(item.id, item);
-      }
-      if (batch.length < tamanho) break;
     }
   };
 
@@ -1275,11 +1290,12 @@ export async function buscarTotaisReceberContaAzul(
     );
   }
   const http = createContaAzulHttp(env, cred.accessToken);
+  const periodo = limitarJanelaCa(isoDateLocal(inicio), isoDateLocal(fim));
   const qs = new URLSearchParams({
     pagina: "1",
     tamanho_pagina: "1",
-    data_vencimento_de: isoDateLocal(inicio),
-    data_vencimento_ate: isoDateLocal(fim),
+    data_vencimento_de: periodo.de,
+    data_vencimento_ate: periodo.ate,
   });
   if (opts?.status) qs.set("status", opts.status);
   try {
@@ -1355,42 +1371,41 @@ export async function buscarBaixasReceberPorPeriodoPagamento(
   const http = createContaAzulHttp(env, cred.accessToken);
   const pathBase =
     "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar";
-  const pagDe = isoDateLocal(inicio);
-  const pagAte = isoDateLocal(fim);
-  const vencAmploDe = isoDateLocal(
-    new Date(inicio.getFullYear() - 2, inicio.getMonth(), inicio.getDate()),
-  );
-  const vencAmploAte = isoDateLocal(
-    new Date(fim.getFullYear() + 2, fim.getMonth(), fim.getDate()),
-  );
+  const periodo = limitarJanelaCa(isoDateLocal(inicio), isoDateLocal(fim));
+  const pagDe = periodo.de;
+  const pagAte = periodo.ate;
+  const vencAmploDe = addDaysYmd(pagDe, -(CA_MAX_INTERVALO_DIAS * 2));
+  const vencAmploAte = addDaysYmd(pagAte, CA_MAX_INTERVALO_DIAS * 2);
   const tamanho = 200;
   const maxPaginas = 40;
   const porId = new Map<string, ParcelaCaRaw>();
   const idsCat = (opts?.idsCategorias ?? []).filter(Boolean);
 
-  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-    const qs = new URLSearchParams({
-      pagina: String(pagina),
-      tamanho_pagina: String(tamanho),
-      data_vencimento_de: vencAmploDe,
-      data_vencimento_ate: vencAmploAte,
-      data_pagamento_de: pagDe,
-      data_pagamento_ate: pagAte,
-    });
-    for (const id of idsCat) {
-      qs.append("ids_categorias", id);
+  for (const janela of janelasContaAzul(vencAmploDe, vencAmploAte)) {
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        data_vencimento_de: janela.de,
+        data_vencimento_ate: janela.ate,
+        data_pagamento_de: pagDe,
+        data_pagamento_ate: pagAte,
+      });
+      for (const id of idsCat) {
+        qs.append("ids_categorias", id);
+      }
+      let res: BuscaParcelasResponse;
+      try {
+        res = await fetchParcelasPagina(http, pathBase, qs);
+      } catch {
+        break;
+      }
+      const batch = res.itens ?? [];
+      for (const item of batch) {
+        if (item.id) porId.set(item.id, item);
+      }
+      if (batch.length < tamanho) break;
     }
-    let res: BuscaParcelasResponse;
-    try {
-      res = await fetchParcelasPagina(http, pathBase, qs);
-    } catch {
-      break;
-    }
-    const batch = res.itens ?? [];
-    for (const item of batch) {
-      if (item.id) porId.set(item.id, item);
-    }
-    if (batch.length < tamanho) break;
   }
 
   const [classifs, catalogo] = await Promise.all([
@@ -1433,32 +1448,33 @@ export async function buscarParcelasReceberPorVencimento(
     );
   }
   const http = createContaAzulHttp(env, cred.accessToken);
-  const vencDe = isoDateLocal(inicio);
-  const vencAte = isoDateLocal(fim);
+  const periodo = limitarJanelaCa(isoDateLocal(inicio), isoDateLocal(fim));
   const tamanho = 200;
   const maxPaginas = 40;
   const porId = new Map<string, ParcelaCaRaw>();
 
-  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
-    const qs = new URLSearchParams({
-      pagina: String(pagina),
-      tamanho_pagina: String(tamanho),
-      data_vencimento_de: vencDe,
-      data_vencimento_ate: vencAte,
-    });
-    try {
-      const res = await fetchParcelasPagina(
-        http,
-        "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
-        qs,
-      );
-      const batch = res.itens ?? [];
-      for (const item of batch) {
-        if (item.id) porId.set(item.id, item);
+  for (const janela of janelasContaAzul(periodo.de, periodo.ate)) {
+    for (let pagina = 1; pagina <= maxPaginas; pagina++) {
+      const qs = new URLSearchParams({
+        pagina: String(pagina),
+        tamanho_pagina: String(tamanho),
+        data_vencimento_de: janela.de,
+        data_vencimento_ate: janela.ate,
+      });
+      try {
+        const res = await fetchParcelasPagina(
+          http,
+          "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+          qs,
+        );
+        const batch = res.itens ?? [];
+        for (const item of batch) {
+          if (item.id) porId.set(item.id, item);
+        }
+        if (batch.length < tamanho) break;
+      } catch {
+        break;
       }
-      if (batch.length < tamanho) break;
-    } catch {
-      break;
     }
   }
 
