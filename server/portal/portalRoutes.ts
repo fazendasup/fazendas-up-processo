@@ -309,7 +309,7 @@ export function registerPortalRoutes(app: Express): void {
               grupo: grupoEfetivo(produto.nome, produto.grupoLoja),
               descricao: produto.descricaoLoja || ficha.descricao,
               aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
-              preco: logado ? preco : null,
+              preco,
               precoEspecial: logado && especial != null,
               imagemUrl: produto.imagemUrl || ficha.foto,
               unidade: produto.modoCompra === "KG" ? "kg" : "un",
