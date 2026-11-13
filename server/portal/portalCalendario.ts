@@ -1,4 +1,4 @@
-/** Entrega B2B: 2 dias úteis, sem sábado, domingo ou feriado de Manaus. */
+/** Entrega B2B: 1 dia útil, sem sábado, domingo ou feriado de Manaus. */
 
 export const MIN_ORDER_REAIS = 300;
 export const MIN_ORDER_RECORRENTE_REAIS = 150;
@@ -24,7 +24,7 @@ export function taxaEntregaAbaixoMinimo(
 
 /** Acréscimo no total cobrado quando o cliente paga com cartão. */
 export const TAXA_CARTAO_PESSOA = 0.05;
-export const LEAD_BUSINESS_DAYS = 2;
+export const LEAD_BUSINESS_DAYS = 1;
 const TIMEZONE = "America/Manaus";
 
 const HOLIDAYS = new Set([
