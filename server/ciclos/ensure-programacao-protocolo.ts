@@ -1,7 +1,8 @@
 import "dotenv/config";
 import { and, eq, inArray } from "drizzle-orm";
 import { programacaoCiclos, type CicloProgramado } from "../../client/src/data/cicloFases14d";
-import { caixasAgua, cicloCaixaExecucoes, ciclos, projetos } from "../../drizzle/schema";
+import { caixasAgua, cicloCaixaExecucoes, ciclos, projetos, torres } from "../../drizzle/schema";
+import { torreEhMicroverdesCultivo, torreEhMudasOperacional } from "../../shared/mudasBandejas";
 import { closeDb, getDb } from "../db";
 
 function hojeSaoPaulo(agora = new Date()): string {
@@ -108,6 +109,49 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
       .where(eq(caixasAgua.projetoId, fazenda.id));
     if (caixas.length === 0) continue;
 
+    const torresFazenda = await db
+      .select({
+        id: torres.id,
+        fase: torres.fase,
+        cultivo: torres.cultivo,
+        caixaAguaId: torres.caixaAguaId,
+      })
+      .from(torres)
+      .where(eq(torres.projetoId, fazenda.id));
+
+    /** Caixas elegíveis à programação: ignora órfãs e as ligadas só a cultivo=microverdes. */
+    const caixasProgramaveis = caixas.filter((caixa) => {
+      const ligadas = torresFazenda.filter((t) => t.caixaAguaId === caixa.id);
+      if (ligadas.length === 0) return false;
+      if (ligadas.every((t) => torreEhMicroverdesCultivo(t))) return false;
+      if (caixa.fase === "mudas") {
+        return ligadas.some((t) => torreEhMudasOperacional(t));
+      }
+      return true;
+    });
+    // Uma única caixa de mudas na programação (a compartilhada).
+    const mudasProgramaveis = caixasProgramaveis.filter((c) => c.fase === "mudas");
+    const caixaMudasUnicaId =
+      mudasProgramaveis.length <= 1
+        ? mudasProgramaveis[0]?.id
+        : (() => {
+            let melhor = mudasProgramaveis[0]!;
+            let melhorN = 0;
+            for (const c of mudasProgramaveis) {
+              const n = torresFazenda.filter(
+                (t) => t.caixaAguaId === c.id && torreEhMudasOperacional(t),
+              ).length;
+              if (n > melhorN) {
+                melhorN = n;
+                melhor = c;
+              }
+            }
+            return melhor.id;
+          })();
+    const caixasParaAgenda = caixasProgramaveis.filter(
+      (c) => c.fase !== "mudas" || c.id === caixaMudasUnicaId,
+    );
+
     const existentes = await db
       .select()
       .from(ciclos)
@@ -139,8 +183,8 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
         item.caixas === "nenhuma"
           ? []
           : item.caixas === "sem-mudas"
-            ? caixas.filter((caixa) => caixa.fase !== "mudas").map((caixa) => caixa.id)
-            : caixas.map((caixa) => caixa.id);
+            ? caixasParaAgenda.filter((caixa) => caixa.fase !== "mudas").map((caixa) => caixa.id)
+            : caixasParaAgenda.map((caixa) => caixa.id);
       const alvo = item.caixas === "nenhuma" ? "andar" : "caixa";
       const dados = {
         nome: item.nome,

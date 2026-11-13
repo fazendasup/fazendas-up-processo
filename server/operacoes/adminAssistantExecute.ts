@@ -152,13 +152,17 @@ export async function runAdminAssistantAction(
         estruturaOverrideJson = JSON.stringify(ESTRUTURA_OVERRIDE_FV_12x6);
       }
       const slug = `${p.nome.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}-${Date.now().toString(36)}`;
+      const caixaAguaId =
+        proj?.tipo === "fazenda_vertical" && p.fase === "mudas"
+          ? await db.findOrCreateCaixaMudasCompartilhada(pid)
+          : p.caixaAguaId;
       await db.createTorreComEstrutura({
         projetoId: pid,
         slug,
         nome: p.nome,
         fase: p.fase,
         numAndares,
-        caixaAguaId: p.caixaAguaId,
+        caixaAguaId,
         numeroTorre,
         estruturaOverrideJson,
       });
@@ -168,6 +172,15 @@ export async function runAdminAssistantAction(
       requireProjetoComTorres(ctx.projetoTipo);
       const p = parseAssistantActionParams("atualizar_torre", params);
       const { id, modeloEstrutura, ...updates } = p;
+      const existing = await db.getTorreById(pid, id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Torre não encontrada." });
+      const faseEfetiva = (updates.fase ?? existing.fase) as string;
+      if ((existing as { cultivo?: string | null }).cultivo === "microverdes") {
+        (updates as { caixaAguaId?: number | null }).caixaAguaId = null;
+      } else if (ctx.projetoTipo === "fazenda_vertical" && faseEfetiva === "mudas") {
+        (updates as { caixaAguaId?: number | null }).caixaAguaId =
+          await db.findOrCreateCaixaMudasCompartilhada(pid);
+      }
       if (modeloEstrutura && updates.fase !== "mudas") {
         await db.updateTorre(pid, id, {
           ...updates,

@@ -54,6 +54,9 @@ export const torresRouter = router({
       }
       if (proj?.tipo === "microverdes" && !proj.usarCaixaAgua) {
         caixaAguaId = undefined;
+      } else if (proj?.tipo === "fazenda_vertical" && input.fase === "mudas") {
+        // Todas as torres de mudas compartilham uma única caixa.
+        caixaAguaId = await db.findOrCreateCaixaMudasCompartilhada(projetoId);
       } else if (caixaAguaId != null) {
         const caixa = await db.getCaixaAguaById(projetoId, caixaAguaId);
         if (!caixa) {
@@ -144,7 +147,14 @@ export const torresRouter = router({
         }
       }
       const faseEfetiva = (updates.fase ?? existing.fase) as "mudas" | "vegetativa" | "maturacao";
-      if (updates.caixaAguaId != null && typeof updates.caixaAguaId === "number") {
+      const cultivoEfetivo = (existing as { cultivo?: string | null }).cultivo;
+      if (cultivoEfetivo === "microverdes") {
+        // Torre de microverdes na FV: sem caixa programada (aplicação só manual).
+        (updates as { caixaAguaId?: number | null }).caixaAguaId = null;
+      } else if (proj?.tipo === "fazenda_vertical" && faseEfetiva === "mudas") {
+        (updates as { caixaAguaId?: number | null }).caixaAguaId =
+          await db.findOrCreateCaixaMudasCompartilhada(projetoId);
+      } else if (updates.caixaAguaId != null && typeof updates.caixaAguaId === "number") {
         const caixa = await db.getCaixaAguaById(projetoId, updates.caixaAguaId);
         if (!caixa) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Caixa d'água não encontrada." });
@@ -156,7 +166,13 @@ export const torresRouter = router({
           });
         }
       }
-      if (updates.fase != null && updates.fase !== existing.fase && updates.caixaAguaId === undefined) {
+      if (
+        cultivoEfetivo !== "microverdes" &&
+        !(proj?.tipo === "fazenda_vertical" && faseEfetiva === "mudas") &&
+        updates.fase != null &&
+        updates.fase !== existing.fase &&
+        updates.caixaAguaId === undefined
+      ) {
         const currentCaixaId = existing.caixaAguaId;
         if (currentCaixaId) {
           const c = await db.getCaixaAguaById(projetoId, currentCaixaId);

@@ -9,7 +9,11 @@ type SyncContaAzulCallbacks = {
   escopo?: ContaAzulSyncEscopoCliente;
   /** Sem toast ao abrir a página. O botão manual continua avisando. */
   silencioso?: boolean;
-  onSuccess?: (data: { pedidosGravados: number | null; inteligenciaOportunidades: number | null }) => void;
+  onSuccess?: (data: {
+    pedidosGravados: number | null;
+    inteligenciaOportunidades: number | null;
+    clientesAtivos?: number | null;
+  }) => void;
 };
 
 const PERFIS_SYNC = new Set(["ADMIN", "GERENTE_COMERCIAL"]);
@@ -45,6 +49,7 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
       escopo === "completo" ? utils.comercial.kpis.snapshots.invalidate() : Promise.resolve(),
       clientes ? utils.comercial.clientes.listar.invalidate() : Promise.resolve(),
       clientes ? utils.comercial.clientes.listarCarteira.invalidate() : Promise.resolve(),
+      clientes ? utils.comercial.pedidos.clientes.invalidate() : Promise.resolve(),
       escopo === "completo" ? utils.comercial.oportunidades.listar.invalidate() : Promise.resolve(),
       escopo === "completo" ? utils.comercial.execucoes.resumo.invalidate() : Promise.resolve(),
       escopo === "completo" ? utils.comercial.execucoes.listar.invalidate() : Promise.resolve(),
@@ -104,9 +109,14 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
       if (status.data!.lastStatus === "SUCESSO") {
         const pedidos = status.data!.pedidosGravados;
         const intel = status.data!.inteligenciaOportunidades;
+        const clientesAtivos =
+          typeof (status.data as { clientesAtivos?: number | null }).clientesAtivos === "number"
+            ? (status.data as { clientesAtivos?: number | null }).clientesAtivos
+            : null;
         callbacks?.onSuccess?.({
           pedidosGravados: pedidos,
           inteligenciaOportunidades: intel,
+          clientesAtivos,
         });
         const escopo = escopoRef.current;
         if (escopo === "vendas") {
@@ -114,7 +124,11 @@ export function useSyncContaAzul(callbacks?: SyncContaAzulCallbacks) {
             pedidos != null ? `Vendas atualizadas: ${pedidos} pedido(s).` : "Vendas da Conta Azul atualizadas.",
           );
         } else if (escopo === "clientes") {
-          toast.success("Clientes da Conta Azul atualizados.");
+          toast.success(
+            clientesAtivos != null
+              ? `Clientes ativos atualizados: ${clientesAtivos}.`
+              : "Clientes ativos da Conta Azul atualizados.",
+          );
         } else {
           toast.success(
             pedidos != null

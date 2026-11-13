@@ -16,10 +16,11 @@ export const RETENCAO_EXECUCOES_API_DIAS = 30;
 /** Rastreio GPS do entregador — pontos antigos não são necessários para operação. */
 export const RETENCAO_HISTORICO_LOCALIZACAO_DIAS = 14;
 
-/** Tabelas de log/auditoria seguras para TRUNCATE em emergência (reclaim de disco com file-per-table). */
+/** Tabelas de log/auditoria seguras para TRUNCATE em emergência (reclaim de disco com file-per-table).
+ * Maior primeiro: com disco 100% cheio, o DROP dela libera bytes para as demais. */
 const TABELAS_LOG_TRUNCATE = [
-  "historico_localizacao_entrega",
   "pedidos_conciliacao_eventos",
+  "historico_localizacao_entrega",
   "execucoes_api",
   "pedidos_operacionais_auditoria",
 ] as const;
@@ -31,6 +32,7 @@ type PrismaEspaco = Pick<
   | "execucaoApi"
   | "historicoLocalizacaoEntrega"
   | "$executeRawUnsafe"
+  | "$queryRawUnsafe"
 >;
 
 async function limparPorData(
@@ -130,10 +132,14 @@ export async function limparSnapshotsConciliacaoAntigos(
  */
 /**
  * Esvazia tabela quando undo/tablespace está no limite.
- * Ordem: TRUNCATE → recreate (CREATE LIKE + RENAME + DROP) → DELETE em lotes minúsculos.
+ * Ordem:
+ * 1) TRUNCATE
+ * 2) CREATE LIKE + RENAME + DROP (precisa de espaço livre p/ __empty)
+ * 3) SHOW CREATE → DROP → CREATE  ← único caminho com disco 100% cheio (3675)
+ * 4) DELETE em lotes minúsculos (não devolve bytes ao SO; só reuso interno)
  */
 async function esvaziarTabelaSegura(
-  prisma: Pick<PrismaClient, "$executeRawUnsafe">,
+  prisma: Pick<PrismaClient, "$executeRawUnsafe" | "$queryRawUnsafe">,
   tabela: string,
 ): Promise<string> {
   try {
@@ -176,6 +182,28 @@ async function esvaziarTabelaSegura(
     }
   }
 
+  // Disco 100% cheio: CREATE LIKE precisa de bytes livres e falha (3675).
+  // DROP libera o .ibd imediatamente; depois recria com o DDL capturado antes.
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ "Create Table": string } | Record<string, string>>>(
+      `SHOW CREATE TABLE \`${tabela}\``,
+    );
+    const row = rows?.[0] ?? {};
+    const ddl =
+      (row as { "Create Table"?: string })["Create Table"] ??
+      Object.values(row).find((v) => typeof v === "string" && /CREATE TABLE/i.test(v));
+    if (typeof ddl === "string" && ddl.length > 0) {
+      await prisma.$executeRawUnsafe(`DROP TABLE \`${tabela}\``);
+      await prisma.$executeRawUnsafe(ddl);
+      return "ok_drop_recreate";
+    }
+  } catch (err) {
+    console.warn(
+      `[mysql-espaco] drop+recreate ${tabela}:`,
+      err instanceof Error ? err.message : err,
+    );
+  }
+
   // Último recurso: DELETE em lotes pequenos (cada statement = pouco UNDO).
   let total = 0;
   for (let i = 0; i < 5000; i++) {
@@ -196,7 +224,7 @@ async function esvaziarTabelaSegura(
 }
 
 export async function truncarTabelasLogComercial(
-  prisma: Pick<PrismaClient, "$executeRawUnsafe">,
+  prisma: Pick<PrismaClient, "$executeRawUnsafe" | "$queryRawUnsafe">,
 ): Promise<Record<string, string>> {
   const resultado: Record<string, string> = {};
   try {

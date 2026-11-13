@@ -4,9 +4,10 @@
  *   tsx server/run-liberar-espaco-comercial.ts
  *   tsx server/run-liberar-espaco-comercial.ts --emergencia
  *
- * --emergencia faz TRUNCATE de pedidos_conciliacao_eventos, execucoes_api e
- * pedidos_operacionais_auditoria (único jeito de devolver bytes ao disco com
- * innodb_file_per_table — DELETE não basta quando o volume está 100% cheio).
+ * --emergencia esvazia pedidos_conciliacao_eventos, execucoes_api,
+ * pedidos_operacionais_auditoria e historico_localizacao_entrega.
+ * Com disco 100% cheio (erro 3675), cai em SHOW CREATE → DROP → CREATE
+ * (TRUNCATE/CREATE LIKE precisam de espaço livre e falham).
  */
 import "dotenv/config";
 import { getComercialPrisma } from "./comercial/db.js";

@@ -2,9 +2,13 @@ import { receitaCicloPrioritariaParaVariedade } from "@shared/cicloReceita";
 import {
   ANDARES_TORRE_MUDAS_BANDEJA,
   BANDEJAS_POR_ANDAR_MUDAS,
+  NOME_CAIXA_MUDAS_COMPARTILHADA,
+  SLUG_CAIXA_MUDAS_COMPARTILHADA,
   TORRES_MUDAS_BANDEJA,
   nomeTorreComoMicroverdes,
   slugTorreMudasBandeja,
+  torreEhMicroverdesCultivo,
+  torreEhMudasOperacional,
   torreMudasViraMicroverdes,
 } from "../shared/mudasBandejas";
 import {
@@ -2206,7 +2210,67 @@ export async function createTorre(data: InsertTorre) {
   return { id: result[0].insertId };
 }
 
-/** Cria torre + andares + perfis + furos conforme a fase (igual ao seed admin). Opcional: caixa existente; senão cria uma caixa dedicada. */
+/**
+ * Caixa única de mudas do projeto FV: reutiliza a já ligada às torres operacionais,
+ * ou a de slug canônico, ou cria "Caixa Mudas".
+ */
+export async function findOrCreateCaixaMudasCompartilhada(projetoId: number): Promise<number> {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+
+  const listaTorres = await dbConn
+    .select({ id: torres.id, fase: torres.fase, cultivo: torres.cultivo, caixaAguaId: torres.caixaAguaId })
+    .from(torres)
+    .where(eq(torres.projetoId, projetoId));
+  const mudasOps = listaTorres.filter((t) => torreEhMudasOperacional(t));
+  const contagem = new Map<number, number>();
+  for (const t of mudasOps) {
+    if (t.caixaAguaId == null) continue;
+    contagem.set(t.caixaAguaId, (contagem.get(t.caixaAguaId) ?? 0) + 1);
+  }
+  let melhorId: number | null = null;
+  let melhorN = -1;
+  for (const [id, n] of contagem) {
+    if (n > melhorN) {
+      melhorN = n;
+      melhorId = id;
+    }
+  }
+  if (melhorId != null) return melhorId;
+
+  const porSlug = await dbConn
+    .select({ id: caixasAgua.id })
+    .from(caixasAgua)
+    .where(
+      and(
+        eq(caixasAgua.projetoId, projetoId),
+        eq(caixasAgua.slug, SLUG_CAIXA_MUDAS_COMPARTILHADA),
+      ),
+    )
+    .limit(1);
+  if (porSlug[0]) return porSlug[0].id;
+
+  const qualquerMudas = await dbConn
+    .select({ id: caixasAgua.id, slug: caixasAgua.slug })
+    .from(caixasAgua)
+    .where(and(eq(caixasAgua.projetoId, projetoId), eq(caixasAgua.fase, "mudas")));
+  // Prefere caixa sem torre de microverdes ligada
+  const microCaixaIds = new Set(
+    listaTorres.filter((t) => torreEhMicroverdesCultivo(t) && t.caixaAguaId != null).map((t) => t.caixaAguaId!),
+  );
+  const candidata = qualquerMudas.find((c) => !microCaixaIds.has(c.id)) ?? qualquerMudas[0];
+  if (candidata) return candidata.id;
+
+  const created = await createCaixaAgua({
+    projetoId,
+    slug: SLUG_CAIXA_MUDAS_COMPARTILHADA,
+    nome: NOME_CAIXA_MUDAS_COMPARTILHADA,
+    fase: "mudas",
+  });
+  return created.id;
+}
+
+/** Cria torre + andares + perfis + furos conforme a fase (igual ao seed admin). Opcional: caixa existente; senão cria uma caixa dedicada (mudas: reusa a compartilhada). */
 export async function createTorreComEstrutura(params: {
   projetoId: number;
   slug: string;
@@ -2222,7 +2286,9 @@ export async function createTorreComEstrutura(params: {
   const { projetoId } = params;
 
   let caixaId: number | null = params.caixaAguaId ?? null;
-  if (caixaId == null) {
+  if (caixaId == null && params.fase === "mudas") {
+    caixaId = await findOrCreateCaixaMudasCompartilhada(projetoId);
+  } else if (caixaId == null) {
     const slugBase = params.nome
       .toLowerCase()
       .replace(/\s+/g, "-")
@@ -3872,6 +3938,17 @@ export async function marcarCicloExecutado(input: {
             executorNome: input.executorNome,
           });
         }
+        // Histórico append-only (não sobrescreve aplicações anteriores).
+        await createAplicacaoCaixa({
+          projetoId: input.projetoId,
+          caixaAguaId,
+          tipo: atual.tipo || "ciclo",
+          produto: atual.produto,
+          quantidade: atual.dosagem?.trim() || "conforme ciclo",
+          dataHora: input.ultimaExecucao,
+          executadoPorId: input.executorId,
+          executadoPorNome: input.executorNome,
+        });
       } catch (err) {
         console.error(
           `[marcarCicloExecutado] falha na caixa ${caixaAguaId} do ciclo ${input.cicloId}:`,
@@ -3909,6 +3986,8 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
   caixaAguaId: number;
   executorId: number;
   executorNome: string;
+  /** Data/hora da aplicação (retroativa permitida). Padrão = agora. */
+  dataHora?: Date;
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -3930,8 +4009,11 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
   const caixa = await getCaixaAguaById(input.projetoId, input.caixaAguaId);
   if (!caixa) throw new Error("Caixa não encontrada.");
 
-  const agora = new Date();
-  const hojeYmd = hojeYmdSaoPaulo(agora);
+  const agora =
+    input.dataHora instanceof Date && !Number.isNaN(input.dataHora.getTime())
+      ? input.dataHora
+      : new Date();
+  const hojeYmd = hojeYmdSaoPaulo(agora) || ymdCalendario(agora) || hojeYmdSaoPaulo();
 
   const [ciclosProjeto, execucoesProjeto] = await Promise.all([
     db.select().from(ciclos).where(eq(ciclos.projetoId, input.projetoId)),
@@ -4023,6 +4105,17 @@ export async function registrarAplicacaoCicloNaCaixa(input: {
     executadoPorId: input.executorId,
     executadoPorNome: input.executorNome,
   });
+
+  // Mantém ponteiro do ciclo sem apagar o histórico em aplicacoes_caixa.
+  const ultimaAtual = ciclo.ultimaExecucao ? new Date(ciclo.ultimaExecucao).getTime() : 0;
+  if (!Number.isFinite(ultimaAtual) || agora.getTime() >= ultimaAtual) {
+    await updateCiclo(input.projetoId, input.cicloId, {
+      ultimaExecucao: agora,
+      ultimoExecutorId: input.executorId,
+      ultimoExecutorNome: input.executorNome,
+    });
+  }
+
   return deslocamentos.length;
 }
 
@@ -4906,6 +4999,8 @@ WHERE t.\`numeroTorre\` IS NULL`));
 /**
  * Torre de mudas existente vira microverdes (andares, perfis e histórico ficam).
  * Cria 4 torres de 6 andares com 4 bandejas cada, se ainda não existirem.
+ * Consolida 1 caixa d'água compartilhada para todas as mudas operacionais;
+ * torres cultivo=microverdes ficam sem caixa (aplicação só manual).
  * Não corre no Vitest, para não alterar bases de teste.
  */
 export async function ensureMudasBandejasEMicroverdes(): Promise<void> {
@@ -4941,7 +5036,7 @@ export async function ensureMudasBandejasEMicroverdes(): Promise<void> {
   });
 
   for (const projeto of projetosFv) {
-    const lista = await dbConn
+    let lista = await dbConn
       .select()
       .from(torres)
       .where(eq(torres.projetoId, projeto.id));
@@ -4962,9 +5057,23 @@ export async function ensureMudasBandejasEMicroverdes(): Promise<void> {
         .set({
           cultivo: "microverdes",
           nome: nomeTorreComoMicroverdes(torre.nome).slice(0, 128),
+          caixaAguaId: null,
         })
         .where(and(eq(torres.projetoId, projeto.id), eq(torres.id, torre.id)));
     }
+
+    // Microverdes já convertidas: sem caixa programada.
+    await dbConn
+      .update(torres)
+      .set({ caixaAguaId: null })
+      .where(
+        and(
+          eq(torres.projetoId, projeto.id),
+          eq(torres.cultivo, "microverdes"),
+        ),
+      );
+
+    const caixaMudasId = await findOrCreateCaixaMudasCompartilhada(projeto.id);
 
     for (let n = 1; n <= TORRES_MUDAS_BANDEJA; n++) {
       const slug = slugTorreMudasBandeja(n);
@@ -4982,6 +5091,7 @@ export async function ensureMudasBandejasEMicroverdes(): Promise<void> {
           fase: "mudas",
           numAndares: ANDARES_TORRE_MUDAS_BANDEJA,
           numeroTorre,
+          caixaAguaId: caixaMudasId,
           estruturaOverrideJson: overrideBandeja,
         });
         slugs.add(slug);
@@ -4990,6 +5100,19 @@ export async function ensureMudasBandejasEMicroverdes(): Promise<void> {
         if (/duplicate|uq_|unique/i.test(msg)) continue;
         console.error("[Database] ensureMudasBandejasEMicroverdes criar torre:", err);
       }
+    }
+
+    lista = await dbConn
+      .select()
+      .from(torres)
+      .where(eq(torres.projetoId, projeto.id));
+    for (const torre of lista) {
+      if (!torreEhMudasOperacional(torre)) continue;
+      if (torre.caixaAguaId === caixaMudasId) continue;
+      await dbConn
+        .update(torres)
+        .set({ caixaAguaId: caixaMudasId })
+        .where(and(eq(torres.projetoId, projeto.id), eq(torres.id, torre.id)));
     }
   }
 }
@@ -5091,6 +5214,8 @@ export async function ensureFvDefaultInfrastructure(projetoId: number): Promise<
     };
   }
 
+  const caixaMudasId = await findOrCreateCaixaMudasCompartilhada(projetoId);
+
   await createTorreComEstrutura({
     projetoId,
     slug: "t-mudas-1",
@@ -5098,6 +5223,7 @@ export async function ensureFvDefaultInfrastructure(projetoId: number): Promise<
     fase: "mudas",
     numAndares: 12,
     numeroTorre: 1,
+    caixaAguaId: caixaMudasId,
   });
 
   for (let t = 1; t <= 3; t++) {
@@ -5126,7 +5252,7 @@ export async function ensureFvDefaultInfrastructure(projetoId: number): Promise<
   return {
     created: true,
     message:
-      "Estrutura padrão recriada: 1 torre mudas, 3 vegetativas, 10 maturação (últimas duas 12×6), cada uma com caixa associada. Cadastre nomes/slugs em Configuração se precisar alinhar ao anterior.",
+      "Estrutura padrão recriada: 1 torre mudas (caixa compartilhada), 3 vegetativas, 10 maturação (últimas duas 12×6). Cadastre nomes/slugs em Configuração se precisar alinhar ao anterior.",
   };
 }
 

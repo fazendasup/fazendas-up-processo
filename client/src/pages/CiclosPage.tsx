@@ -19,11 +19,13 @@ import {
 } from '@shared/cicloSequencia';
 import { programacaoCiclos } from '@/data/cicloFases14d';
 import { numeroNoNomeCadastro, rotuloCaixaComoCadastro } from '@/lib/rotuloCaixaCadastro';
+import { caixaElegivelProgramacao, idCaixaMudasCompartilhada } from '@shared/mudasBandejas';
 import AplicacaoFoliar from '@/components/AplicacaoFoliar';
 import AplicacaoSolucao from '@/components/AplicacaoSolucao';
 import ProtocoloFases14d from '@/components/ProtocoloFases14d';
 import QuadroAplicacoesProtocolo from '@/components/QuadroAplicacoesProtocolo';
 import ApontamentoOperadorCiclos from '@/components/ApontamentoOperadorCiclos';
+import CiclosTorresPainel from '@/components/CiclosTorresPainel';
 import {
   caldaFoliar,
   caldasNoMesmoDia,
@@ -100,11 +102,35 @@ function referenciaHojeFazenda(): Date {
 
 function caixasNaSequencia<T extends { id: string; nome: string; fase: Fase }>(
   caixas: T[],
-  torres: { nome: string; caixaAguaId?: string; ativa?: boolean | number | null }[],
+  torres: {
+    nome: string;
+    caixaAguaId?: string;
+    fase?: string;
+    cultivo?: string | null;
+    ativa?: boolean | number | null;
+  }[],
   fase: Fase,
 ): { caixa: T; torres: { nome: string }[] }[] {
+  const mudasId = idCaixaMudasCompartilhada(
+    torres.map((t) => ({
+      caixaAguaId: t.caixaAguaId,
+      fase: t.fase ?? fase,
+      cultivo: t.cultivo,
+    })),
+  );
   return caixas
     .filter((c) => c.fase === fase)
+    .filter((c) =>
+      caixaElegivelProgramacao(
+        c,
+        torres.map((t) => ({
+          caixaAguaId: t.caixaAguaId,
+          fase: t.fase ?? c.fase,
+          cultivo: t.cultivo,
+        })),
+        mudasId,
+      ),
+    )
     .map((caixa) => ({
       caixa,
       torres: torres
@@ -151,6 +177,8 @@ export default function CiclosPage() {
   const [initialUltimaExecucaoYmd, setInitialUltimaExecucaoYmd] = useState('');
   const [dataInicioTouched, setDataInicioTouched] = useState(false);
   const [ultimaExecucaoTouched, setUltimaExecucaoTouched] = useState(false);
+  const [feitoDialogId, setFeitoDialogId] = useState<string | null>(null);
+  const [feitoDataYmd, setFeitoDataYmd] = useState(hojeYmdSaoPaulo() || hojeYmdLocal());
 
   const toggleDia = (dia: number) => {
     setDiasSelecionados((prev) =>
@@ -514,7 +542,15 @@ export default function CiclosPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (!window.confirm('Excluir este ciclo?')) return;
+    const ciclo = data.ciclos.find((c) => c.id === id);
+    const nome = ciclo?.nome ?? 'este ciclo';
+    if (
+      !window.confirm(
+        `Excluir "${nome}"? Prefira desativar (botão liga/desliga) para manter o histórico. Excluir remove o cadastro do ciclo.`,
+      )
+    ) {
+      return;
+    }
     const dbId = resolver.cicloFrontIdToDbId.get(id);
     if (!dbId) return;
     mutations.deleteCiclo.mutate({ id: dbId });
@@ -526,18 +562,31 @@ export default function CiclosPage() {
     if (!ciclo) return;
     const dbId = resolver.cicloFrontIdToDbId.get(id);
     if (!dbId) return;
-    mutations.updateCiclo.mutate({ id: dbId, ativo: !ciclo.ativo });
+    const ativar = ciclo.ativo === false;
+    mutations.updateCiclo.mutate(
+      { id: dbId, ativo: ativar },
+      {
+        onSuccess: () =>
+          toast.success(ativar ? `"${ciclo.nome}" reativado.` : `"${ciclo.nome}" desativado (histórico mantido).`),
+        onError: (e) => toast.error(e.message || 'Não foi possível alterar o ciclo'),
+      },
+    );
   };
 
-  /** Um clique: marca feito no dia de hoje (calendário da fazenda). */
-  const marcarFeitoHoje = (id: string) => {
-    const dbId = resolver.cicloFrontIdToDbId.get(id);
+  /** Abre diálogo para escolher a data da aplicação (hoje ou retroativa). */
+  const abrirMarcarFeito = (id: string) => {
+    setFeitoDialogId(id);
+    setFeitoDataYmd(hojeYmdSaoPaulo() || hojeYmdLocal());
+  };
+
+  const confirmarMarcarFeito = () => {
+    if (!feitoDialogId) return;
+    const dbId = resolver.cicloFrontIdToDbId.get(feitoDialogId);
     if (!dbId) {
       toast.error('Ciclo não encontrado');
       return;
     }
-    const ymd = hojeYmdSaoPaulo() || hojeYmdLocal();
-    const ultimaExecucao = dateAtLocalNoonFromYmd(ymd);
+    const ultimaExecucao = dateAtLocalNoonFromYmd(feitoDataYmd.trim());
     if (Number.isNaN(ultimaExecucao.getTime())) {
       toast.error('Data inválida');
       return;
@@ -546,10 +595,11 @@ export default function CiclosPage() {
       { id: dbId, ultimaExecucao },
       {
         onSuccess: (resultado) => {
+          setFeitoDialogId(null);
           toast.success(
             resultado.ajustados > 0
-              ? 'Aplicação registrada. A outra calda mudou de data.'
-              : 'Aplicação registrada!',
+              ? `Aplicação em ${formatYmdPtBr(feitoDataYmd)} registrada. A outra calda mudou de data.`
+              : `Aplicação em ${formatYmdPtBr(feitoDataYmd)} registrada (histórico preservado).`,
           );
         },
         onError: (e) => toast.error(e.message || 'Não foi possível marcar como feito'),
@@ -632,16 +682,124 @@ export default function CiclosPage() {
   }, [data.ciclos, protocoloEsperado]);
 
 
+  const cicloFeitoNome = feitoDialogId
+    ? data.ciclos.find((c) => c.id === feitoDialogId)?.nome
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container py-6 max-w-4xl">
+      <main className="container py-6 max-w-6xl">
+        <CiclosTorresPainel />
+
         <ApontamentoOperadorCiclos />
+
+        {/* Lista de ciclos com ativar/desativar visível (histórico preservado ao desativar). */}
+        <section className="mb-8">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-display text-lg font-bold">
+                Aplicações do protocolo ({ciclosLista.filter((c) => c.ativo !== false).length} ativas
+                {ciclosPendentes.length > 0
+                  ? ` · ${ciclosPendentes.length} pendente${ciclosPendentes.length === 1 ? '' : 's'}`
+                  : ''}
+                {mostrarInativos && qtdInativos > 0 ? ` · ${qtdInativos} desativadas` : ''})
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Desative o que não usa mais (liga/desliga). O histórico das torres acima permanece.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {qtdInativos > 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMostrarInativos((v) => !v)}
+                >
+                  {mostrarInativos ? 'Ocultar desativadas' : `Mostrar desativadas (${qtdInativos})`}
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          {ciclosPendentes.length > 0 ? (
+            <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
+              <AlertTriangle className="h-4 w-4" />
+              {ciclosPendentes.length} pendente(s) hoje — use Feito e escolha a data.
+            </p>
+          ) : null}
+          {ciclosLista.length === 0 ? (
+            <div className="rounded-xl border bg-card py-10 text-center">
+              <CalendarClock className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">Nenhum ciclo cadastrado ainda.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {ciclosLista.map((ciclo) => (
+                <CicloItem
+                  key={ciclo.id}
+                  ciclo={ciclo}
+                  pendente={cicloPendenteNoProtocolo(ciclo, data.ciclos, referenciaHoje)}
+                  todosCiclos={data.ciclos}
+                  caixasLabel={(ciclo.caixaIds ?? [])
+                    .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
+                    .filter(Boolean)
+                    .join(', ')}
+                  onDelete={handleDelete}
+                  onToggle={handleToggle}
+                  onExecutar={abrirMarcarFeito}
+                  onEdit={handleEditCiclo}
+                  onDuplicate={handleDuplicateCiclo}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <Dialog
+          open={feitoDialogId != null}
+          onOpenChange={(open) => {
+            if (!open) setFeitoDialogId(null);
+          }}
+        >
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="font-display text-base">
+                Registrar {cicloFeitoNome ?? 'aplicação'}
+              </DialogTitle>
+            </DialogHeader>
+            <div>
+              <Label className="text-xs">Data da aplicação</Label>
+              <Input
+                type="date"
+                className="mt-1 h-9 text-sm"
+                value={feitoDataYmd}
+                max={hojeYmdSaoPaulo() || hojeYmdLocal()}
+                onChange={(e) => setFeitoDataYmd(e.target.value)}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Pode ser retroativa. Não apaga registros anteriores.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setFeitoDialogId(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={mutations.marcarCicloExecutado.isPending}
+                onClick={confirmarMarcarFeito}
+              >
+                {mutations.marcarCicloExecutado.isPending ? 'Salvando…' : 'Confirmar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <details className="mb-8 rounded-xl border bg-card">
           <summary className="cursor-pointer list-none px-4 py-3 font-display text-sm font-bold text-muted-foreground hover:text-foreground">
-            Configuração avançada (ciclos, protocolo, quadro)
+            Configuração avançada (cadastro, protocolo, quadro)
           </summary>
           <div className="space-y-6 border-t px-4 py-4">
         <div className="flex items-center justify-between mb-2">
@@ -1071,70 +1229,6 @@ export default function CiclosPage() {
               </span>
             ))}
           </div>
-          {ciclosPendentes.length > 0 ? (
-            <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
-              <AlertTriangle className="h-4 w-4" />
-              {ciclosPendentes.length} pendente(s) hoje — use Feito após aplicar.
-            </p>
-          ) : null}
-        </section>
-
-        {/* Lista única: todos os ativos (pendentes no topo), sem esconder protocolo */}
-        <section>
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-display font-bold text-base">
-              Ciclos ({ciclosLista.filter((c) => c.ativo !== false).length} ativos
-              {ciclosPendentes.length > 0
-                ? ` · ${ciclosPendentes.length} pendente${ciclosPendentes.length === 1 ? '' : 's'}`
-                : ''}
-              {mostrarInativos && qtdInativos > 0 ? ` · ${qtdInativos} inativos` : ''})
-            </h2>
-            {qtdInativos > 0 ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setMostrarInativos((v) => !v)}
-              >
-                {mostrarInativos ? 'Ocultar inativos' : `Mostrar inativos (${qtdInativos})`}
-              </Button>
-            ) : null}
-          </div>
-          {ciclosLista.length === 0 ? (
-            <div className="text-center py-12 bg-card rounded-xl border">
-              <CalendarClock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Nenhum ciclo cadastrado ainda.
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Clique em &quot;Novo Ciclo&quot; para começar.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {ciclosLista.map((ciclo) => (
-                <CicloItem
-                  key={ciclo.id}
-                  ciclo={ciclo}
-                  pendente={cicloPendenteNoProtocolo(
-                    ciclo,
-                    data.ciclos,
-                    referenciaHoje,
-                  )}
-                  todosCiclos={data.ciclos}
-                  caixasLabel={(ciclo.caixaIds ?? [])
-                    .map((id) => data.caixasAgua.find((c) => c.id === id)?.nome)
-                    .filter(Boolean)
-                    .join(', ')}
-                  onDelete={handleDelete}
-                  onToggle={handleToggle}
-                  onExecutar={marcarFeitoHoje}
-                  onEdit={handleEditCiclo}
-                  onDuplicate={handleDuplicateCiclo}
-                />
-              ))}
-            </div>
-          )}
         </section>
           </div>
         </details>
@@ -1375,10 +1469,17 @@ function CicloItem({
             <Copy className="w-3.5 h-3.5" />
           </Button>
         )}
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggle(ciclo.id)} title={ciclo.ativo ? 'Desativar' : 'Ativar'}>
-          <Power className={`w-3.5 h-3.5 ${ciclo.ativo ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
+        <Button
+          variant={ciclo.ativo ? 'outline' : 'default'}
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={() => onToggle(ciclo.id)}
+          title={ciclo.ativo ? 'Desativar (mantém histórico)' : 'Reativar'}
+        >
+          <Power className={`w-3.5 h-3.5 ${ciclo.ativo ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+          {ciclo.ativo ? 'Desativar' : 'Ativar'}
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onDelete(ciclo.id)} title="Excluir">
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onDelete(ciclo.id)} title="Excluir cadastro (prefira desativar)">
           <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </div>

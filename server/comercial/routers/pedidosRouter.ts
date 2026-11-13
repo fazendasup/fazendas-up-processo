@@ -4,7 +4,7 @@ import {
   CLIENTES_ACUMULO_ALLOWLIST_LABELS,
   clientePodeAcumularPedidos,
 } from "@shared/clientesAcumuloPedidos";
-import { OrigemPedido, Prisma } from "../generated/prisma/index.js";
+import { OrigemPedido, Prisma, StatusRelacionamento } from "../generated/prisma/index.js";
 import type { PrismaClient } from "../generated/prisma/index.js";
 import { composicaoDoPedidoParaDashboard } from "../lib/composicao-valor.js";
 import {
@@ -603,6 +603,10 @@ export const pedidosRouter = router({
               ? { in: idsNoDia.map(r => r.contaAzulCustomerId) }
               : {}),
           },
+          // Emissão usa só clientes ativos (status no Conta Azul / relacionamento local).
+          ...(idsNoDia
+            ? {}
+            : { statusRelacionamento: { not: StatusRelacionamento.INATIVO } }),
           ...whereBusca,
         },
         orderBy: { nome: "asc" },

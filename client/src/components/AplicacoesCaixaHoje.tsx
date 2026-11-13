@@ -251,16 +251,19 @@ export function AplicacaoPendenteNaTorre({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  const [y, m, d] = hojeYmdSaoPaulo().split("-").map(Number);
+                  const dataHora = new Date(y, (m || 1) - 1, d || 1, 12, 0, 0, 0);
                   if (linha.acao.tipo === "caixa") {
                     aplicar.mutate({
                       cicloId: linha.acao.cicloId,
                       caixaAguaId: linha.acao.caixaDbId,
+                      dataHora,
                     });
                     return;
                   }
                   marcarFoliar.mutate({
                     id: linha.acao.cicloId,
-                    ultimaExecucao: new Date(),
+                    ultimaExecucao: dataHora,
                   });
                 }}
               >

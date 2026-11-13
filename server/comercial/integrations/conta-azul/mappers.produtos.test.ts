@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { extrairPesoLiquidoKgContaAzul, mapProdutoContaAzulItem } from "./mappers";
+import {
+  extrairPesoLiquidoKgContaAzul,
+  mapProdutoContaAzulItem,
+  pessoaContaAzulEstaAtiva,
+} from "./mappers";
 
 describe("mapProdutoContaAzulItem", () => {
   it("aceita PRODUTO, VARIACAO_PRODUTO, KIT_PRODUTO e outros tipos com id+nome", () => {
@@ -63,5 +67,13 @@ describe("mapProdutoContaAzulItem", () => {
   it("exige id e nome", () => {
     expect(mapProdutoContaAzulItem({ id: "x", nome: "" })).toBeNull();
     expect(mapProdutoContaAzulItem({ nome: "Só nome" })).toBeNull();
+  });
+});
+
+describe("pessoaContaAzulEstaAtiva", () => {
+  it("trata ausente/true como ativo e false como inativo", () => {
+    expect(pessoaContaAzulEstaAtiva({})).toBe(true);
+    expect(pessoaContaAzulEstaAtiva({ ativo: true })).toBe(true);
+    expect(pessoaContaAzulEstaAtiva({ ativo: false })).toBe(false);
   });
 });

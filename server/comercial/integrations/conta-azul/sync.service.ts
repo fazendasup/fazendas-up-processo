@@ -1,4 +1,8 @@
-import { AcaoApi, StatusExecucaoApi } from "../../generated/prisma/index.js";
+import {
+  AcaoApi,
+  StatusExecucaoApi,
+  StatusRelacionamento,
+} from "../../generated/prisma/index.js";
 import type { PrismaClient } from "../../generated/prisma/index.js";
 import type { Env } from "../../env";
 import { logger } from "../../lib/logger";
@@ -8,6 +12,7 @@ import {
   mapPedidoCreate,
   mapPessoaApiItem,
   mapPessoaFromVendaClienteEmbutido,
+  pessoaContaAzulEstaAtiva,
   pessoaItemTemPerfilCliente,
   extrairNumeroVendaContaAzul,
   mapVendaBuscaItem,
@@ -197,9 +202,17 @@ async function enriquecerPessoasComEnderecoDetalhado(
 async function upsertClientesContaAzul(
   prisma: PrismaClient,
   rawItems: NonNullable<ContaAzulPessoasListResponse["items"]>,
-): Promise<{ clientesProcessados: number; clientesComEndereco: number; maxAlteracao: string | null }> {
+): Promise<{
+  clientesProcessados: number;
+  clientesComEndereco: number;
+  clientesAtivos: number;
+  clientesInativos: number;
+  maxAlteracao: string | null;
+}> {
   let clientesComEndereco = 0;
   let clientesProcessados = 0;
+  let clientesAtivos = 0;
+  let clientesInativos = 0;
   let maxAlteracao: string | null = null;
 
   for (const raw of rawItems) {
@@ -213,11 +226,17 @@ async function upsertClientesContaAzul(
     const p = mapPessoaApiItem(raw);
     if (!p.id) continue;
     const data = mapClienteUpsert(p);
+    const ativoCa = pessoaContaAzulEstaAtiva(raw);
+    const statusRelacionamento = ativoCa
+      ? StatusRelacionamento.ATIVO
+      : StatusRelacionamento.INATIVO;
     if (data.endereco) clientesComEndereco++;
     clientesProcessados++;
+    if (ativoCa) clientesAtivos++;
+    else clientesInativos++;
     await prisma.cliente.upsert({
       where: { externalId: p.id },
-      create: { ...data, externalId: p.id },
+      create: { ...data, externalId: p.id, statusRelacionamento },
       update: {
         nome: data.nome,
         cnpjCpf: data.cnpjCpf,
@@ -225,6 +244,7 @@ async function upsertClientesContaAzul(
         emailPrincipal: data.emailPrincipal,
         telefoneWhatsapp: data.telefoneWhatsapp,
         contatoPrincipal: data.contatoPrincipal,
+        statusRelacionamento,
       },
     });
 
@@ -234,7 +254,13 @@ async function upsertClientesContaAzul(
     }
   }
 
-  return { clientesProcessados, clientesComEndereco, maxAlteracao };
+  return {
+    clientesProcessados,
+    clientesComEndereco,
+    clientesAtivos,
+    clientesInativos,
+    maxAlteracao,
+  };
 }
 
 /** data_inicio/fim como calendário America/Sao_Paulo (evita deslocar dia vs UTC). */
@@ -824,6 +850,8 @@ export async function runContaAzulClientesSync(
           step: "clientes_enderecos",
           clientesProcessados: clientesSync.clientesProcessados,
           clientesComEndereco: clientesSync.clientesComEndereco,
+          clientesAtivos: clientesSync.clientesAtivos,
+          clientesInativos: clientesSync.clientesInativos,
           totalPessoasContaAzul: pessoasRes.totalItems ?? rawItems.length,
           forceFullClientes: Boolean(options?.forceFullClientes),
         },
@@ -834,6 +862,8 @@ export async function runContaAzulClientesSync(
     logger.info(
       {
         clientes: clientesSync.clientesProcessados,
+        clientesAtivos: clientesSync.clientesAtivos,
+        clientesInativos: clientesSync.clientesInativos,
         clientesComEndereco: clientesSync.clientesComEndereco,
       },
       "Conta Azul: sync de clientes/endereço concluído"
@@ -936,6 +966,9 @@ async function executarContaAzulSync(
     let rawItems: NonNullable<ContaAzulPessoasListResponse["items"]> = [];
     let pessoasTotal = 0;
     let clientesComEndereco = 0;
+    let clientesProcessados = 0;
+    let clientesAtivos = 0;
+    let clientesInativos = 0;
 
     if (syncClientes) {
       const cursor = options?.forceFullClientes ? null : syncState.cursor;
@@ -944,6 +977,9 @@ async function executarContaAzulSync(
       pessoasTotal = pessoasRes.totalItems ?? rawItems.length;
       const clientesSync = await upsertClientesContaAzul(prisma, rawItems);
       clientesComEndereco = clientesSync.clientesComEndereco;
+      clientesProcessados = clientesSync.clientesProcessados;
+      clientesAtivos = clientesSync.clientesAtivos;
+      clientesInativos = clientesSync.clientesInativos;
       if (clientesSync.maxAlteracao) nextCursor = clientesSync.maxAlteracao;
     }
 
@@ -1086,7 +1122,9 @@ async function executarContaAzulSync(
         statusExecucao: StatusExecucaoApi.SUCESSO,
         detalhesExecucao: {
           escopo,
-          clientesProcessados: rawItems.length,
+          clientesProcessados,
+          clientesAtivos,
+          clientesInativos,
           clientesComEndereco,
           totalPessoasContaAzul: pessoasTotal,
           vendasRecebidas: vendasItens.length,
@@ -1109,7 +1147,9 @@ async function executarContaAzulSync(
 
     logger.info(
       {
-        clientes: rawItems.length,
+        clientes: clientesProcessados,
+        clientesAtivos,
+        clientesInativos,
         clientesComEndereco,
         vendasRecebidas: vendasItens.length,
         pedidosGravados,
@@ -1119,7 +1159,7 @@ async function executarContaAzulSync(
     );
 
     return {
-      clientesProcessados: rawItems.length,
+      clientesProcessados,
       clientesComEndereco,
       vendasRecebidas: vendasItens.length,
       pedidosGravados,

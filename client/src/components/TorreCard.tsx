@@ -329,7 +329,10 @@ export default function TorreCard({ torre }: TorreCardProps) {
               )}
             </div>
             </Link>
-            <AplicacaoPendenteNaTorre caixaId={torre.caixaAguaId} fase={torre.fase} />
+            {/* cultivo=microverdes: sem aplicação programada — registro só manual na torre. */}
+            {torre.cultivo !== 'microverdes' && (
+              <AplicacaoPendenteNaTorre caixaId={torre.caixaAguaId} fase={torre.fase} />
+            )}
           </div>
 
           <Link

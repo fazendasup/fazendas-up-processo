@@ -94,6 +94,8 @@ export type ContaAzulPessoasListResponse = {
     email?: string;
     telefone?: string;
     data_alteracao?: string;
+    /** Pessoa ativa no Conta Azul (API não filtra por status na listagem). */
+    ativo?: boolean;
     /** Ex.: ["CLIENTE","FORNECEDOR"] — não importar quem não for cliente de fato. */
     perfis?: string[];
     endereco?:
@@ -115,6 +117,13 @@ export type ContaAzulPessoasListResponse = {
   total_items?: number;
   total_itens?: number;
 };
+
+/** `false` = inativo no CA; ausente/`true` = trata como ativo. */
+export function pessoaContaAzulEstaAtiva(
+  item: NonNullable<ContaAzulPessoasListResponse["items"]>[number],
+): boolean {
+  return item.ativo !== false;
+}
 
 /** Conta Azul separa perfis; só deve virar cadastro local quem tem perfil de cliente. */
 export function pessoaItemTemPerfilCliente(

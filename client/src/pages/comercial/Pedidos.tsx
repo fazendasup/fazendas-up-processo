@@ -46,6 +46,7 @@ import {
   InadimplenciaClienteBadge,
   useInadimplenciaResumo,
 } from "@/components/comercial/InadimplenciaClienteBadge";
+import { useSyncContaAzul } from "@/hooks/useSyncContaAzul";
 import { SearchMultiSelect, SearchSelect } from "@/components/ui/search-select";
 import {
   CLIENTES_ACUMULO_ALLOWLIST_LABELS,
@@ -422,6 +423,10 @@ export function Pedidos({
     me.data?.perfil === "GERENTE_COMERCIAL" ||
     me.data?.perfil === "COMERCIAL" ||
     me.data?.perfil === "OPERACOES";
+  const podeSyncClientesCa =
+    me.data?.perfil === "ADMIN" || me.data?.perfil === "GERENTE_COMERCIAL";
+  const { iniciar: iniciarSyncClientesCa, busy: syncClientesCaBusy } =
+    useSyncContaAzul({ escopo: "clientes" });
   const isPromoter = isPromoterPerfil(me.data?.perfil);
   const isLiderColheita = isLiderColheitaPerfil(me.data?.perfil);
   const perfilOperacionalRestrito = isPromoter || isLiderColheita;
@@ -2190,10 +2195,30 @@ export function Pedidos({
           className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
         >
           <Card id="form-emissao-pedido" className="min-w-0 overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Plus className="h-4 w-4" /> Emitir / agendar pedido
-              </CardTitle>
+            <CardHeader className="space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Plus className="h-4 w-4" /> Emitir / agendar pedido
+                </CardTitle>
+                {podeSyncClientesCa ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5 text-xs"
+                    disabled={syncClientesCaBusy}
+                    onClick={() => iniciarSyncClientesCa({ escopo: "clientes" })}
+                    title="Busca no Conta Azul os clientes ativos e atualiza a lista da emissão"
+                  >
+                    <RefreshCcw
+                      className={`h-3.5 w-3.5 ${syncClientesCaBusy ? "animate-spin" : ""}`}
+                    />
+                    {syncClientesCaBusy
+                      ? "Sincronizando clientes…"
+                      : "Sincronizar clientes CA"}
+                  </Button>
+                ) : null}
+              </div>
               {pedidoEditId && (
                 <p className="text-xs text-muted-foreground">
                   Editando pedido existente. Salvar criará registro de

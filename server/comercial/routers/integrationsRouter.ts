@@ -19,15 +19,22 @@ const syncCA = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL");
 function detalhesSync(detalhes: unknown): {
   pedidosGravados: number | null;
   clientesComEndereco: number | null;
+  clientesAtivos: number | null;
   inteligenciaOportunidades: number | null;
 } {
   if (!detalhes || typeof detalhes !== "object") {
-    return { pedidosGravados: null, clientesComEndereco: null, inteligenciaOportunidades: null };
+    return {
+      pedidosGravados: null,
+      clientesComEndereco: null,
+      clientesAtivos: null,
+      inteligenciaOportunidades: null,
+    };
   }
   const d = detalhes as Record<string, unknown>;
   return {
     pedidosGravados: typeof d.pedidosGravados === "number" ? d.pedidosGravados : null,
     clientesComEndereco: typeof d.clientesComEndereco === "number" ? d.clientesComEndereco : null,
+    clientesAtivos: typeof d.clientesAtivos === "number" ? d.clientesAtivos : null,
     inteligenciaOportunidades:
       typeof d.inteligenciaOportunidades === "number" ? d.inteligenciaOportunidades : null,
   };
@@ -66,10 +73,13 @@ export const integrationsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const escopo = input?.escopo ?? "completo";
+      // Manual de clientes (ou completo): full scan para pegar ativos novos e marcar inativos.
+      const forceFullClientes =
+        !input?.aoAbrirPagina && (escopo === "completo" || escopo === "clientes");
       const r = iniciarSyncContaAzulEmBackground(ctx.prisma!, ctx.comercialEnv!, "manual", {
         escopo,
         aoAbrirPagina: input?.aoAbrirPagina,
-        forceFullClientes: escopo === "completo" && !input?.aoAbrirPagina,
+        forceFullClientes,
       });
       if (r.status === "already_running") {
         throw new TRPCError({

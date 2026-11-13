@@ -35,6 +35,11 @@ import {
   DEFAULT_OPERATIONAL_RESET_CLUSTERS,
   type OperationalResetClusters,
 } from '@shared/operationalReset';
+import {
+  NOME_CAIXA_MUDAS_COMPARTILHADA,
+  SLUG_CAIXA_MUDAS_COMPARTILHADA,
+  torreEhMicroverdesCultivo,
+} from '@shared/mudasBandejas';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { trpc } from '@/lib/trpc';
@@ -140,27 +145,56 @@ export default function ConfigPage() {
   const fases: Fase[] = ['mudas', 'vegetativa', 'maturacao'];
   const utils = trpc.useUtils();
 
+  const fvMudasCaixaUnica = !isMicroverdes && formData.fase === 'mudas';
+
   const caixasOpcoesNovaTorre = useMemo(() => {
-    return (data.caixasAgua || [])
+    let list = (data.caixasAgua || [])
       .filter((c) => String(c.fase).trim() === formData.fase)
       .filter((c) => mostrarCaixasSeedNovaTorre || !isCaixaSlugDoSeedInicial(String(c.id)))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true, sensitivity: 'base' }));
-  }, [data.caixasAgua, formData.fase, mostrarCaixasSeedNovaTorre]);
+    if (fvMudasCaixaUnica) {
+      // Preferir a caixa já ligada às torres de mudas (compartilhada).
+      const idsMudas = new Set(
+        (data.torres || [])
+          .filter((t) => t.fase === 'mudas' && !torreEhMicroverdesCultivo(t))
+          .map((t) => t.caixaAguaId)
+          .filter(Boolean),
+      );
+      const compartilhadas = list.filter((c) => idsMudas.has(c.id));
+      if (compartilhadas.length > 0) list = compartilhadas;
+      else {
+        const canon = list.find((c) => c.id === SLUG_CAIXA_MUDAS_COMPARTILHADA);
+        if (canon) list = [canon];
+      }
+    }
+    return list;
+  }, [data.caixasAgua, data.torres, formData.fase, mostrarCaixasSeedNovaTorre, fvMudasCaixaUnica]);
 
   /** Editar torre: mostra todas as caixas da fase (incl. seed) para o usuário escolher qualquer uma. */
   const caixasOpcoesEdicao = useMemo(() => {
     if (!editingTorre) return [];
+    if (torreEhMicroverdesCultivo(editingTorre)) return [];
     const f = editingTorre.fase as Fase;
     let list = (data.caixasAgua || [])
       .filter((c) => String(c.fase).trim() === f)
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true, sensitivity: 'base' }));
+    if (!isMicroverdes && f === 'mudas') {
+      const idsMudas = new Set(
+        (data.torres || [])
+          .filter((t) => t.fase === 'mudas' && !torreEhMicroverdesCultivo(t))
+          .map((t) => t.caixaAguaId)
+          .filter(Boolean),
+      );
+      const compartilhadas = list.filter((c) => idsMudas.has(c.id));
+      if (compartilhadas.length > 0) list = compartilhadas;
+    }
     const cur = String(editingTorre.caixaAguaSlug ?? "");
     if (cur && !list.some((c) => c.id === cur)) {
       const orphan = (data.caixasAgua || []).find((c) => c.id === cur);
       if (orphan) list = [orphan, ...list];
     }
     return list;
-  }, [data.caixasAgua, editingTorre]);
+  }, [data.caixasAgua, data.torres, editingTorre, isMicroverdes]);
 
   useEffect(() => {
     if (!formData.caixaAguaSlug) return;
@@ -674,14 +708,25 @@ export default function ConfigPage() {
                         });
                       }}
                       className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                      disabled={fvMudasCaixaUnica && caixasOpcoesNovaTorre.length > 0}
                     >
-                      <option value="">Criar caixa nova (recomendado)</option>
+                      {fvMudasCaixaUnica ? (
+                        <option value="">
+                          {caixasOpcoesNovaTorre[0]
+                            ? `Usar ${caixasOpcoesNovaTorre[0].nome} (compartilhada)`
+                            : `Usar ${NOME_CAIXA_MUDAS_COMPARTILHADA} (compartilhada)`}
+                        </option>
+                      ) : (
+                        <option value="">Criar caixa nova (recomendado)</option>
+                      )}
                       {caixasOpcoesNovaTorre.map((c) => (
                         <option key={c.id} value={c.id}>{c.nome}</option>
                       ))}
                     </select>
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      Só entram caixas da <strong>mesma fase</strong> escolhida acima. Ao abrir este formulário, os dados são recarregados do servidor.
+                      {fvMudasCaixaUnica
+                        ? 'Torres de mudas compartilham uma única caixa d\'água.'
+                        : <>Só entram caixas da <strong>mesma fase</strong> escolhida acima. Ao abrir este formulário, os dados são recarregados do servidor.</>}
                     </p>
                   </div>
                   )}
@@ -837,7 +882,12 @@ export default function ConfigPage() {
                               </select>
                             </div>
                           )}
-                          {!microOmitCaixaAgua && (
+                          {!microOmitCaixaAgua && torreEhMicroverdesCultivo(editingTorre) && (
+                            <p className="text-xs text-muted-foreground rounded-md border border-border/60 bg-muted/40 px-2 py-2">
+                              Torre de microverdes: sem caixa programada. Aplicações, se houver, são registradas manualmente.
+                            </p>
+                          )}
+                          {!microOmitCaixaAgua && !torreEhMicroverdesCultivo(editingTorre) && (
                             <div>
                               <Label>Caixa d&apos;água</Label>
                               <select
@@ -850,6 +900,7 @@ export default function ConfigPage() {
                                   });
                                 }}
                                 className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                                disabled={!isMicroverdes && editingTorre.fase === 'mudas'}
                               >
                                 {caixasOpcoesEdicao.map((c) => (
                                   <option key={c.id} value={c.id}>
@@ -857,6 +908,11 @@ export default function ConfigPage() {
                                   </option>
                                 ))}
                               </select>
+                              {!isMicroverdes && editingTorre.fase === 'mudas' && (
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                  Todas as torres de mudas usam a mesma caixa.
+                                </p>
+                              )}
                               {caixasOpcoesEdicao.length === 0 && (
                                 <p className="text-[10px] text-amber-800 dark:text-amber-200/90 mt-1">
                                   Nenhuma caixa d&apos;água cadastrada para esta fase.

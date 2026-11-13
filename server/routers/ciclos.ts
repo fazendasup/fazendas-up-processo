@@ -70,6 +70,8 @@ export const ciclosRouter = router({
       z.object({
         cicloId: z.number().int().positive(),
         caixaAguaId: z.number().int().positive(),
+        /** Data/hora da aplicação (retroativa permitida). Padrão = agora. */
+        dataHora: z.coerce.date().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -79,6 +81,7 @@ export const ciclosRouter = router({
         caixaAguaId: input.caixaAguaId,
         executorId: ctx.user.id,
         executorNome: ctx.user.name || "Usuário",
+        dataHora: input.dataHora,
       });
       return { success: true as const, ajustados };
     }),

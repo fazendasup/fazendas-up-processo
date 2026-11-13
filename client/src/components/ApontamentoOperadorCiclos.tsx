@@ -22,12 +22,23 @@ import {
 } from "@shared/apontamentoSeguranca";
 import { infinitosCarregadosPorLote } from "@shared/quadroAplicacoesProtocolo";
 import { hojeYmdSaoPaulo, ymdCalendario } from "@shared/cicloSequencia";
+import {
+  caixaElegivelProgramacao,
+  idCaixaMudasCompartilhada,
+} from "@shared/mudasBandejas";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const RAIZ_IDS: ProdutoSolucaoId[] = ["thyper", "infinito", "cercobin"];
 
 function referenciaHoje(): Date {
   const [a, m, d] = hojeYmdSaoPaulo().split("-").map(Number);
   return new Date(a, (m || 1) - 1, d || 1, 12, 0, 0);
+}
+
+function dateAtLocalNoonFromYmd(ymd: string): Date {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0, 0);
 }
 
 function fmtBr(ymd: string): string {
@@ -48,6 +59,7 @@ export default function ApontamentoOperadorCiclos() {
 
   const [produtoAtivo, setProdutoAtivo] = useState<ProdutoSolucaoId | null>(null);
   const [caixasSel, setCaixasSel] = useState<string[]>([]);
+  const [dataAplicacaoYmd, setDataAplicacaoYmd] = useState(hoje);
   const [alertasPendentes, setAlertasPendentes] = useState<AlertaApontamento[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -91,6 +103,11 @@ export default function ApontamentoOperadorCiclos() {
     }>;
   }, [cicloPorProduto, data.ciclos, refHoje]);
 
+  const caixaMudasId = useMemo(
+    () => idCaixaMudasCompartilhada(data.torres),
+    [data.torres],
+  );
+
   const caixasElegiveis = useMemo(() => {
     if (!produtoAtivo) return [];
     const ciclo = cicloPorProduto.get(produtoAtivo);
@@ -99,6 +116,7 @@ export default function ApontamentoOperadorCiclos() {
     const cartao = cartaoSolucao(produtoAtivo);
     return data.caixasAgua
       .filter((c) => ids.has(c.id))
+      .filter((c) => caixaElegivelProgramacao(c, data.torres, caixaMudasId))
       .filter((c) => {
         if (produtoAtivo === "infinito" || produtoAtivo === "cercobin") {
           return cartao.fases.includes(c.fase as "vegetativa" | "maturacao" | "mudas");
@@ -106,7 +124,7 @@ export default function ApontamentoOperadorCiclos() {
         return true;
       })
       .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }, [produtoAtivo, cicloPorProduto, data.caixasAgua]);
+  }, [produtoAtivo, cicloPorProduto, data.caixasAgua, data.torres, caixaMudasId]);
 
   function ultimasNaCaixa(caixaId: string) {
     const pick = (key: "infinito" | "cercobin" | "thyper") => {
@@ -162,8 +180,10 @@ export default function ApontamentoOperadorCiclos() {
       return;
     }
     setProdutoAtivo(id);
+    const mudasId = idCaixaMudasCompartilhada(data.torres);
     const elegiveis = data.caixasAgua
       .filter((c) => (ciclo.caixaIds ?? []).includes(c.id))
+      .filter((c) => caixaElegivelProgramacao(c, data.torres, mudasId))
       .filter((c) => {
         if (id === "infinito" || id === "cercobin") return c.fase !== "mudas";
         return true;
@@ -214,6 +234,12 @@ export default function ApontamentoOperadorCiclos() {
       return;
     }
 
+    const dataHora = dateAtLocalNoonFromYmd(dataAplicacaoYmd.trim());
+    if (Number.isNaN(dataHora.getTime())) {
+      toast.error("Data da aplicação inválida.");
+      return;
+    }
+
     setConfirmOpen(false);
     let ok = 0;
     let falhas = 0;
@@ -224,7 +250,7 @@ export default function ApontamentoOperadorCiclos() {
         continue;
       }
       try {
-        await aplicarCaixa.mutateAsync({ cicloId, caixaAguaId: caixaDbId });
+        await aplicarCaixa.mutateAsync({ cicloId, caixaAguaId: caixaDbId, dataHora });
         ok += 1;
       } catch {
         falhas += 1;
@@ -237,8 +263,8 @@ export default function ApontamentoOperadorCiclos() {
     if (ok > 0) {
       toast.success(
         falhas > 0
-          ? `Registrado em ${ok} caixa(s). ${falhas} falhou.`
-          : `Aplicação registrada em ${ok} caixa(s).`,
+          ? `Registrado em ${ok} caixa(s) (${dataAplicacaoYmd.split("-").reverse().join("/")}). ${falhas} falhou.`
+          : `Aplicação registrada em ${ok} caixa(s) — ${dataAplicacaoYmd.split("-").reverse().join("/")}.`,
       );
     } else {
       toast.error("Não foi possível registrar a aplicação.");
@@ -251,10 +277,17 @@ export default function ApontamentoOperadorCiclos() {
       toast.error("Ciclo não encontrado.");
       return;
     }
+    const dataHora = dateAtLocalNoonFromYmd(dataAplicacaoYmd.trim());
+    if (Number.isNaN(dataHora.getTime())) {
+      toast.error("Data da aplicação inválida.");
+      return;
+    }
     try {
-      await marcarFoliar.mutateAsync({ id: dbId, ultimaExecucao: new Date() });
+      await marcarFoliar.mutateAsync({ id: dbId, ultimaExecucao: dataHora });
       await utils.fazenda.loadAll.invalidate();
-      toast.success("Calda registrada.");
+      toast.success(
+        `Calda registrada em ${dataAplicacaoYmd.split("-").reverse().join("/")}.`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao registrar calda.");
     }
@@ -264,12 +297,24 @@ export default function ApontamentoOperadorCiclos() {
 
   return (
     <div className="mb-8 space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Aplicações de hoje</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {hoje.split("-").reverse().join("/")} — marque o que for feito. Tratamento de
-          raiz você escolhe; o sistema avisa se houver risco.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Aplicações do dia</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Marque o que foi feito. Escolha a data abaixo se for registro retroativo —
+            o histórico não é apagado.
+          </p>
+        </div>
+        <div className="w-full max-w-[11rem]">
+          <Label className="text-xs">Data da aplicação</Label>
+          <Input
+            type="date"
+            className="mt-1 h-9 text-sm"
+            value={dataAplicacaoYmd}
+            max={hoje}
+            onChange={(e) => setDataAplicacaoYmd(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Caldas — indicação automática */}
