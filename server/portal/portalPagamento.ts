@@ -12,7 +12,7 @@ import {
   escolherContaCobrancaBoleto,
   sincronizarContasFinanceirasEnvio,
 } from "../comercial/integrations/conta-azul/venda-outbound.service";
-import { MIN_ORDER_PESSOA_REAIS, TAXA_CARTAO_PESSOA, todayYmd } from "./portalCalendario";
+import { MIN_COBRANCA_CONTA_AZUL_REAIS, TAXA_CARTAO_PESSOA, todayYmd } from "./portalCalendario";
 import { LojaErro } from "./portalLoja";
 
 export type FormaPagamentoPessoa = "pix" | "cartao";
@@ -272,10 +272,10 @@ export async function criarCobrancasPessoa(input: {
     throw new LojaErro(400, "Não foi possível calcular o valor do pedido.");
   }
   const total = totalCobrancaPessoa(base, input.formaPagamento);
-  if (total < MIN_ORDER_PESSOA_REAIS) {
+  if (total < MIN_COBRANCA_CONTA_AZUL_REAIS) {
     throw new LojaErro(
       400,
-      `O pedido mínimo para pessoa física é R$ ${MIN_ORDER_PESSOA_REAIS.toFixed(2).replace(".", ",")}.`,
+      `O Conta Azul só emite Pix/cartão a partir de R$ ${MIN_COBRANCA_CONTA_AZUL_REAIS.toFixed(2).replace(".", ",")}. Ajuste o pedido.`,
     );
   }
   const taxaCartao = input.formaPagamento === "cartao" ? Math.round((total - base) * 100) / 100 : 0;

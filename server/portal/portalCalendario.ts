@@ -2,8 +2,25 @@
 
 export const MIN_ORDER_REAIS = 300;
 export const MIN_ORDER_RECORRENTE_REAIS = 150;
-/** Pessoa física: pedido mínimo R$ 200; entrega com 2 dias úteis (48h), como a empresa. */
+/** Limiar de entrega grátis para pessoa física (abaixo: retirada ou taxa). */
 export const MIN_ORDER_PESSOA_REAIS = 200;
+/** Taxa de entrega quando o pedido fica abaixo do limiar de entrega grátis. */
+export const TAXA_ENTREGA_ABAIXO_MINIMO_REAIS = 20;
+/** Conta Azul recusa cobrança Pix/cartão abaixo deste valor. */
+export const MIN_COBRANCA_CONTA_AZUL_REAIS = 10;
+
+export type ModalidadeEntrega = "entrega" | "retirada";
+
+/** Taxa de entrega cobrada quando o cliente escolhe entrega abaixo do limiar. */
+export function taxaEntregaAbaixoMinimo(
+  totalProdutos: number,
+  minimoEntregaGratis: number,
+  modalidade: ModalidadeEntrega,
+): number {
+  if (modalidade === "retirada") return 0;
+  if (totalProdutos >= minimoEntregaGratis) return 0;
+  return TAXA_ENTREGA_ABAIXO_MINIMO_REAIS;
+}
 
 /** Acréscimo no total cobrado quando o cliente paga com cartão. */
 export const TAXA_CARTAO_PESSOA = 0.05;

@@ -10,8 +10,11 @@ import {
   addCalendarDays,
   earliestDeliveryYmd,
   entregaPermitida,
+  TAXA_ENTREGA_ABAIXO_MINIMO_REAIS,
+  taxaEntregaAbaixoMinimo,
   todayYmd,
   upcomingDeliveryDates,
+  type ModalidadeEntrega,
 } from "./portalCalendario";
 import { clienteAceitouRecorrencia } from "./contratoRecorrencia";
 import { aceitarContrato, lerConta, minimoDaConta, salvarConta } from "./portalConta";
@@ -256,9 +259,10 @@ export function registerPortalRoutes(app: Express): void {
     const agora = new Date();
     const acesso = await clienteDaSessao(req);
     const minimoReais = await minimoDaConta(getComercialPrisma(), acesso?.clienteId ?? null);
-    res.json({
-      minimoReais,
-      antecedenciaDiasUteis: 2,
+      res.json({
+        minimoReais,
+        taxaEntregaAbaixoMinimoReais: TAXA_ENTREGA_ABAIXO_MINIMO_REAIS,
+        antecedenciaDiasUteis: 2,
       primeiraData: earliestDeliveryYmd(agora),
       datas: upcomingDeliveryDates(agora),
     });
@@ -284,6 +288,7 @@ export function registerPortalRoutes(app: Express): void {
       const agora = new Date();
       res.json({
         minimoReais: await minimoDaConta(prisma, acesso?.clienteId ?? null),
+        taxaEntregaAbaixoMinimoReais: TAXA_ENTREGA_ABAIXO_MINIMO_REAIS,
         datas: upcomingDeliveryDates(agora),
         itens: produtos.flatMap((produto) => {
           const logado = Boolean(acesso);
@@ -946,6 +951,7 @@ export function registerPortalRoutes(app: Express): void {
         observacoes: z.string().max(1500).optional(),
         periodoEntrega: z.enum(["manha", "tarde"]).optional(),
         formaPagamento: z.enum(["pix", "cartao"]).optional(),
+        modalidade: z.enum(["entrega", "retirada"]).optional(),
         endereco: z
           .object({
             cep: z.string().trim().min(8).max(16),
@@ -1045,23 +1051,28 @@ export function registerPortalRoutes(app: Express): void {
         falha(res, 400, "Há produto sem preço.");
         return;
       }
-      const totalReais = Math.round(total * 100) / 100;
+      const totalProdutos = Math.round(total * 100) / 100;
       const minimo = await minimoDaConta(prisma, acesso.clienteId);
-      if (totalReais < minimo) {
-        falha(res, 400, `O pedido mínimo para entrega é R$ ${minimo.toFixed(2).replace(".", ",")}.`);
+      const abaixoMinimo = minimo > 0 && totalProdutos < minimo;
+      let modalidade: ModalidadeEntrega = parsed.data.modalidade ?? "entrega";
+      if (abaixoMinimo && !parsed.data.modalidade) {
+        falha(
+          res,
+          400,
+          `Abaixo de R$ ${minimo.toFixed(2).replace(".", ",")} escolha retirada ou entrega com taxa de R$ 20,00.`,
+        );
         return;
       }
+      if (!abaixoMinimo) modalidade = "entrega";
+      const taxaEntrega = taxaEntregaAbaixoMinimo(totalProdutos, minimo, modalidade);
+      const totalReais = Math.round((totalProdutos + taxaEntrega) * 100) / 100;
 
       let enderecoSalvo: Awaited<ReturnType<typeof salvarEnderecoEntrega>> | null = null;
       let periodo: PeriodoEntrega | null = null;
       let formaPagamento: "pix" | "cartao" | null = null;
       if (pessoa) {
-        if (!parsed.data.endereco) {
-          falha(res, 400, "Informe o endereço completo de entrega.");
-          return;
-        }
         if (!parsed.data.periodoEntrega) {
-          falha(res, 400, "Escolha o período de entrega (manhã ou tarde).");
+          falha(res, 400, modalidade === "retirada" ? "Escolha o período de retirada (manhã ou tarde)." : "Escolha o período de entrega (manhã ou tarde).");
           return;
         }
         if (!parsed.data.formaPagamento) {
@@ -1070,23 +1081,38 @@ export function registerPortalRoutes(app: Express): void {
         }
         periodo = parsed.data.periodoEntrega;
         formaPagamento = parsed.data.formaPagamento;
-        enderecoSalvo = await salvarEnderecoEntrega(
-          prisma,
-          acesso.clienteId,
-          parsed.data.endereco,
-          acesso.cliente.telefoneWhatsapp,
-          acesso.cliente.nome,
-        );
-        await sincronizarEnderecoContaAzul(prisma, contaAzulId, enderecoSalvo);
+        if (modalidade === "entrega") {
+          if (!parsed.data.endereco) {
+            falha(res, 400, "Informe o endereço completo de entrega.");
+            return;
+          }
+          enderecoSalvo = await salvarEnderecoEntrega(
+            prisma,
+            acesso.clienteId,
+            parsed.data.endereco,
+            acesso.cliente.telefoneWhatsapp,
+            acesso.cliente.nome,
+          );
+          await sincronizarEnderecoContaAzul(prisma, contaAzulId, enderecoSalvo);
+        }
       }
 
       const nota = parsed.data.observacoes?.trim();
       const dataEntrega = new Date(`${parsed.data.dataEntrega}T12:00:00`);
+      const linhaModalidade =
+        modalidade === "retirada"
+          ? "Modalidade: retirada na fazenda (sem taxa de entrega)."
+          : taxaEntrega > 0
+            ? `Modalidade: entrega com taxa de R$ ${taxaEntrega.toFixed(2).replace(".", ",")} (pedido abaixo de R$ ${minimo.toFixed(2).replace(".", ",")}).`
+            : "Modalidade: entrega (sem taxa — atingiu o valor mínimo).";
       const observacoes = pessoa
         ? [
             "Pedido pelo site (pessoa). Aguardando pagamento.",
-            `Entrega: ${rotuloPeriodo(periodo!)}`,
-            `Endereço: ${textoEndereco(enderecoSalvo!)}`,
+            linhaModalidade,
+            modalidade === "retirada"
+              ? `Retirada: ${rotuloPeriodo(periodo!)}`
+              : `Entrega: ${rotuloPeriodo(periodo!)}`,
+            modalidade === "entrega" && enderecoSalvo ? `Endereço: ${textoEndereco(enderecoSalvo)}` : null,
             formaPagamento === "pix"
               ? "Pagamento: Pix"
               : "Pagamento: cartão (taxa de 5%)",
@@ -1094,9 +1120,13 @@ export function registerPortalRoutes(app: Express): void {
           ]
             .filter(Boolean)
             .join("\n")
-        : nota
-          ? `Pedido pelo site. ${nota}`
-          : "Pedido pelo site.";
+        : [
+            "Pedido pelo site.",
+            linhaModalidade,
+            nota ? `Obs.: ${nota}` : null,
+          ]
+            .filter(Boolean)
+            .join(" ");
       const pedido = await prisma.$transaction(async (tx) => {
         for (const linha of linhas) {
           if (linha!.produto.estoqueLoja == null) continue;
@@ -1136,8 +1166,15 @@ export function registerPortalRoutes(app: Express): void {
           id: pedido.id,
           dataEntrega: parsed.data.dataEntrega,
           total: totalReais,
+          taxaEntrega,
+          modalidade,
           perfil: "empresa",
-          mensagem: "Pedido enviado para aprovação.",
+          mensagem:
+            modalidade === "retirada"
+              ? "Pedido enviado para aprovação (retirada na fazenda)."
+              : taxaEntrega > 0
+                ? "Pedido enviado para aprovação (entrega com taxa de R$ 20,00)."
+                : "Pedido enviado para aprovação.",
         });
         return;
       }
@@ -1148,21 +1185,28 @@ export function registerPortalRoutes(app: Express): void {
           pedidoId: pedido.id,
           contaAzulCustomerId: contaAzulId,
           total: totalReais,
-          descricao: `Pedido Fazendas Up ${parsed.data.dataEntrega}`,
+          descricao:
+            taxaEntrega > 0
+              ? `Pedido Fazendas Up ${parsed.data.dataEntrega} · taxa entrega`
+              : `Pedido Fazendas Up ${parsed.data.dataEntrega}`,
           vencimentoYmd: parsed.data.dataEntrega,
           formaPagamento: formaPagamento!,
         });
+        const liberar =
+          modalidade === "retirada" ? "liberar a retirada" : "liberar a entrega";
         res.status(201).json({
           id: pedido.id,
           dataEntrega: parsed.data.dataEntrega,
           total: totalReais,
+          taxaEntrega,
+          modalidade,
           perfil: "pessoa",
           pagamento: cobranca,
           mensagem: cobranca.linkPendente
             ? "Pedido criado. O link de pagamento está sendo liberado — abra em Meus pedidos em instantes."
             : formaPagamento === "pix"
-              ? "Pedido criado. Conclua o Pix para liberar a entrega."
-              : "Pedido criado. Conclua o pagamento no cartão para liberar a entrega.",
+              ? `Pedido criado. Conclua o Pix para ${liberar}.`
+              : `Pedido criado. Conclua o pagamento no cartão para ${liberar}.`,
         });
       } catch (error) {
         // Só desfaz o pedido se a cobrança nem chegou a ser criada.
@@ -1186,8 +1230,24 @@ export function registerPortalRoutes(app: Express): void {
         falha(res, error.status, error.message);
         return;
       }
+      // Alguns bundlers quebram instanceof entre módulos — ainda assim devolve a mensagem útil.
+      if (error && typeof error === "object" && "status" in error && "message" in error) {
+        const status = Number((error as { status: unknown }).status);
+        const message = String((error as { message: unknown }).message ?? "");
+        if (Number.isFinite(status) && status >= 400 && status < 600 && message) {
+          falha(res, status, message);
+          return;
+        }
+      }
       console.error("[portal] criar pedido", error);
-      falha(res, 503, "Não foi possível enviar o pedido agora.");
+      const detalhe = error instanceof Error ? error.message : String(error);
+      falha(
+        res,
+        503,
+        /Conta Azul|estoque|prisma|ECONN|timeout/i.test(detalhe)
+          ? "Não foi possível enviar o pedido agora. Tente de novo em instantes."
+          : "Não foi possível enviar o pedido agora.",
+      );
     }
   });
 
