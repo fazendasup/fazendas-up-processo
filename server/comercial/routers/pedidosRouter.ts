@@ -70,6 +70,13 @@ import {
   sincronizarCatalogoProdutosContaAzul,
   sincronizarCatalogoProdutosContaAzulExclusivo,
 } from "../integrations/conta-azul/produtos-sync.service.js";
+import {
+  aprovarPedidoSite as aprovarPedidoSitePortal,
+  pedidoAguardandoAprovacaoSite,
+  pedidoPessoaSite,
+  rejeitarPedidoSite as rejeitarPedidoSitePortal,
+} from "../../portal/portalAprovacao";
+import { LojaErro } from "../../portal/portalLoja";
 const podeConfigurarEstoqueVivo = comercialRequirePerfis(
   "ADMIN",
   "GERENTE_COMERCIAL",
@@ -555,12 +562,151 @@ const produtoInput = z.object({
   mixVariedades: nullableStringArray,
 });
 
+function trpcDeLojaErro(err: unknown): never {
+  if (err instanceof LojaErro) {
+    const code =
+      err.status === 404
+        ? "NOT_FOUND"
+        : err.status === 409
+          ? "CONFLICT"
+          : "BAD_REQUEST";
+    throw new TRPCError({ code, message: err.message });
+  }
+  throw err;
+}
+
 export const pedidosRouter = router({
   me: comercialProcedure.query(({ ctx }) => ({
     id: ctx.comercialUsuario.id,
     nome: ctx.comercialUsuario.nome,
     perfil: ctx.comercialUsuario.perfil,
   })),
+
+  /** Pedidos do site aguardando aprovação da fazenda. */
+  pedidosSiteAprovacao: comercialProcedure.query(async ({ ctx }) => {
+    const candidatos = await ctx.prisma!.pedidoOperacional.findMany({
+      where: {
+        status: "PENDENTE",
+        observacoes: { contains: "Pedido pelo site" },
+      },
+      include: {
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            cnpjCpf: true,
+            telefoneWhatsapp: true,
+          },
+        },
+        itens: {
+          select: {
+            id: true,
+            produtoNome: true,
+            quantidade: true,
+            precoUnit: true,
+          },
+        },
+      },
+      orderBy: [{ criadoEm: "desc" }],
+      take: 80,
+    });
+
+    const pagamentos = await ctx.prisma!.portalPedidoPagamento.findMany({
+      where: { pedidoId: { in: candidatos.map(p => p.id) } },
+      select: { pedidoId: true, status: true },
+    });
+    const pagamentoPorPedido = new Map(
+      pagamentos.map(p => [p.pedidoId, p.status] as const)
+    );
+
+    return candidatos
+      .filter(p => {
+        const statusPagamento = pagamentoPorPedido.get(p.id);
+        return pedidoAguardandoAprovacaoSite({
+          status: p.status,
+          observacoes: p.observacoes,
+          temPagamentoAguardandoOuPago: Boolean(
+            statusPagamento && statusPagamento !== "CANCELADO"
+          ),
+        });
+      })
+      .map(p => {
+        const total = p.itens.reduce((acc, it) => {
+          const q = Number(it.quantidade);
+          const pr = Number(it.precoUnit);
+          return acc + (Number.isFinite(q) && Number.isFinite(pr) ? q * pr : 0);
+        }, 0);
+        return {
+          id: p.id,
+          dataEntrega: p.dataEntrega,
+          criadoEm: p.criadoEm,
+          observacoes: p.observacoes,
+          tipoVenda: p.tipoVenda,
+          cliente: p.cliente,
+          itens: p.itens.map(it => ({
+            id: it.id,
+            produtoNome: it.produtoNome,
+            quantidade: Number(it.quantidade),
+            precoUnit: Number(it.precoUnit),
+          })),
+          total,
+          pessoa: pedidoPessoaSite(p.observacoes),
+          precisaAprovacao: true,
+        };
+      });
+  }),
+
+  aprovarPedidoSite: comercialProcedure
+    .input(z.object({ pedidoId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      try {
+        const result = await aprovarPedidoSitePortal({
+          prisma: ctx.prisma!,
+          pedidoId: input.pedidoId,
+          usuario: { id: usuario.id, nome: usuario.nome },
+        });
+        return {
+          success: true,
+          pessoa: result.pessoa,
+          pagamento: result.pagamento,
+        };
+      } catch (err) {
+        trpcDeLojaErro(err);
+      }
+    }),
+
+  rejeitarPedidoSite: comercialProcedure
+    .input(
+      z.object({
+        pedidoId: z.string().min(1),
+        motivo: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      try {
+        await rejeitarPedidoSitePortal({
+          prisma: ctx.prisma!,
+          pedidoId: input.pedidoId,
+          motivo: input.motivo,
+          usuario: { id: usuario.id, nome: usuario.nome },
+        });
+        return { success: true };
+      } catch (err) {
+        trpcDeLojaErro(err);
+      }
+    }),
 
   clientes: comercialProcedure
     .input(

@@ -221,7 +221,7 @@ async function marcarParcelaComoPerda(
   }
 }
 
-async function encerrarReceberPortal(
+export async function encerrarReceberPortal(
   prisma: PrismaClient,
   parcelaId: string | null | undefined,
   pixCobrancaId?: string | null,
@@ -615,6 +615,7 @@ export async function cancelarPedidoCliente(input: {
   const obs = pedido.observacoes ?? "";
   const doSite = obs.includes("Pedido pelo site");
   const pessoa = obs.includes("(pessoa)");
+  const aprovado = obs.includes("Aprovado pela fazenda.");
   const pagamento = await input.prisma.portalPedidoPagamento.findUnique({ where: { pedidoId: pedido.id } });
 
   if (pagamento?.status === "PAGO") {
@@ -622,10 +623,18 @@ export async function cancelarPedidoCliente(input: {
   }
 
   if (pessoa) {
-    if (!pagamento || pagamento.status !== "AGUARDANDO") {
-      throw new LojaErro(409, "Só é possível cancelar enquanto o pagamento estiver em aberto.");
+    // Antes da aprovação: cancela sem cobrança. Depois: só com pagamento em aberto.
+    const aguardandoAprovacao = doSite && !aprovado && !pagamento;
+    const pagamentoAberto = pagamento?.status === "AGUARDANDO";
+    if (!aguardandoAprovacao && !pagamentoAberto) {
+      throw new LojaErro(
+        409,
+        aprovado
+          ? "Só é possível cancelar enquanto o pagamento estiver em aberto."
+          : "Só é possível cancelar enquanto o pedido estiver aguardando aprovação ou pagamento.",
+      );
     }
-  } else if (!(doSite && pedido.status === "PENDENTE")) {
+  } else if (!(doSite && pedido.status === "PENDENTE" && !aprovado)) {
     throw new LojaErro(409, "Só é possível cancelar pedidos do site ainda aguardando aprovação.");
   }
 
@@ -786,16 +795,28 @@ export async function alterarFormaPagamentoPedido(input: {
   }
 
   const atual = formaPagamentoDoRegistro(pagamento);
-  const base = resolverBaseCobrancaPessoa({
+  const taxaEntregaMatch = obs.match(/taxa de R\$\s*([\d.,]+)/i);
+  const taxaEntregaRaw = taxaEntregaMatch?.[1];
+  const taxaEntrega = taxaEntregaRaw
+    ? Math.round(
+        Number(taxaEntregaRaw.includes(",") ? taxaEntregaRaw.replace(/\./g, "").replace(",", ".") : taxaEntregaRaw) *
+          100,
+      ) / 100
+    : 0;
+  const taxaOk = Number.isFinite(taxaEntrega) && taxaEntrega > 0 ? taxaEntrega : 0;
+  const baseItens = resolverBaseCobrancaPessoa({
     itens: pedido.itens,
     totalCobradoAtual: Number(pagamento.total),
     // Se está Pix com total de cartão, trata como se viesse de cartão para remover a taxa.
     formaAnterior:
       atual === "pix" &&
-      Math.abs(Number(pagamento.total) - totalCobrancaPessoa(somarBaseItensPedido(pedido.itens), "cartao")) < 0.02
+      Math.abs(
+        Number(pagamento.total) - totalCobrancaPessoa(somarBaseItensPedido(pedido.itens) + taxaOk, "cartao"),
+      ) < 0.02
         ? "cartao"
         : atual,
   });
+  const base = Math.round((baseItens + taxaOk) * 100) / 100;
   if (!(base > 0)) {
     throw new LojaErro(400, "Não foi possível recalcular o valor do pedido para a nova cobrança.");
   }

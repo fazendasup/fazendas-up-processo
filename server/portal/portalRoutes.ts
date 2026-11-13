@@ -25,10 +25,13 @@ import { pesoDoProduto } from "./produtoPeso";
 import { alinharFotosDeEstoque, bytesDaFoto, cnpjValido, formatarCnpj, jpegDaFotoEnviada, jpegValido, LojaErro, preencherFichasDaVitrine, produtoVisivelNaLoja, reenviarCadastro, registrarEmpresa } from "./portalLoja";
 import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "./portalDocumentos";
 import {
+  pedidoAguardandoAprovacaoSite,
+  pedidoAprovadoPelaFazenda,
+} from "./portalAprovacao";
+import {
   alinharPagamentoPedidoCancelado,
   alterarFormaPagamentoPedido,
   cancelarPedidoCliente,
-  criarCobrancasPessoa,
   formaPagamentoDoRegistro,
   idsParcelasPortalAtivas,
   lerPagamentoPedido,
@@ -908,13 +911,24 @@ export function registerPortalRoutes(app: Express): void {
           }).format(pedido.dataEntrega);
           const pagamento = pagamentoPorPedido.get(pedido.id);
           const obs = pedido.observacoes ?? "";
+          const doSite = obs.includes("Pedido pelo site");
+          const pessoa = obs.includes("(pessoa)");
+          const aprovado = pedidoAprovadoPelaFazenda(obs);
+          const aguardandoAprovacao = pedidoAguardandoAprovacaoSite({
+            status: pedido.status,
+            observacoes: obs,
+            temPagamentoAguardandoOuPago:
+              pagamento?.status === "AGUARDANDO" || pagamento?.status === "PAGO",
+          });
           return {
             id: pedido.id,
             dataEntrega,
             status: pedido.status,
             programado: dataEntrega >= hoje && pedido.status !== "CANCELADO",
-            doSite: obs.includes("Pedido pelo site"),
-            pessoa: obs.includes("(pessoa)"),
+            doSite,
+            pessoa,
+            aprovado,
+            aguardandoAprovacao,
             pagamento: pagamento
               ? {
                   status: pagamento.status,
@@ -1116,7 +1130,7 @@ export function registerPortalRoutes(app: Express): void {
             : "Modalidade: entrega (sem taxa — atingiu o valor mínimo).";
       const observacoes = pessoa
         ? [
-            "Pedido pelo site (pessoa). Aguardando pagamento.",
+            "Pedido pelo site (pessoa). Aguardando aprovação da fazenda.",
             linhaModalidade,
             modalidade === "retirada"
               ? `Retirada: ${rotuloPeriodo(periodo!)}`
@@ -1130,12 +1144,12 @@ export function registerPortalRoutes(app: Express): void {
             .filter(Boolean)
             .join("\n")
         : [
-            "Pedido pelo site.",
+            "Pedido pelo site. Aguardando aprovação da fazenda.",
             linhaModalidade,
             nota ? `Obs.: ${nota}` : null,
           ]
             .filter(Boolean)
-            .join(" ");
+            .join("\n");
       const pedido = await prisma.$transaction(async (tx) => {
         for (const linha of linhas) {
           if (linha!.produto.estoqueLoja == null) continue;
@@ -1170,70 +1184,29 @@ export function registerPortalRoutes(app: Express): void {
         });
       });
 
-      if (!pessoa) {
-        res.status(201).json({
-          id: pedido.id,
-          dataEntrega: parsed.data.dataEntrega,
-          total: totalReais,
-          taxaEntrega,
-          modalidade,
-          perfil: "empresa",
-          mensagem:
-            modalidade === "retirada"
-              ? "Pedido enviado para aprovação (retirada na fazenda)."
-              : taxaEntrega > 0
-                ? "Pedido enviado para aprovação (entrega com taxa de R$ 20,00)."
-                : "Pedido enviado para aprovação.",
-        });
-        return;
-      }
-
-      try {
-        const cobranca = await criarCobrancasPessoa({
-          prisma,
-          pedidoId: pedido.id,
-          contaAzulCustomerId: contaAzulId,
-          total: totalReais,
-          descricao:
-            taxaEntrega > 0
-              ? `Pedido Fazendas Up ${parsed.data.dataEntrega} · taxa entrega`
-              : `Pedido Fazendas Up ${parsed.data.dataEntrega}`,
-          vencimentoYmd: parsed.data.dataEntrega,
-          formaPagamento: formaPagamento!,
-        });
-        const liberar =
-          modalidade === "retirada" ? "liberar a retirada" : "liberar a entrega";
-        res.status(201).json({
-          id: pedido.id,
-          dataEntrega: parsed.data.dataEntrega,
-          total: totalReais,
-          taxaEntrega,
-          modalidade,
-          perfil: "pessoa",
-          pagamento: cobranca,
-          mensagem: cobranca.linkPendente
-            ? "Pedido criado. O link de pagamento está sendo liberado — abra em Meus pedidos em instantes."
-            : formaPagamento === "pix"
-              ? `Pedido criado. Conclua o Pix para ${liberar}.`
-              : `Pedido criado. Conclua o pagamento no cartão para ${liberar}.`,
-        });
-      } catch (error) {
-        // Só desfaz o pedido se a cobrança nem chegou a ser criada.
-        const pagamento = await prisma.portalPedidoPagamento.findUnique({ where: { pedidoId: pedido.id } });
-        if (!pagamento) {
-          await prisma.pedidoOperacional.delete({ where: { id: pedido.id } }).catch(() => null);
-          for (const linha of linhas) {
-            if (linha!.produto.estoqueLoja == null) continue;
-            await prisma.produtoComercial
-              .update({
-                where: { id: linha!.produto.id },
-                data: { estoqueLoja: { increment: linha!.quantidade } },
-              })
-              .catch(() => null);
-          }
-        }
-        throw error;
-      }
+      // Pessoa e empresa: cobrança Conta Azul só depois da aprovação da equipe.
+      const mensagemAprovacao =
+        modalidade === "retirada"
+          ? "Pedido enviado para aprovação (retirada na fazenda). O pagamento será liberado após a fazenda aprovar."
+          : taxaEntrega > 0
+            ? "Pedido enviado para aprovação (entrega com taxa de R$ 20,00). O pagamento será liberado após a fazenda aprovar."
+            : "Pedido enviado para aprovação. O pagamento será liberado após a fazenda aprovar.";
+      res.status(201).json({
+        id: pedido.id,
+        dataEntrega: parsed.data.dataEntrega,
+        total: totalReais,
+        taxaEntrega,
+        modalidade,
+        perfil: pessoa ? "pessoa" : "empresa",
+        aguardandoAprovacao: true,
+        mensagem: pessoa
+          ? mensagemAprovacao
+          : modalidade === "retirada"
+            ? "Pedido enviado para aprovação (retirada na fazenda)."
+            : taxaEntrega > 0
+              ? "Pedido enviado para aprovação (entrega com taxa de R$ 20,00)."
+              : "Pedido enviado para aprovação.",
+      });
     } catch (error) {
       if (error instanceof LojaErro) {
         falha(res, error.status, error.message);
