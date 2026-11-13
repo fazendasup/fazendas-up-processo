@@ -995,14 +995,22 @@ export function registerPortalRoutes(app: Express): void {
     const pessoa = ehPerfilPessoa(acesso.perfil, acesso.cliente.cnpjCpf);
     try {
       if (!pessoa) {
-        const atraso = await detalheInadimplenciaCliente(contaAzulId);
-        if (atraso.inadimplente) {
-          falha(
-            res,
-            409,
-            "Há um pagamento em atraso nesta conta. Regularize para enviar um novo pedido.",
+        try {
+          const atraso = await detalheInadimplenciaCliente(contaAzulId);
+          if (atraso.inadimplente) {
+            falha(
+              res,
+              409,
+              "Há um pagamento em atraso nesta conta. Regularize para enviar um novo pedido.",
+            );
+            return;
+          }
+        } catch (error) {
+          console.error("[portal] checagem inadimplência", error);
+          throw new LojaErro(
+            503,
+            "Não foi possível verificar pagamentos em atraso agora. Tente de novo em instantes.",
           );
-          return;
         }
       }
       const prisma = getComercialPrisma();
@@ -1234,20 +1242,36 @@ export function registerPortalRoutes(app: Express): void {
       if (error && typeof error === "object" && "status" in error && "message" in error) {
         const status = Number((error as { status: unknown }).status);
         const message = String((error as { message: unknown }).message ?? "");
-        if (Number.isFinite(status) && status >= 400 && status < 600 && message) {
+        if (Number.isFinite(status) && status >= 400 && status < 600 && message && !/^\d+$/.test(message)) {
           falha(res, status, message);
           return;
         }
       }
       console.error("[portal] criar pedido", error);
       const detalhe = error instanceof Error ? error.message : String(error);
-      falha(
-        res,
-        503,
-        /Conta Azul|estoque|prisma|ECONN|timeout/i.test(detalhe)
-          ? "Não foi possível enviar o pedido agora. Tente de novo em instantes."
-          : "Não foi possível enviar o pedido agora.",
-      );
+      if (/inadimpl|atraso|pagamento em atraso/i.test(detalhe)) {
+        falha(res, 503, "Não foi possível verificar pagamentos em atraso agora. Tente de novo em instantes.");
+        return;
+      }
+      if (/Conta Azul/i.test(detalhe)) {
+        falha(
+          res,
+          503,
+          /token|OAuth|não conectado/i.test(detalhe)
+            ? "Pagamentos Conta Azul indisponíveis no momento. Fale com a fazenda ou tente de novo em instantes."
+            : "Não foi possível falar com o Conta Azul agora. Tente de novo em instantes.",
+        );
+        return;
+      }
+      if (/estoque/i.test(detalhe)) {
+        falha(res, 409, "Um ou mais produtos não têm essa quantidade disponível.");
+        return;
+      }
+      if (/prisma|ECONN|timeout|ETIMEDOUT|ENOTFOUND/i.test(detalhe)) {
+        falha(res, 503, "Não foi possível enviar o pedido agora. Tente de novo em instantes.");
+        return;
+      }
+      falha(res, 503, "Não foi possível enviar o pedido agora.");
     }
   });
 

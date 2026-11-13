@@ -260,7 +260,19 @@ export async function criarCobrancasPessoa(input: {
     throw new LojaErro(503, "Os pagamentos ainda não estão disponíveis. Tente de novo em instantes.");
   }
   const http = createContaAzulHttp(env, cred.accessToken);
-  const sync = await sincronizarContasFinanceirasEnvio(input.prisma, env);
+  let sync: Awaited<ReturnType<typeof sincronizarContasFinanceirasEnvio>>;
+  try {
+    sync = await sincronizarContasFinanceirasEnvio(input.prisma, env);
+  } catch (error) {
+    const texto = error instanceof Error ? error.message : String(error);
+    console.error("[portal] sync contas financeiras", error);
+    throw new LojaErro(
+      503,
+      /token|OAuth/i.test(texto)
+        ? "Os pagamentos ainda não estão disponíveis. Tente de novo em instantes."
+        : "Não foi possível preparar a cobrança agora. Tente de novo em instantes.",
+    );
+  }
   const contaId = escolherContaCobrancaBoleto(sync.contas, sync.selecionadaId);
   if (!contaId) {
     throw new LojaErro(503, "Não há conta de cobrança configurada na fazenda.");

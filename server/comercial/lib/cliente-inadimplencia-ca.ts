@@ -235,9 +235,12 @@ export async function listarTitulosEmAtrasoCa(opts?: {
 
   const http = await httpCa();
   const hoje = isoHoje();
-  const [y, m, d] = hoje.split("-").map(Number);
-  const inicio = new Date(y! - 3, (m ?? 1) - 1, d ?? 1);
-  const vencDe = diaIsoAmericaSp(inicio);
+  // Conta Azul limita o intervalo de vencimento a 365 dias (inclusive).
+  const vencDe = (() => {
+    const base = new Date(`${hoje}T12:00:00-03:00`);
+    base.setDate(base.getDate() - 364);
+    return diaIsoAmericaSp(base);
+  })();
 
   let raw: ParcelaRaw[] = [];
   try {
@@ -254,13 +257,21 @@ export async function listarTitulosEmAtrasoCa(opts?: {
       { err },
       "Conta Azul: busca ATRASADO falhou — tentando abertos por vencimento",
     );
-    raw = await buscarReceberPaginas(http, () => {
-      const qs = new URLSearchParams({
-        data_vencimento_de: vencDe,
-        data_vencimento_ate: hoje,
+    try {
+      raw = await buscarReceberPaginas(http, () => {
+        const qs = new URLSearchParams({
+          data_vencimento_de: vencDe,
+          data_vencimento_ate: hoje,
+        });
+        return qs;
       });
-      return qs;
-    });
+    } catch (err2) {
+      logger.error(
+        { err: err2 },
+        "Conta Azul: listagem de títulos em atraso indisponível",
+      );
+      throw err2;
+    }
   }
 
   const itens = raw
