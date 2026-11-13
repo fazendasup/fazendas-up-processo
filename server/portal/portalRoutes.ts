@@ -1121,7 +1121,8 @@ export function registerPortalRoutes(app: Express): void {
       }
 
       const nota = parsed.data.observacoes?.trim();
-      const dataEntrega = new Date(`${parsed.data.dataEntrega}T12:00:00`);
+      // Meio-dia em Manaus: evita o pedido “cair” no dia anterior/seguinte no ERP (UTC).
+      const dataEntrega = new Date(`${parsed.data.dataEntrega}T12:00:00.000-04:00`);
       const linhaModalidade =
         modalidade === "retirada"
           ? "Modalidade: retirada na fazenda (sem taxa de entrega)."

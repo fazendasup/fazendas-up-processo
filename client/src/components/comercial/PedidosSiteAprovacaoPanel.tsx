@@ -6,7 +6,7 @@ import {
   Loader2,
   XCircle,
 } from "lucide-react";
-import { fmtDataEntrega } from "@/lib/dataEntrega";
+import { fmtDataEntrega, isoDataEntrega } from "@/lib/dataEntrega";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Props = {
   canEdit: boolean;
+  /** Após aprovar, o pai abre o dia da entrega na agenda operacional. */
+  onAprovado?: (dataEntregaIso: string) => void;
 };
 
 function fmtBrl(valor: number) {
@@ -23,7 +25,7 @@ function fmtBrl(valor: number) {
   });
 }
 
-export function PedidosSiteAprovacaoPanel({ canEdit }: Props) {
+export function PedidosSiteAprovacaoPanel({ canEdit, onAprovado }: Props) {
   const utils = trpc.useUtils();
   const lista = trpc.comercial.pedidos.pedidosSiteAprovacao.useQuery(undefined, {
     refetchInterval: 60_000,
@@ -32,21 +34,35 @@ export function PedidosSiteAprovacaoPanel({ canEdit }: Props) {
 
   async function invalidarAposAcao() {
     await Promise.all([
-      utils.comercial.pedidos.pedidosSiteAprovacao.invalidate(),
-      utils.comercial.pedidos.agenda.invalidate(),
-      utils.comercial.pedidos.dashboard.invalidate(),
-      utils.comercial.pedidos.statusSemana.invalidate(),
+      utils.comercial.pedidos.pedidosSiteAprovacao.invalidate(undefined, {
+        refetchType: "all",
+      }),
+      utils.comercial.pedidos.agenda.invalidate(undefined, {
+        refetchType: "all",
+      }),
+      utils.comercial.pedidos.dashboard.invalidate(undefined, {
+        refetchType: "all",
+      }),
+      utils.comercial.pedidos.statusSemana.invalidate(undefined, {
+        refetchType: "all",
+      }),
     ]);
   }
 
   const aprovar = trpc.comercial.pedidos.aprovarPedidoSite.useMutation({
     onSuccess: async result => {
+      const diaIso = result.dataEntrega
+        ? isoDataEntrega(result.dataEntrega)
+        : "";
       toast.success(
         result.pessoa
           ? "Pedido do site aprovado. Cobrança liberada para o cliente."
-          : "Pedido do site aprovado e liberado na programação."
+          : diaIso
+            ? `Pedido aprovado. Aberto o dia ${fmtDataEntrega(diaIso)} na operação.`
+            : "Pedido do site aprovado e liberado na operação."
       );
       await invalidarAposAcao();
+      if (diaIso && !result.pessoa) onAprovado?.(diaIso);
     },
     onError: err => toast.error(err.message || "Falha ao aprovar."),
     onSettled: () => setBusyId(null),
@@ -76,8 +92,8 @@ export function PedidosSiteAprovacaoPanel({ canEdit }: Props) {
           )}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Pedidos enviados pelo site aparecem aqui. Aprove para liberar
-          pagamento (pessoa) ou programação (empresa).
+          Pedidos do site ficam aqui até a aprovação. Depois disso, empresa
+          entra no dia da entrega; pessoa entra após o pagamento.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -93,6 +109,7 @@ export function PedidosSiteAprovacaoPanel({ canEdit }: Props) {
           <ul className="space-y-2">
             {pedidos.map(p => {
               const ocupado = busyId === p.id;
+              const diaIso = isoDataEntrega(p.dataEntrega);
               return (
                 <li
                   key={p.id}
@@ -131,51 +148,63 @@ export function PedidosSiteAprovacaoPanel({ canEdit }: Props) {
                         </p>
                       ) : null}
                     </div>
-                    {canEdit ? (
-                      <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {diaIso ? (
                         <Button
                           size="sm"
-                          disabled={ocupado}
-                          onClick={() => {
-                            setBusyId(p.id);
-                            aprovar.mutate({ pedidoId: p.id });
-                          }}
+                          variant="ghost"
+                          onClick={() => onAprovado?.(diaIso)}
                         >
-                          {ocupado && aprovar.isPending ? (
-                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="mr-1 h-4 w-4" />
-                          )}
-                          Aprovar
+                          Ver dia {fmtDataEntrega(diaIso)}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={ocupado}
-                          onClick={() => {
-                            const ok = window.confirm(
-                              "Rejeitar este pedido do site?\n\nO estoque volta para a loja e o cliente deixa de ver o pedido em aberto."
-                            );
-                            if (!ok) return;
-                            const motivo =
-                              window.prompt("Motivo da rejeição (opcional):") ??
-                              undefined;
-                            setBusyId(p.id);
-                            rejeitar.mutate({
-                              pedidoId: p.id,
-                              motivo: motivo?.trim() || undefined,
-                            });
-                          }}
-                        >
-                          {ocupado && rejeitar.isPending ? (
-                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                          ) : (
-                            <XCircle className="mr-1 h-4 w-4" />
-                          )}
-                          Rejeitar
-                        </Button>
-                      </div>
-                    ) : null}
+                      ) : null}
+                      {canEdit ? (
+                        <>
+                          <Button
+                            size="sm"
+                            disabled={ocupado}
+                            onClick={() => {
+                              setBusyId(p.id);
+                              aprovar.mutate({ pedidoId: p.id });
+                            }}
+                          >
+                            {ocupado && aprovar.isPending ? (
+                              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="mr-1 h-4 w-4" />
+                            )}
+                            Aprovar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={ocupado}
+                            onClick={() => {
+                              const ok = window.confirm(
+                                "Rejeitar este pedido do site?\n\nO estoque volta para a loja e o cliente deixa de ver o pedido em aberto."
+                              );
+                              if (!ok) return;
+                              const motivo =
+                                window.prompt(
+                                  "Motivo da rejeição (opcional):"
+                                ) ?? undefined;
+                              setBusyId(p.id);
+                              rejeitar.mutate({
+                                pedidoId: p.id,
+                                motivo: motivo?.trim() || undefined,
+                              });
+                            }}
+                          >
+                            {ocupado && rejeitar.isPending ? (
+                              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                            ) : (
+                              <XCircle className="mr-1 h-4 w-4" />
+                            )}
+                            Rejeitar
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </li>
               );

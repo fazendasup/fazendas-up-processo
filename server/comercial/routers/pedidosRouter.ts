@@ -72,8 +72,11 @@ import {
 } from "../integrations/conta-azul/produtos-sync.service.js";
 import {
   aprovarPedidoSite as aprovarPedidoSitePortal,
+  garantirCobrancaPedidoSiteAprovado as garantirCobrancaPedidoSiteAprovadoPortal,
   pedidoAguardandoAprovacaoSite,
+  pedidoDoSite,
   pedidoPessoaSite,
+  pedidoSiteLiberadoNaOperacao,
   rejeitarPedidoSite as rejeitarPedidoSitePortal,
 } from "../../portal/portalAprovacao";
 import { LojaErro } from "../../portal/portalLoja";
@@ -671,10 +674,15 @@ export const pedidosRouter = router({
           pedidoId: input.pedidoId,
           usuario: { id: usuario.id, nome: usuario.nome },
         });
+        const atualizado = await ctx.prisma!.pedidoOperacional.findUnique({
+          where: { id: input.pedidoId },
+          select: { dataEntrega: true },
+        });
         return {
           success: true,
           pessoa: result.pessoa,
           pagamento: result.pagamento,
+          dataEntrega: atualizado?.dataEntrega ?? null,
         };
       } catch (err) {
         trpcDeLojaErro(err);
@@ -703,6 +711,34 @@ export const pedidosRouter = router({
           usuario: { id: usuario.id, nome: usuario.nome },
         });
         return { success: true };
+      } catch (err) {
+        trpcDeLojaErro(err);
+      }
+    }),
+
+  /** Repara pedido do site aprovado sem cobrança Pix/cartão (libera pagamento no portal). */
+  garantirCobrancaPedidoSite: comercialProcedure
+    .input(
+      z.object({
+        pedidoId: z.string().min(1),
+        formaPagamento: z.enum(["pix", "cartao"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      try {
+        const result = await garantirCobrancaPedidoSiteAprovadoPortal({
+          prisma: ctx.prisma!,
+          pedidoId: input.pedidoId,
+          formaPagamento: input.formaPagamento,
+          usuario: { id: usuario.id, nome: usuario.nome },
+        });
+        return { success: true, pagamento: result.pagamento };
       } catch (err) {
         trpcDeLojaErro(err);
       }
@@ -1315,16 +1351,23 @@ export const pedidosRouter = router({
           editadoPor: { select: { nome: true, email: true } },
         },
       });
+      const pedidosOperacao = pedidos.filter(p =>
+        pedidoSiteLiberadoNaOperacao({
+          status: p.status,
+          observacoes: p.observacoes,
+        })
+      );
       const alertas = await alertasAvariasDepoisPedidoOrigem(
         ctx.prisma!,
-        pedidos
+        pedidosOperacao
       );
-      return pedidos.sort(compararEntregaPorRegra).map(pedido => {
+      return pedidosOperacao.sort(compararEntregaPorRegra).map(pedido => {
         const base = deveOcultarValores(ctx)
           ? ocultarValoresPedido(pedido)
           : pedido;
         return {
           ...base,
+          origemSite: pedidoDoSite(pedido.observacoes),
           itens: base.itens.map(comNomeCatalogoProduto),
           avarias: base.avarias.map(comNomeCatalogoProduto),
           alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
@@ -2056,7 +2099,13 @@ export const pedidosRouter = router({
           { criadoEm: "asc" },
         ],
       });
-      pedidos.sort((a, b) => {
+      const pedidosOperacao = pedidos.filter(p =>
+        pedidoSiteLiberadoNaOperacao({
+          status: p.status,
+          observacoes: p.observacoes,
+        })
+      );
+      pedidosOperacao.sort((a, b) => {
         const da = inicioDia(a.dataEntrega).getTime();
         const db = inicioDia(b.dataEntrega).getTime();
         if (da !== db) return da - db;
@@ -2064,7 +2113,7 @@ export const pedidosRouter = router({
       });
       const alertas = await alertasAvariasDepoisPedidoOrigem(
         ctx.prisma!,
-        pedidos
+        pedidosOperacao
       );
       const grupos = new Map<
         string,
@@ -2077,15 +2126,16 @@ export const pedidosRouter = router({
           dataEntregaIso: string;
           prioridadeEntrega: number | null;
           prioridadeAutomatica: number;
-          pedidos: typeof pedidos;
+          pedidos: typeof pedidosOperacao;
           itens: unknown[];
           avarias: unknown[];
           alertasAvariasPendentes: unknown[];
           avisosAcumulo: string[];
           volumeFaturamentoOculto: boolean;
+          origemSite: boolean;
         }
       >();
-      for (const p of pedidos) {
+      for (const p of pedidosOperacao) {
         const pedido = deveOcultarValores(ctx) ? ocultarValoresPedido(p) : p;
         const dataEntrega = inicioDia(p.dataEntrega);
         const dataEntregaIso = `${dataEntrega.getFullYear()}-${String(dataEntrega.getMonth() + 1).padStart(2, "0")}-${String(dataEntrega.getDate()).padStart(2, "0")}`;
@@ -2110,6 +2160,7 @@ export const pedidosRouter = router({
           alertasAvariasPendentes: [],
           avisosAcumulo: [],
           volumeFaturamentoOculto: false,
+          origemSite: false,
         };
         if (
           p.prioridadeEntrega != null &&
@@ -2118,6 +2169,7 @@ export const pedidosRouter = router({
         ) {
           atual.prioridadeEntrega = p.prioridadeEntrega;
         }
+        if (pedidoDoSite(p.observacoes)) atual.origemSite = true;
         atual.pedidos.push(pedido);
         // Quantidades do pedido operacional; nome/categoria vêm do catálogo atual
         // ( Conta Azul → produtoComercial ), não do snapshot antigo em produto_nome.

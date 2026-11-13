@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   baseCobrancaPedidoSite,
   formaPagamentoPreferidaDasObservacoes,
+  garantirMarcadorPessoaObs,
   pedidoAguardandoAprovacaoSite,
   pedidoAprovadoPelaFazenda,
+  pedidoSiteLiberadoNaOperacao,
   taxaEntregaDasObservacoes,
   MARCA_APROVADO_FAZENDA,
 } from "./portalAprovacao";
@@ -52,5 +54,35 @@ describe("portalAprovacao", () => {
         itens: [{ precoUnit: "10", quantidade: "2" }],
       }),
     ).toBe(40);
+  });
+
+  it("insere marcador (pessoa) sem duplicar", () => {
+    expect(garantirMarcadorPessoaObs("Pedido pelo site. Modalidade: entrega.")).toBe(
+      "Pedido pelo site (pessoa). Modalidade: entrega.",
+    );
+    expect(garantirMarcadorPessoaObs("Pedido pelo site (pessoa). Já ok.")).toBe(
+      "Pedido pelo site (pessoa). Já ok.",
+    );
+  });
+
+  it("empresa aprovada libera operação; PF só após pagamento", () => {
+    expect(
+      pedidoSiteLiberadoNaOperacao({
+        status: "PENDENTE",
+        observacoes: `Pedido pelo site.\n${MARCA_APROVADO_FAZENDA}`,
+      }),
+    ).toBe(true);
+    expect(
+      pedidoSiteLiberadoNaOperacao({
+        status: "PENDENTE",
+        observacoes: `Pedido pelo site (pessoa).\n${MARCA_APROVADO_FAZENDA}\nAguardando pagamento.`,
+      }),
+    ).toBe(false);
+    expect(
+      pedidoSiteLiberadoNaOperacao({
+        status: "PENDENTE",
+        observacoes: `Pedido pelo site (pessoa).\n${MARCA_APROVADO_FAZENDA}\nPago via site. Liberado para produção.`,
+      }),
+    ).toBe(true);
   });
 });

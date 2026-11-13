@@ -568,15 +568,33 @@ export function Pedidos({
       },
       onError: err => toast.error(err.message),
     });
+  function abrirDiaEntregaSite(dataEntregaIso: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataEntregaIso)) return;
+    setDia(dataEntregaIso);
+    setEscopoDashboard("dia");
+    setAba("operacional");
+    setDashboardClienteFiltro([]);
+    setAgendaClienteFiltro("");
+    setBusca("");
+    setLocation(`/comercial/pedidos?dia=${dataEntregaIso}`);
+  }
+
   const aprovarPedidoSite =
     trpc.comercial.pedidos.aprovarPedidoSite.useMutation({
       onSuccess: result => {
+        const diaIso = result.dataEntrega
+          ? isoDataEntrega(result.dataEntrega)
+          : "";
         toast.success(
           result.pessoa
             ? "Pedido do site aprovado. Cobrança liberada para o cliente."
-            : "Pedido do site aprovado e liberado na programação.",
+            : diaIso
+              ? `Pedido aprovado. Aberto o dia ${fmtDataEntrega(diaIso)} na operação.`
+              : "Pedido do site aprovado e liberado na operação.",
         );
-        void invalidarVisaoOperacionalDia();
+        void invalidarVisaoOperacionalDia().then(() => {
+          if (diaIso && !result.pessoa) abrirDiaEntregaSite(diaIso);
+        });
       },
       onError: err => toast.error(err.message || "Não foi possível aprovar."),
     });
@@ -1140,6 +1158,10 @@ export function Pedidos({
               {siteAguardando.length > 0 ? (
                 <span className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
                   Site · aguardando aprovação
+                </span>
+              ) : grupo.origemSite ? (
+                <span className="rounded border border-sky-300 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-900 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-100">
+                  Site
                 </span>
               ) : null}
               <span className="text-[11px] tabular-nums text-muted-foreground">
@@ -1716,7 +1738,10 @@ export function Pedidos({
         </div>
       </div>
 
-      <PedidosSiteAprovacaoPanel canEdit={canEditarComercial} />
+      <PedidosSiteAprovacaoPanel
+        canEdit={canEditarComercial}
+        onAprovado={abrirDiaEntregaSite}
+      />
 
       {statusSemana.data?.semanaAtual ? (
         <div className="rounded-lg border bg-muted/30">
