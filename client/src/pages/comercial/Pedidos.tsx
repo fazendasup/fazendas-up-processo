@@ -585,15 +585,16 @@ export function Pedidos({
         const diaIso = result.dataEntrega
           ? isoDataEntrega(result.dataEntrega)
           : "";
+        const pagaAVista = result.pagaAVista ?? result.pessoa;
         toast.success(
-          result.pessoa
-            ? "Pedido do site aprovado. Cobrança liberada para o cliente."
+          pagaAVista
+            ? "Pedido aprovado. Cliente pode pagar Pix/cartão no site (Conta Azul na hora do pagamento)."
             : diaIso
-              ? `Pedido aprovado. Aberto o dia ${fmtDataEntrega(diaIso)} na operação.`
-              : "Pedido do site aprovado e liberado na operação.",
+              ? `Pedido faturado aprovado. Aberto o dia ${fmtDataEntrega(diaIso)} na operação.`
+              : "Pedido faturado aprovado e liberado na operação.",
         );
         void invalidarVisaoOperacionalDia().then(() => {
-          if (diaIso && !result.pessoa) abrirDiaEntregaSite(diaIso);
+          if (diaIso && !pagaAVista) abrirDiaEntregaSite(diaIso);
         });
       },
       onError: err => toast.error(err.message || "Não foi possível aprovar."),

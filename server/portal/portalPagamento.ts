@@ -760,7 +760,7 @@ export async function encerrarParcelasOrfasCa(
 }
 
 /**
- * Troca Pix ↔ cartão: cancela a cobrança atual e emite a nova.
+ * Cria (lazy) ou troca Pix ↔ cartão: Conta Azul só neste momento, nunca na aprovação.
  */
 export async function alterarFormaPagamentoPedido(input: {
   prisma: PrismaClient;
@@ -785,12 +785,60 @@ export async function alterarFormaPagamentoPedido(input: {
   if (!pedido) throw new LojaErro(404, "Pedido não encontrado.");
   if (pedido.status === "CANCELADO") throw new LojaErro(409, "Pedido cancelado.");
   const obs = pedido.observacoes ?? "";
-  if (!obs.includes("(pessoa)")) {
-    throw new LojaErro(400, "Só pedidos de pessoa física têm Pix/cartão no site.");
+  if (obs.includes("Pagamento: faturado.")) {
+    throw new LojaErro(400, "Pedido faturado — pagamento pelo fluxo comercial, sem Pix/cartão no site.");
+  }
+  if (!obs.includes("(pessoa)") && !/Aguardando pagamento\.?/i.test(obs)) {
+    throw new LojaErro(400, "Só pedidos à vista (após aprovação) têm Pix/cartão no site.");
+  }
+  if (!obs.includes("Aprovado pela fazenda.")) {
+    throw new LojaErro(409, "Aguarde a aprovação da fazenda para pagar.");
   }
 
   const pagamento = await input.prisma.portalPedidoPagamento.findUnique({ where: { pedidoId: pedido.id } });
-  if (!pagamento || pagamento.status !== "AGUARDANDO") {
+
+  // Primeira vez: gera Conta Azul agora (lazy) e devolve o link.
+  if (!pagamento || pagamento.status === "CANCELADO") {
+    const dataEntrega = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Manaus",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(pedido.dataEntrega);
+    const taxaMatch = obs.match(/taxa de R\$\s*([\d.,]+)/i);
+    const taxaRaw = taxaMatch?.[1];
+    const taxaEntrega = taxaRaw
+      ? Math.round(
+          Number(taxaRaw.includes(",") ? taxaRaw.replace(/\./g, "").replace(",", ".") : taxaRaw) * 100,
+        ) / 100
+      : 0;
+    const taxaOk = Number.isFinite(taxaEntrega) && taxaEntrega > 0 ? taxaEntrega : 0;
+    const base = Math.round((somarBaseItensPedido(pedido.itens) + taxaOk) * 100) / 100;
+    if (!(base > 0)) {
+      throw new LojaErro(400, "Não foi possível calcular o valor do pedido para cobrança.");
+    }
+    const cobranca = await criarCobrancasPessoa({
+      prisma: input.prisma,
+      pedidoId: pedido.id,
+      contaAzulCustomerId: input.contaAzulCustomerId,
+      total: base,
+      descricao:
+        taxaOk > 0
+          ? `Pedido Fazendas Up ${dataEntrega} · taxa entrega`
+          : `Pedido Fazendas Up ${dataEntrega}`,
+      vencimentoYmd: dataEntrega,
+      formaPagamento: input.formaPagamento,
+    });
+    if (!/Aguardando pagamento\.?/i.test(obs)) {
+      await input.prisma.pedidoOperacional.update({
+        where: { id: pedido.id },
+        data: { observacoes: `${obs.trim()}\nAguardando pagamento.` },
+      });
+    }
+    return cobranca;
+  }
+
+  if (pagamento.status !== "AGUARDANDO") {
     throw new LojaErro(409, "Só é possível trocar o pagamento enquanto estiver em aberto.");
   }
 

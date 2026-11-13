@@ -54,15 +54,16 @@ export function PedidosSiteAprovacaoPanel({ canEdit, onAprovado }: Props) {
       const diaIso = result.dataEntrega
         ? isoDataEntrega(result.dataEntrega)
         : "";
+      const pagaAVista = result.pagaAVista ?? result.pessoa;
       toast.success(
-        result.pessoa
-          ? "Pedido do site aprovado. Cobrança liberada para o cliente."
+        pagaAVista
+          ? "Pedido aprovado. Cliente pode pagar Pix/cartão no site (Conta Azul na hora do pagamento)."
           : diaIso
-            ? `Pedido aprovado. Aberto o dia ${fmtDataEntrega(diaIso)} na operação.`
-            : "Pedido do site aprovado e liberado na operação."
+            ? `Pedido faturado aprovado. Aberto o dia ${fmtDataEntrega(diaIso)} na operação.`
+            : "Pedido faturado aprovado e liberado na operação."
       );
       await invalidarAposAcao();
-      if (diaIso && !result.pessoa) onAprovado?.(diaIso);
+      if (diaIso && !pagaAVista) onAprovado?.(diaIso);
     },
     onError: err => toast.error(err.message || "Falha ao aprovar."),
     onSettled: () => setBusyId(null),
@@ -92,8 +93,9 @@ export function PedidosSiteAprovacaoPanel({ canEdit, onAprovado }: Props) {
           )}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Pedidos do site ficam aqui até a aprovação. Depois disso, empresa
-          entra no dia da entrega; pessoa entra após o pagamento.
+          Pedidos do site ficam aqui até a aprovação. À vista (sem regra
+          faturada): cliente paga no site depois. Faturado: entra na
+          programação sem Pix/cartão.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -122,9 +124,9 @@ export function PedidosSiteAprovacaoPanel({ canEdit, onAprovado }: Props) {
                           {p.cliente?.nome ?? "Cliente"}
                         </p>
                         <Badge className="bg-amber-600 hover:bg-amber-600">
-                          {p.pessoa
-                            ? "Pessoa · aguarda aprovação"
-                            : "Empresa · aguarda aprovação"}
+                          {(p.pagaAVista ?? p.pessoa)
+                            ? "À vista · aguarda aprovação"
+                            : "Faturado · aguarda aprovação"}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">

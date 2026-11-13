@@ -77,6 +77,7 @@ import {
   pedidoDoSite,
   pedidoPessoaSite,
   pedidoSiteLiberadoNaOperacao,
+  regraComercialEhFaturada,
   rejeitarPedidoSite as rejeitarPedidoSitePortal,
 } from "../../portal/portalAprovacao";
 import { LojaErro } from "../../portal/portalLoja";
@@ -622,6 +623,23 @@ export const pedidosRouter = router({
       pagamentos.map(p => [p.pedidoId, p.status] as const)
     );
 
+    const contaAzulIds = [
+      ...new Set(
+        candidatos
+          .map(p => p.contaAzulCustomerId?.trim())
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
+    const regras = contaAzulIds.length
+      ? await ctx.prisma!.regraComercialCliente.findMany({
+          where: { contaAzulCustomerId: { in: contaAzulIds } },
+          select: { contaAzulCustomerId: true, prazoBoletoDias: true },
+        })
+      : [];
+    const regraPorConta = new Map(
+      regras.map(r => [r.contaAzulCustomerId, r] as const)
+    );
+
     return candidatos
       .filter(p => {
         const statusPagamento = pagamentoPorPedido.get(p.id);
@@ -639,6 +657,13 @@ export const pedidosRouter = router({
           const pr = Number(it.precoUnit);
           return acc + (Number.isFinite(q) && Number.isFinite(pr) ? q * pr : 0);
         }, 0);
+        const pessoaObs = pedidoPessoaSite(p.observacoes);
+        const faturadoRegra = regraComercialEhFaturada(
+          p.contaAzulCustomerId
+            ? regraPorConta.get(p.contaAzulCustomerId) ?? null
+            : null
+        );
+        const pagaAVista = pessoaObs || !faturadoRegra;
         return {
           id: p.id,
           dataEntrega: p.dataEntrega,
@@ -653,7 +678,9 @@ export const pedidosRouter = router({
             precoUnit: Number(it.precoUnit),
           })),
           total,
-          pessoa: pedidoPessoaSite(p.observacoes),
+          pessoa: pagaAVista,
+          pagaAVista,
+          faturado: !pagaAVista,
           precisaAprovacao: true,
         };
       });
@@ -681,6 +708,8 @@ export const pedidosRouter = router({
         return {
           success: true,
           pessoa: result.pessoa,
+          pagaAVista: result.pagaAVista,
+          faturado: result.faturado,
           pagamento: result.pagamento,
           dataEntrega: atualizado?.dataEntrega ?? null,
         };

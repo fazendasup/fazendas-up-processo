@@ -27,6 +27,9 @@ import { baixarDocumentoCliente, DocumentoErro, lembrarTitulosDoCliente } from "
 import {
   pedidoAguardandoAprovacaoSite,
   pedidoAprovadoPelaFazenda,
+  pedidoFaturadoSite,
+  pedidoPessoaSite,
+  regraComercialEhFaturada,
 } from "./portalAprovacao";
 import {
   alinharPagamentoPedidoCancelado,
@@ -891,6 +894,21 @@ export function registerPortalRoutes(app: Express): void {
         where: { pedidoId: { in: pedidos.map((pedido) => pedido.id) } },
       });
       const pagamentoPorPedido = new Map(pagamentos.map((item) => [item.pedidoId, item]));
+      const contaAzulIds = [
+        ...new Set(
+          pedidos
+            .map((p) => p.contaAzulCustomerId?.trim())
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+      const regras = contaAzulIds.length
+        ? await prisma.regraComercialCliente.findMany({
+            where: { contaAzulCustomerId: { in: contaAzulIds } },
+            select: { contaAzulCustomerId: true, prazoBoletoDias: true },
+          })
+        : [];
+      const regraPorConta = new Map(regras.map((r) => [r.contaAzulCustomerId, r]));
+      const acessoPerfilPessoa = ehPerfilPessoa(acesso.perfil, acesso.cliente.cnpjCpf);
       // Cura inconsistência: pedido cancelado com cobrança ainda "AGUARDANDO".
       for (const pedido of pedidos) {
         if (pedido.status !== "CANCELADO") continue;
@@ -912,8 +930,20 @@ export function registerPortalRoutes(app: Express): void {
           const pagamento = pagamentoPorPedido.get(pedido.id);
           const obs = pedido.observacoes ?? "";
           const doSite = obs.includes("Pedido pelo site");
-          const pessoa = obs.includes("(pessoa)");
+          const pessoaObs = pedidoPessoaSite(obs);
           const aprovado = pedidoAprovadoPelaFazenda(obs);
+          const regra = pedido.contaAzulCustomerId
+            ? regraPorConta.get(pedido.contaAzulCustomerId)
+            : undefined;
+          const faturadoRegra = regraComercialEhFaturada(regra ?? null);
+          // Paywall: marcador no pedido, PF, ou PJ sem regra faturada — nunca faturado explícito.
+          const faturado = pedidoFaturadoSite(obs) || (aprovado && faturadoRegra && !pessoaObs);
+          const pagaAVista =
+            pessoaObs ||
+            acessoPerfilPessoa ||
+            (!faturado && !faturadoRegra) ||
+            (aprovado && /Aguardando pagamento\.?/i.test(obs));
+          const pessoa = pagaAVista && !faturado;
           const aguardandoAprovacao = pedidoAguardandoAprovacaoSite({
             status: pedido.status,
             observacoes: obs,
@@ -927,6 +957,8 @@ export function registerPortalRoutes(app: Express): void {
             programado: dataEntrega >= hoje && pedido.status !== "CANCELADO",
             doSite,
             pessoa,
+            pagaAVista: pessoa,
+            faturado,
             aprovado,
             aguardandoAprovacao,
             pagamento: pagamento
@@ -1185,13 +1217,21 @@ export function registerPortalRoutes(app: Express): void {
         });
       });
 
-      // Pessoa e empresa: cobrança Conta Azul só depois da aprovação da equipe.
+      // Conta Azul só no clique de pagar (após aprovação), nunca na criação.
+      const pagaAVistaCriacao =
+        pessoa || !regraComercialEhFaturada(regra);
       const mensagemAprovacao =
         modalidade === "retirada"
           ? "Pedido enviado para aprovação (retirada na fazenda). O pagamento será liberado após a fazenda aprovar."
           : taxaEntrega > 0
             ? "Pedido enviado para aprovação (entrega com taxa de R$ 20,00). O pagamento será liberado após a fazenda aprovar."
             : "Pedido enviado para aprovação. O pagamento será liberado após a fazenda aprovar.";
+      const mensagemFaturado =
+        modalidade === "retirada"
+          ? "Pedido enviado para aprovação (retirada na fazenda)."
+          : taxaEntrega > 0
+            ? "Pedido enviado para aprovação (entrega com taxa de R$ 20,00)."
+            : "Pedido enviado para aprovação.";
       res.status(201).json({
         id: pedido.id,
         dataEntrega: parsed.data.dataEntrega,
@@ -1199,14 +1239,10 @@ export function registerPortalRoutes(app: Express): void {
         taxaEntrega,
         modalidade,
         perfil: pessoa ? "pessoa" : "empresa",
+        pagaAVista: pagaAVistaCriacao,
+        faturado: !pagaAVistaCriacao,
         aguardandoAprovacao: true,
-        mensagem: pessoa
-          ? mensagemAprovacao
-          : modalidade === "retirada"
-            ? "Pedido enviado para aprovação (retirada na fazenda)."
-            : taxaEntrega > 0
-              ? "Pedido enviado para aprovação (entrega com taxa de R$ 20,00)."
-              : "Pedido enviado para aprovação.",
+        mensagem: pagaAVistaCriacao ? mensagemAprovacao : mensagemFaturado,
       });
     } catch (error) {
       if (error instanceof LojaErro) {

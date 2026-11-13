@@ -6,8 +6,10 @@ import {
   pedidoAguardandoAprovacaoSite,
   pedidoAprovadoPelaFazenda,
   pedidoSiteLiberadoNaOperacao,
+  regraComercialEhFaturada,
   taxaEntregaDasObservacoes,
   MARCA_APROVADO_FAZENDA,
+  MARCA_PAGAMENTO_FATURADO,
 } from "./portalAprovacao";
 
 describe("portalAprovacao", () => {
@@ -82,6 +84,22 @@ describe("portalAprovacao", () => {
       pedidoSiteLiberadoNaOperacao({
         status: "PENDENTE",
         observacoes: `Pedido pelo site (pessoa).\n${MARCA_APROVADO_FAZENDA}\nPago via site. Liberado para produção.`,
+      }),
+    ).toBe(true);
+  });
+
+  it("detecta faturado pela regra (prazoBoletoDias > 0)", () => {
+    expect(regraComercialEhFaturada(null)).toBe(false);
+    expect(regraComercialEhFaturada({ prazoBoletoDias: null })).toBe(false);
+    expect(regraComercialEhFaturada({ prazoBoletoDias: 0 })).toBe(false);
+    expect(regraComercialEhFaturada({ prazoBoletoDias: 7 })).toBe(true);
+  });
+
+  it("faturado aprovado libera operação sem pagamento no site", () => {
+    expect(
+      pedidoSiteLiberadoNaOperacao({
+        status: "PENDENTE",
+        observacoes: `Pedido pelo site.\n${MARCA_APROVADO_FAZENDA}\n${MARCA_PAGAMENTO_FATURADO}`,
       }),
     ).toBe(true);
   });

@@ -10,6 +10,8 @@ import { LojaErro } from "./portalLoja";
 
 /** Marcador gravado nas observações quando a equipe aprova o pedido do site. */
 export const MARCA_APROVADO_FAZENDA = "Aprovado pela fazenda.";
+/** Pedido PJ faturado: sem Pix/cartão no portal após aprovação. */
+export const MARCA_PAGAMENTO_FATURADO = "Pagamento: faturado.";
 
 export function pedidoDoSite(obs: string | null | undefined): boolean {
   return (obs ?? "").includes("Pedido pelo site");
@@ -21,6 +23,50 @@ export function pedidoPessoaSite(obs: string | null | undefined): boolean {
 
 export function pedidoAprovadoPelaFazenda(obs: string | null | undefined): boolean {
   return (obs ?? "").includes(MARCA_APROVADO_FAZENDA);
+}
+
+export function pedidoFaturadoSite(obs: string | null | undefined): boolean {
+  return (obs ?? "").includes(MARCA_PAGAMENTO_FATURADO);
+}
+
+/**
+ * Faturado na regra comercial = prazo de boleto explícito (> 0 dias).
+ * Sem regra, prazo null/0 ou só regras de entrega → à vista no portal.
+ */
+export function regraComercialEhFaturada(
+  regra: { prazoBoletoDias?: number | null } | null | undefined,
+): boolean {
+  return regra != null && regra.prazoBoletoDias != null && regra.prazoBoletoDias > 0;
+}
+
+/**
+ * Cliente paga à vista no site (Pix/cartão) após aprovação —
+ * PF sempre; PJ só se NÃO tiver regra faturada (prazoBoletoDias > 0).
+ */
+export async function clientePagaAVistaNoPortal(
+  prisma: PrismaClient,
+  input: {
+    clienteId?: string | null;
+    contaAzulCustomerId?: string | null;
+    /** Perfil portal PESSOA força à vista mesmo com regra. */
+    perfilPessoa?: boolean;
+  },
+): Promise<boolean> {
+  if (input.perfilPessoa) return true;
+  let contaAzulId = input.contaAzulCustomerId?.trim() || null;
+  if (!contaAzulId && input.clienteId) {
+    const cliente = await prisma.cliente.findUnique({
+      where: { id: input.clienteId },
+      select: { externalId: true },
+    });
+    contaAzulId = cliente?.externalId?.trim() || null;
+  }
+  if (!contaAzulId) return true;
+  const regra = await prisma.regraComercialCliente.findUnique({
+    where: { contaAzulCustomerId: contaAzulId },
+    select: { prazoBoletoDias: true },
+  });
+  return !regraComercialEhFaturada(regra);
 }
 
 /** Garante o marcador (pessoa) nas observações para o portal liberar Pix/cartão. */
@@ -52,7 +98,8 @@ export function pedidoAguardandoAprovacaoSite(input: {
 
 /**
  * Pedido do site liberado para a operação do dia (agenda/dashboard).
- * Empresa: após aprovação. Pessoa: após pagamento (ou liberação explícita).
+ * Faturado / empresa sem paywall: após aprovação.
+ * À vista (marcador pessoa / aguarda pagamento): após pagamento.
  */
 export function pedidoSiteLiberadoNaOperacao(input: {
   status: string;
@@ -67,7 +114,11 @@ export function pedidoSiteLiberadoNaOperacao(input: {
   })) {
     return false;
   }
-  if (pedidoPessoaSite(obs)) {
+  // À vista no portal: Pix/cartão antes da programação.
+  if (pedidoPessoaSite(obs) || /Aguardando pagamento\.?/i.test(obs)) {
+    if (pedidoFaturadoSite(obs)) {
+      return pedidoAprovadoPelaFazenda(obs);
+    }
     return (
       obs.includes("Liberado para produção") ||
       obs.includes("Pago via site") ||
@@ -75,7 +126,7 @@ export function pedidoSiteLiberadoNaOperacao(input: {
       input.status === "ENTREGUE"
     );
   }
-  // Empresa: aprovação da fazenda libera a programação/operação.
+  // Faturado / sem paywall: aprovação libera a programação.
   return pedidoAprovadoPelaFazenda(obs);
 }
 
@@ -108,40 +159,61 @@ export function baseCobrancaPedidoSite(input: {
   return Math.round((produtos + taxa) * 100) / 100;
 }
 
-function anexarMarcaAprovado(obs: string | null | undefined, pessoa?: boolean): string {
+function anexarMarcaAprovado(
+  obs: string | null | undefined,
+  opts: { pagaAVista: boolean; faturado?: boolean },
+): string {
   const base = (obs ?? "").trim();
   if (base.includes(MARCA_APROVADO_FAZENDA)) {
-    if (pessoa && !pedidoPessoaSite(base)) return garantirMarcadorPessoaObs(base);
+    if (opts.pagaAVista && !pedidoPessoaSite(base)) return garantirMarcadorPessoaObs(base);
+    if (opts.faturado && !pedidoFaturadoSite(base)) {
+      return `${base.trim()}\n${MARCA_PAGAMENTO_FATURADO}`;
+    }
     return base;
   }
-  const comPessoa = pessoa ? garantirMarcadorPessoaObs(base) : base;
-  const semAguardo = comPessoa
+  const comPaywall = opts.pagaAVista ? garantirMarcadorPessoaObs(base) : base;
+  const semAguardo = comPaywall
     .replace(/\s*Aguardando aprovação da fazenda\.?/gi, "")
     .replace(/\s*Aguardando pagamento\.?/gi, "")
+    .replace(new RegExp(`\\s*${MARCA_PAGAMENTO_FATURADO.replace(".", "\\.")}?`, "gi"), "")
     .trim();
-  const ehPessoa = pessoa ?? pedidoPessoaSite(semAguardo);
   const linhas = [
-    semAguardo || (ehPessoa ? "Pedido pelo site (pessoa)." : "Pedido pelo site."),
+    semAguardo ||
+      (opts.pagaAVista ? "Pedido pelo site (pessoa)." : "Pedido pelo site."),
     MARCA_APROVADO_FAZENDA,
-    ehPessoa ? "Aguardando pagamento." : null,
+    opts.pagaAVista ? "Aguardando pagamento." : null,
+    opts.faturado ? MARCA_PAGAMENTO_FATURADO : null,
   ].filter(Boolean);
   return linhas.join("\n");
 }
 
-async function resolverPedidoPessoaSite(input: {
+/** Resolve se o pedido do site deve cobrar à vista no portal (não faturado). */
+async function resolverPedidoPagaAVistaSite(input: {
   prisma: PrismaClient;
   clienteId: string | null | undefined;
+  contaAzulCustomerId?: string | null;
   observacoes: string | null | undefined;
-}): Promise<boolean> {
-  if (pedidoPessoaSite(input.observacoes)) return true;
-  // Checkout PF grava "Pagamento: Pix|cartão" mesmo se o marcador (pessoa) falhar.
-  if (formaPagamentoPreferidaDasObservacoes(input.observacoes)) return true;
-  if (!input.clienteId) return false;
-  const acesso = await input.prisma.portalAcesso.findUnique({
-    where: { clienteId: input.clienteId },
-    select: { perfil: true },
+}): Promise<{ pagaAVista: boolean; faturado: boolean }> {
+  const obs = input.observacoes ?? "";
+  if (pedidoFaturadoSite(obs)) return { pagaAVista: false, faturado: true };
+  // Já marcado como paywall à vista (PF ou PJ reparado).
+  if (pedidoPessoaSite(obs) || formaPagamentoPreferidaDasObservacoes(obs)) {
+    return { pagaAVista: true, faturado: false };
+  }
+  let perfilPessoa = false;
+  if (input.clienteId) {
+    const acesso = await input.prisma.portalAcesso.findUnique({
+      where: { clienteId: input.clienteId },
+      select: { perfil: true },
+    });
+    perfilPessoa = acesso?.perfil === "PESSOA";
+  }
+  const pagaAVista = await clientePagaAVistaNoPortal(input.prisma, {
+    clienteId: input.clienteId,
+    contaAzulCustomerId: input.contaAzulCustomerId,
+    perfilPessoa,
   });
-  return acesso?.perfil === "PESSOA";
+  return { pagaAVista, faturado: !pagaAVista };
 }
 
 async function emitirCobrancaPedidoSite(input: {
@@ -198,8 +270,9 @@ async function emitirCobrancaPedidoSite(input: {
 }
 
 /**
- * Equipe aprova pedido do portal: libera programação (empresa) ou emite cobrança (pessoa).
- * Cobrança PF é obrigatória: se falhar, não grava "Aprovado pela fazenda.".
+ * Equipe aprova pedido do portal (sem Conta Azul).
+ * À vista → libera "Aguardando pagamento" no site; cobrança só no clique Pix/cartão.
+ * Faturado → libera programação; sem paywall no portal.
  */
 export async function aprovarPedidoSite(input: {
   prisma: PrismaClient;
@@ -207,7 +280,10 @@ export async function aprovarPedidoSite(input: {
   usuario?: { id: string; nome: string } | null;
 }): Promise<{
   ok: true;
+  /** @deprecated use pagaAVista — true quando o site deve cobrar Pix/cartão. */
   pessoa: boolean;
+  pagaAVista: boolean;
+  faturado: boolean;
   pagamento: {
     status: string;
     pixUrl: string | null;
@@ -236,58 +312,18 @@ export async function aprovarPedidoSite(input: {
     throw new LojaErro(409, "Só é possível aprovar pedidos ainda pendentes.");
   }
 
-  const pessoa = await resolverPedidoPessoaSite({
+  const { pagaAVista, faturado } = await resolverPedidoPagaAVistaSite({
     prisma: input.prisma,
     clienteId: pedido.clienteId,
+    contaAzulCustomerId: pedido.contaAzulCustomerId,
     observacoes: obs,
   });
   const pagamentoExistente = await input.prisma.portalPedidoPagamento.findUnique({
     where: { pedidoId: pedido.id },
   });
 
-  if (pessoa && pagamentoExistente && pagamentoExistente.status !== "CANCELADO") {
-    // Já tinha cobrança (legado): só marca aprovado.
-    const novasObs = anexarMarcaAprovado(obs, true);
-    await input.prisma.pedidoOperacional.update({
-      where: { id: pedido.id },
-      data: { observacoes: novasObs },
-    });
-    if (input.usuario) {
-      await input.prisma.pedidoOperacionalAuditoria.create({
-        data: {
-          pedidoId: pedido.id,
-          usuarioId: input.usuario.id,
-          usuarioNome: input.usuario.nome,
-          acao: "portal_pedido_aprovado",
-          antes: { observacoes: obs },
-          depois: { observacoes: novasObs, legadoComCobranca: true },
-        },
-      });
-    }
-    return {
-      ok: true,
-      pessoa: true,
-      pagamento: {
-        status: pagamentoExistente.status,
-        pixUrl: pagamentoExistente.pixUrl,
-        cartaoUrl: pagamentoExistente.cartaoUrl,
-        total: Number(pagamentoExistente.total),
-        formaPagamento: formaPagamentoDoRegistro(pagamentoExistente) ?? "pix",
-      },
-    };
-  }
-
-  let cobranca: Awaited<ReturnType<typeof criarCobrancasPessoa>> | null = null;
-  if (pessoa) {
-    // Falha aqui = pedido segue aguardando aprovação (sem marca).
-    cobranca = await emitirCobrancaPedidoSite({
-      prisma: input.prisma,
-      pedido,
-      forma: formaPagamentoDoRegistro(pagamentoExistente ?? {}) as FormaPagamentoPessoa | null,
-    });
-  }
-
-  const novasObs = anexarMarcaAprovado(obs, pessoa);
+  // Conta Azul NÃO é criada na aprovação — só libera o paywall (à vista) ou a programação (faturado).
+  const novasObs = anexarMarcaAprovado(obs, { pagaAVista, faturado });
   await input.prisma.pedidoOperacional.update({
     where: { id: pedido.id },
     data: { observacoes: novasObs },
@@ -303,15 +339,33 @@ export async function aprovarPedidoSite(input: {
         antes: { observacoes: obs },
         depois: {
           observacoes: novasObs,
-          cobranca: cobranca
-            ? { status: cobranca.status, total: cobranca.total, forma: cobranca.formaPagamento }
+          pagaAVista,
+          faturado,
+          cobrancaExistente: pagamentoExistente
+            ? { status: pagamentoExistente.status, total: Number(pagamentoExistente.total) }
             : null,
         },
       },
     });
   }
 
-  return { ok: true, pessoa, pagamento: cobranca };
+  return {
+    ok: true,
+    pessoa: pagaAVista,
+    pagaAVista,
+    faturado,
+    // Links só existem se já havia cobrança legada; aprovação nova não gera Conta Azul.
+    pagamento:
+      pagaAVista && pagamentoExistente && pagamentoExistente.status !== "CANCELADO"
+        ? {
+            status: pagamentoExistente.status,
+            pixUrl: pagamentoExistente.pixUrl,
+            cartaoUrl: pagamentoExistente.cartaoUrl,
+            total: Number(pagamentoExistente.total),
+            formaPagamento: formaPagamentoDoRegistro(pagamentoExistente) ?? "pix",
+          }
+        : null,
+  };
 }
 
 /**
@@ -338,6 +392,9 @@ export async function garantirCobrancaPedidoSiteAprovado(input: {
   const obs = pedido.observacoes ?? "";
   if (!pedidoDoSite(obs)) {
     throw new LojaErro(400, "Só pedidos do site usam esta cobrança.");
+  }
+  if (pedidoFaturadoSite(obs)) {
+    throw new LojaErro(400, "Pedido faturado — sem Pix/cartão no portal.");
   }
   if (pedido.status === "PRONTO" || pedido.status === "ENTREGUE") {
     throw new LojaErro(409, "Pedido já entrou em separação.");
@@ -371,7 +428,7 @@ export async function garantirCobrancaPedidoSiteAprovado(input: {
 
   let novasObs = garantirMarcadorPessoaObs(obs);
   if (!pedidoAprovadoPelaFazenda(novasObs)) {
-    novasObs = anexarMarcaAprovado(novasObs, true);
+    novasObs = anexarMarcaAprovado(novasObs, { pagaAVista: true, faturado: false });
   } else if (!/Aguardando pagamento\.?/i.test(novasObs)) {
     novasObs = `${novasObs.trim()}\nAguardando pagamento.`;
   }
