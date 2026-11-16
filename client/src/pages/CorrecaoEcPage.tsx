@@ -465,13 +465,13 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
 
   const salvarFatorPh = () => {
     localStorage.setItem(STORAGE_KEY_PH, String(fatorPh));
-    toast.success("Fator KOH (subir pH) salvo neste navegador");
+    toast.success("Fator de hidróxido de potássio salvo neste navegador");
   };
 
   const restaurarFatorPh = () => {
     setFatorPh(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO);
     localStorage.removeItem(STORAGE_KEY_PH);
-    toast.success("Fator KOH restaurado ao padrão");
+    toast.success("Fator de hidróxido de potássio restaurado ao padrão");
   };
 
   const salvarFatorPhAcido = () => {
@@ -999,11 +999,12 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <FlaskConical className="w-4 h-4 text-violet-600" />
-                      Subir pH — dose KOH
+                      Subir pH — dose hidróxido de potássio
                     </CardTitle>
                     <CardDescription>
                       ΔpH {formatDecimalForInput(resultadoPh.koh.deltaPh, 2)} · fator{" "}
-                      {formatDecimalForInput(fatorPh, 3)} mL estoque / L / unidade de pH
+                      {formatDecimalForInput(fatorPh, 3)} mL estoque / L / unidade de pH ·{" "}
+                      {KOH_PRODUTO_NOME}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1016,14 +1017,14 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
 
                     <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-center">
                       <p className="text-xs font-semibold text-violet-800 dark:text-violet-200">
-                        Solução estoque KOH a adicionar na caixa
+                        Solução estoque de hidróxido de potássio a adicionar na caixa
                       </p>
                       <p className="font-display text-4xl font-bold tabular-nums mt-1 text-violet-900 dark:text-violet-100">
                         {fmtMl(resultadoPh.koh.mlEstoque)}
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-1">
                         ≈ {fmtG(resultadoPh.koh.produtoGramas)} de produto (
-                        {fmtG(resultadoPh.koh.kohPuroGramas)} KOH puro a{" "}
+                        {fmtG(resultadoPh.koh.kohPuroGramas)} puro a{" "}
                         {Math.round(resultadoPh.koh.teor * 100)}%) · estoque {KOH_ESTOQUE_G_PRODUTO_POR_L}{" "}
                         g/L
                         {resultadoPh.koh.dosesPorLitroEstoque != null
@@ -1040,10 +1041,11 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                       <ol className="list-decimal pl-4 space-y-1 text-muted-foreground text-xs sm:text-sm">
                         <li>
                           Prepare o estoque (se ainda não tiver): dissolva{" "}
-                          <strong className="text-foreground">{KOH_ESTOQUE_MASSA_G} g</strong> do produto
-                          (teor mín. {Math.round(KOH_TEOR_MIN * 100)}%, embalagem {KOH_PA_EMBALAGEM_G} g) em{" "}
+                          <strong className="text-foreground">{KOH_ESTOQUE_MASSA_G} g</strong> de{" "}
+                          {KOH_PRODUTO_NOME} (teor mín. {Math.round(KOH_TEOR_MIN * 100)}%, embalagem{" "}
+                          {KOH_PA_EMBALAGEM_G} g) em{" "}
                           <strong className="text-foreground">{KOH_ESTOQUE_VOLUME_L} L</strong> de água fria —
-                          água primeiro, KOH depois, com EPI.
+                          água primeiro, produto depois, com EPI.
                         </li>
                         <li>
                           Com seringa ou proveta, meça{" "}
@@ -1058,8 +1060,8 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                     </div>
 
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Se na prática você usa bem menos ou mais mL, ajuste o fator KOH abaixo até bater com o
-                      histórico de correção.
+                      Se na prática você usa bem menos ou mais mL, ajuste o fator do hidróxido de potássio
+                      abaixo até bater com o histórico de correção.
                     </p>
                   </CardContent>
                 </Card>
@@ -1153,8 +1155,8 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
             ) : (
               <Card>
                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                  Preencha volume (310 ou 500 L), pH atual e pH alvo. Se o alvo for maior → KOH; se for menor →
-                  ácido fosfórico.
+                  Preencha volume (310 ou 500 L), pH atual e pH alvo. Se o alvo for maior → hidróxido de
+                  potássio; se for menor → ácido fosfórico.
                 </CardContent>
               </Card>
             )}
@@ -1164,7 +1166,8 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                 <div>
                   <CardTitle className="text-base">Calibração dos fatores</CardTitle>
                   <CardDescription>
-                    KOH: {formatDecimalForInput(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO, 3)} mL estoque / L / pH ·
+                    Hidróxido de potássio:{" "}
+                    {formatDecimalForInput(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO, 3)} mL estoque / L / pH ·
                     Ácido: {formatDecimalForInput(FATOR_ML_ESTOQUE_ACIDO_POR_L_POR_PH_PADRAO, 3)} mL estoque / L
                     / pH
                   </CardDescription>
@@ -1177,7 +1180,7 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2 rounded-lg border p-3">
-                      <p className="text-xs font-semibold">Subir pH — KOH</p>
+                      <p className="text-xs font-semibold">Subir pH — hidróxido de potássio</p>
                       <div className="space-y-1">
                         <Label className="text-xs">mL estoque / L caixa / unidade de pH</Label>
                         <Input
@@ -1191,7 +1194,7 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" onClick={salvarFatorPh}>
-                          Salvar KOH
+                          Salvar fator
                         </Button>
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={restaurarFatorPh}>
                           <RotateCcw className="w-3.5 h-3.5" />
