@@ -12,7 +12,8 @@
 
 // --- KOH (subir pH) ---------------------------------------------------------
 
-export const KOH_PRODUTO_NOME = "Hidróxido de potássio P.A. (Dinâmica)";
+/** Nome de uso operacional: KOH / potassa cáustica. */
+export const KOH_PRODUTO_NOME = "KOH (potassa cáustica) P.A. — Dinâmica";
 
 /** Embalagem comercial típica (g). */
 export const KOH_PA_EMBALAGEM_G = 1000;
