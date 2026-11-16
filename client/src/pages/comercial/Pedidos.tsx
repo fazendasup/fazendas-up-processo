@@ -1634,18 +1634,8 @@ export function Pedidos({
       />
 
       <Tabs
-        value={aba}
-        onValueChange={value => {
-          if (value === "compras") {
-            setLocation(
-              `/comercial/estoque-vivo/compras?dia=${dia}${
-                escopoDashboard === "semana" ? "&escopo=semana" : ""
-              }`,
-            );
-            return;
-          }
-          setAba(value as PedidosTab);
-        }}
+        value={aba === "compras" ? "operacional" : aba}
+        onValueChange={value => setAba(value as PedidosTab)}
         className="space-y-4"
       >
         <TabsList className="flex h-auto flex-wrap">
@@ -1661,9 +1651,6 @@ export function Pedidos({
           )}
           {!perfilOperacionalRestrito && (
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
-          )}
-          {!perfilOperacionalRestrito && (
-            <TabsTrigger value="compras">Estoque vivo</TabsTrigger>
           )}
         </TabsList>
 
@@ -2629,18 +2616,6 @@ export function Pedidos({
             onSalvar={(payload: any) => salvarProduto.mutate(payload)}
             onExcluir={(id: string) => excluirProduto.mutate({ id })}
             canEdit={canEditarComercial}
-          />
-        </TabsContent>
-
-        <TabsContent value="compras">
-          <ComprasArea
-            dia={dia}
-            estoque={compras.data}
-            produtos={produtos.data ?? []}
-            isLoading={compras.isLoading}
-            isAdmin={canEditarComercial}
-            onUpdate={(payload: any) => atualizarCompra.mutate(payload)}
-            onSalvarMixFolha={(payload: any) => salvarMixFolha.mutate(payload)}
           />
         </TabsContent>
       </Tabs>
