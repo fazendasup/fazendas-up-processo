@@ -7,6 +7,7 @@ import type { PrismaClient } from "../comercial/generated/prisma/index.js";
 import { mensagemErroContaAzulFinanceiro } from "../comercial/integrations/conta-azul/conta-azul-date-window";
 import { detalheInadimplenciaCliente, extratoReceberClienteCa } from "../comercial/lib/cliente-inadimplencia-ca";
 import { hashPassword, verifyPassword } from "../comercial/lib/password";
+import { sincronizarEstoqueAposPedidos } from "../comercial/lib/estoque-semanal-portal";
 import {
   addCalendarDays,
   earliestDeliveryYmd,
@@ -1216,6 +1217,15 @@ export function registerPortalRoutes(app: Express): void {
           include: { itens: true },
         });
       });
+
+      await sincronizarEstoqueAposPedidos(prisma, [
+        {
+          dataEntrega: pedido.dataEntrega,
+          produtoIds: pedido.itens.map(i => i.produtoId),
+        },
+      ]).catch(err =>
+        console.warn("[portal] sync estoque semana após pedido", err),
+      );
 
       // Conta Azul só no clique de pagar (após aprovação), nunca na criação.
       const pagaAVistaCriacao =

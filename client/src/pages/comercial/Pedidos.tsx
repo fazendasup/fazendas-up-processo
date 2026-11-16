@@ -41,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
 import { PedidosSiteAprovacaoPanel } from "@/components/comercial/PedidosSiteAprovacaoPanel";
+import { EstoqueSemanalPortalPanel } from "@/components/comercial/EstoqueSemanalPortalPanel";
 import { AcoesPedidoConciliacao } from "@/components/comercial/ConciliacaoResolucaoDialogs";
 import {
   InadimplenciaClienteBadge,
@@ -343,6 +344,7 @@ type AvariaLinha = {
 type PedidosTab =
   | "operacional"
   | "agenda"
+  | "estoqueSemana"
   | "conciliacao"
   | "regras"
   | "produtos"
@@ -434,7 +436,8 @@ export function Pedidos({
   useEffect(() => {
     if (
       perfilOperacionalRestrito &&
-      (aba === "conciliacao" ||
+      (aba === "estoqueSemana" ||
+        aba === "conciliacao" ||
         aba === "regras" ||
         aba === "produtos" ||
         aba === "compras")
@@ -500,6 +503,7 @@ export function Pedidos({
         refetchType: "all",
       }),
       utils.comercial.pedidos.pedidosSiteAprovacao.invalidate(),
+      utils.comercial.pedidos.estoqueSemanal.invalidate(),
       utils.comercial.pedidos.avisoAvariasCliente.invalidate(),
       utils.comercial.pedidos.relatorioHistorico.invalidate(),
       utils.comercial.entregas.roteiro.invalidate(),
@@ -1642,6 +1646,9 @@ export function Pedidos({
           <TabsTrigger value="operacional">Dashboard operacional</TabsTrigger>
           <TabsTrigger value="agenda">Emissão / Agenda</TabsTrigger>
           {!perfilOperacionalRestrito && (
+            <TabsTrigger value="estoqueSemana">Estoque semana</TabsTrigger>
+          )}
+          {!perfilOperacionalRestrito && (
             <TabsTrigger value="conciliacao">
               Conciliação Conta Azul
             </TabsTrigger>
@@ -1878,6 +1885,15 @@ export function Pedidos({
             </CardContent>
           </Card>
         </TabsContent>
+
+        {!perfilOperacionalRestrito && (
+          <TabsContent value="estoqueSemana" className="space-y-3">
+            <EstoqueSemanalPortalPanel
+              dia={diaDate}
+              canEdit={canEditarComercial}
+            />
+          </TabsContent>
+        )}
 
         {!isPromoter && (
           <TabsContent value="conciliacao" className="space-y-3">

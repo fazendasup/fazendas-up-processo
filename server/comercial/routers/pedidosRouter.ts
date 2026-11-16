@@ -80,6 +80,11 @@ import {
   rejeitarPedidoSite as rejeitarPedidoSitePortal,
 } from "../../portal/portalAprovacao";
 import { LojaErro } from "../../portal/portalLoja";
+import {
+  reservadoPorProdutoNaSemana,
+  sincronizarEstoqueAposPedidos,
+  sincronizarEstoqueLojaDaSemana,
+} from "../lib/estoque-semanal-portal.js";
 const podeConfigurarEstoqueVivo = comercialRequirePerfis(
   "ADMIN",
   "GERENTE_COMERCIAL",
@@ -732,16 +737,161 @@ export const pedidosRouter = router({
           message: "Usuário comercial não identificado",
         });
       try {
+        const antes = await ctx.prisma!.pedidoOperacional.findUnique({
+          where: { id: input.pedidoId },
+          select: {
+            dataEntrega: true,
+            itens: { select: { produtoId: true } },
+          },
+        });
         await rejeitarPedidoSitePortal({
           prisma: ctx.prisma!,
           pedidoId: input.pedidoId,
           motivo: input.motivo,
           usuario: { id: usuario.id, nome: usuario.nome },
         });
+        if (antes) {
+          await sincronizarEstoqueAposPedidos(ctx.prisma!, [
+            {
+              dataEntrega: antes.dataEntrega,
+              produtoIds: antes.itens.map(i => i.produtoId),
+            },
+          ]).catch(err =>
+            console.warn("[rejeitarPedidoSite] sync estoque semana", err)
+          );
+        }
         return { success: true };
       } catch (err) {
         trpcDeLojaErro(err);
       }
+    }),
+
+  /** Capacidade semanal da loja do site + reservado (pedidos da semana) + disponível. */
+  estoqueSemanal: comercialProcedure
+    .input(z.object({ dia: z.coerce.date() }))
+    .query(async ({ ctx, input }) => {
+      const inicio = inicioSemana(input.dia);
+      const fim = fimSemana(input.dia);
+      const produtos = await ctx.prisma!.produtoComercial.findMany({
+        where: {
+          importadoOperacao: true,
+          ativo: true,
+          OR: [{ visivelPortal: true }, { estoqueLoja: { not: null } }],
+        },
+        select: {
+          id: true,
+          nome: true,
+          categoria: true,
+          modoCompra: true,
+          visivelPortal: true,
+          estoqueLoja: true,
+        },
+        orderBy: [{ categoria: "asc" }, { nome: "asc" }],
+      });
+      const planejados = await ctx.prisma!.estoqueSemanalPortal.findMany({
+        where: { semanaInicio: inicio },
+        select: { produtoId: true, quantidade: true, atualizadoEm: true },
+      });
+      const planejadoMap = new Map(
+        planejados.map(p => [p.produtoId, p] as const)
+      );
+      const reservado = await reservadoPorProdutoNaSemana(
+        ctx.prisma!,
+        inicio,
+        produtos.map(p => p.id)
+      );
+      const rotulo = `${String(inicio.getDate()).padStart(2, "0")}/${String(inicio.getMonth() + 1).padStart(2, "0")}–${String(fim.getDate()).padStart(2, "0")}/${String(fim.getMonth() + 1).padStart(2, "0")}`;
+      return {
+        semanaInicio: inicio,
+        semanaFim: fim,
+        rotulo,
+        itens: produtos.map(p => {
+          const plan = planejadoMap.get(p.id);
+          const quantidade = plan ? Number(plan.quantidade) : null;
+          const res = reservado.get(p.id) ?? 0;
+          const disponivel =
+            quantidade == null
+              ? null
+              : Math.max(0, Math.round((quantidade - res) * 1000) / 1000);
+          return {
+            produtoId: p.id,
+            nome: p.nome,
+            categoria: p.categoria,
+            modoCompra: p.modoCompra,
+            visivelPortal: p.visivelPortal,
+            estoqueLoja: p.estoqueLoja == null ? null : Number(p.estoqueLoja),
+            quantidade,
+            reservado: res,
+            disponivel,
+            atualizadoEm: plan?.atualizadoEm ?? null,
+          };
+        }),
+      };
+    }),
+
+  salvarEstoqueSemanal: comercialProcedure
+    .input(
+      z.object({
+        dia: z.coerce.date(),
+        itens: z
+          .array(
+            z.object({
+              produtoId: z.string().min(1),
+              /** null = remove o planejado da semana (não sincroniza loja). */
+              quantidade: z.number().min(0).max(999999).nullable(),
+            })
+          )
+          .min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const usuario = ctx.comercialUsuario;
+      if (!usuario)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      const inicio = inicioSemana(input.dia);
+      const ids = input.itens.map(i => i.produtoId);
+      const existentes = await ctx.prisma!.produtoComercial.findMany({
+        where: { id: { in: ids } },
+        select: { id: true },
+      });
+      const ok = new Set(existentes.map(p => p.id));
+      for (const item of input.itens) {
+        if (!ok.has(item.produtoId)) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Produto ${item.produtoId} não encontrado`,
+          });
+        }
+        if (item.quantidade == null) {
+          await ctx.prisma!.estoqueSemanalPortal.deleteMany({
+            where: { semanaInicio: inicio, produtoId: item.produtoId },
+          });
+          continue;
+        }
+        await ctx.prisma!.estoqueSemanalPortal.upsert({
+          where: {
+            semanaInicio_produtoId: {
+              semanaInicio: inicio,
+              produtoId: item.produtoId,
+            },
+          },
+          create: {
+            semanaInicio: inicio,
+            produtoId: item.produtoId,
+            quantidade: item.quantidade.toFixed(3),
+            atualizadoPorId: usuario.id,
+          },
+          update: {
+            quantidade: item.quantidade.toFixed(3),
+            atualizadoPorId: usuario.id,
+          },
+        });
+      }
+      await sincronizarEstoqueLojaDaSemana(ctx.prisma!, inicio, ids);
+      return { success: true, semanaInicio: inicio };
     }),
 
   clientes: comercialProcedure
@@ -1564,6 +1714,24 @@ export const pedidosRouter = router({
           ).catch(err => {
             console.warn("[salvarPedido] auditoria ignorada:", err);
           });
+          const produtoIds = Array.from(
+            new Set([
+              ...input.itens.map(i => i.produtoId),
+              ...((antes?.itens ?? []) as Array<{ produtoId: string }>).map(
+                i => i.produtoId
+              ),
+            ])
+          );
+          await sincronizarEstoqueAposPedidos(ctx.prisma!, [
+            { dataEntrega: input.dataEntrega, produtoIds },
+            ...(antes &&
+            inicioDia(antes.dataEntrega).getTime() !==
+              inicioDia(input.dataEntrega).getTime()
+              ? [{ dataEntrega: antes.dataEntrega, produtoIds }]
+              : []),
+          ]).catch(err =>
+            console.warn("[salvarPedido] sync estoque semana", err)
+          );
         }
         return salvo;
       } catch (err) {
@@ -2581,6 +2749,15 @@ export const pedidosRouter = router({
           { status: "CANCELADO" }
         );
       });
+
+      await sincronizarEstoqueAposPedidos(ctx.prisma!, [
+        {
+          dataEntrega: pedido.dataEntrega,
+          produtoIds: pedido.itens.map(i => i.produtoId),
+        },
+      ]).catch(err =>
+        console.warn("[cancelarPedido] sync estoque semana", err)
+      );
 
       return { success: true, alreadyCancelled: false };
     }),

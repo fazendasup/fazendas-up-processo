@@ -228,6 +228,16 @@ exports.Prisma.ProdutoComercialScalarFieldEnum = {
   atualizadoEm: 'atualizadoEm'
 };
 
+exports.Prisma.EstoqueSemanalPortalScalarFieldEnum = {
+  id: 'id',
+  semanaInicio: 'semanaInicio',
+  produtoId: 'produtoId',
+  quantidade: 'quantidade',
+  atualizadoPorId: 'atualizadoPorId',
+  atualizadoEm: 'atualizadoEm',
+  criadoEm: 'criadoEm'
+};
+
 exports.Prisma.PortalAcessoScalarFieldEnum = {
   id: 'id',
   clienteId: 'clienteId',
@@ -345,6 +355,7 @@ exports.Prisma.PortalCadastroScalarFieldEnum = {
   inscricaoEstadual: 'inscricaoEstadual',
   status: 'status',
   erro: 'erro',
+  senhaHash: 'senhaHash',
   contaAzulId: 'contaAzulId',
   criadoEm: 'criadoEm',
   atualizadoEm: 'atualizadoEm'
@@ -772,6 +783,12 @@ exports.Prisma.ProdutoComercialOrderByRelevanceFieldEnum = {
   grupoLoja: 'grupoLoja'
 };
 
+exports.Prisma.EstoqueSemanalPortalOrderByRelevanceFieldEnum = {
+  id: 'id',
+  produtoId: 'produtoId',
+  atualizadoPorId: 'atualizadoPorId'
+};
+
 exports.Prisma.PortalAcessoOrderByRelevanceFieldEnum = {
   id: 'id',
   clienteId: 'clienteId',
@@ -871,6 +888,7 @@ exports.Prisma.PortalCadastroOrderByRelevanceFieldEnum = {
   inscricaoEstadual: 'inscricaoEstadual',
   status: 'status',
   erro: 'erro',
+  senhaHash: 'senhaHash',
   contaAzulId: 'contaAzulId'
 };
 
@@ -1245,6 +1263,7 @@ exports.Prisma.ModelName = {
   EstoqueVivoMix: 'EstoqueVivoMix',
   EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
   ProdutoComercial: 'ProdutoComercial',
+  EstoqueSemanalPortal: 'EstoqueSemanalPortal',
   PortalAcesso: 'PortalAcesso',
   PortalPedidoPagamento: 'PortalPedidoPagamento',
   PortalConta: 'PortalConta',

@@ -190,6 +190,7 @@ model Usuario {
   rotasEntrega RotaEntrega[] @relation("RotaEntregaEntregador")
   rotasCriadas RotaEntrega[] @relation("RotaEntregaCriadaPor")
   rotasAtualizadas RotaEntrega[] @relation("RotaEntregaAtualizadaPor")
+  estoquesSemanaisPortalAtualizados EstoqueSemanalPortal[] @relation("EstoqueSemanalPortalAtualizadoPor")
 
   @@map("usuarios")
 }
@@ -358,12 +359,33 @@ model ProdutoComercial {
   mixReferenciadoPor ProdutoComercial[] @relation("ProdutoMixReferencia")
   estoqueVivoMixesReferencia EstoqueVivoMix[] @relation("EstoqueVivoMixReferencia")
   estoqueVivoMixComponentes EstoqueVivoMixComponente[] @relation("EstoqueVivoMixComponenteProduto")
+  estoquesSemanaisPortal    EstoqueSemanalPortal[]
 
   @@index([nome])
   @@index([categoria])
   @@index([sku])
   @@index([importadoOperacao, ativo])
   @@map("produtos_comerciais")
+}
+
+/// Capacidade de estoque da loja do site por semana operacional (seg–dom).
+/// O disponível no site = quantidade − reservado (pedidos não cancelados da semana).
+model EstoqueSemanalPortal {
+  id              String   @id @default(cuid())
+  semanaInicio    DateTime @map("semana_inicio")
+  produtoId       String   @map("produto_id")
+  quantidade      Decimal  @db.Decimal(14, 3)
+  atualizadoPorId String?  @map("atualizado_por_id")
+  atualizadoEm    DateTime @updatedAt @map("atualizado_em")
+  criadoEm        DateTime @default(now()) @map("criado_em")
+
+  produto       ProdutoComercial @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  atualizadoPor Usuario?         @relation("EstoqueSemanalPortalAtualizadoPor", fields: [atualizadoPorId], references: [id], onDelete: SetNull)
+
+  @@unique([semanaInicio, produtoId])
+  @@index([semanaInicio])
+  @@index([produtoId])
+  @@map("estoque_semanal_portal")
 }
 
 enum PortalPerfil {

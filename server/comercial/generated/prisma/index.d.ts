@@ -59,6 +59,12 @@ export type EstoqueVivoMixComponente = $Result.DefaultSelection<Prisma.$EstoqueV
  */
 export type ProdutoComercial = $Result.DefaultSelection<Prisma.$ProdutoComercialPayload>
 /**
+ * Model EstoqueSemanalPortal
+ * Capacidade de estoque da loja do site por semana operacional (seg–dom).
+ * O disponível no site = quantidade − reservado (pedidos não cancelados da semana).
+ */
+export type EstoqueSemanalPortal = $Result.DefaultSelection<Prisma.$EstoqueSemanalPortalPayload>
+/**
  * Model PortalAcesso
  * Acesso do cliente ao site. Empresa (B2B) ou pessoa física.
  */
@@ -783,6 +789,16 @@ export class PrismaClient<
     * ```
     */
   get produtoComercial(): Prisma.ProdutoComercialDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.estoqueSemanalPortal`: Exposes CRUD operations for the **EstoqueSemanalPortal** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EstoqueSemanalPortals
+    * const estoqueSemanalPortals = await prisma.estoqueSemanalPortal.findMany()
+    * ```
+    */
+  get estoqueSemanalPortal(): Prisma.EstoqueSemanalPortalDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.portalAcesso`: Exposes CRUD operations for the **PortalAcesso** model.
@@ -1582,6 +1598,7 @@ export namespace Prisma {
     EstoqueVivoMix: 'EstoqueVivoMix',
     EstoqueVivoMixComponente: 'EstoqueVivoMixComponente',
     ProdutoComercial: 'ProdutoComercial',
+    EstoqueSemanalPortal: 'EstoqueSemanalPortal',
     PortalAcesso: 'PortalAcesso',
     PortalPedidoPagamento: 'PortalPedidoPagamento',
     PortalConta: 'PortalConta',
@@ -1635,7 +1652,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "relatorioVendasClasseConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "portalAcesso" | "portalPedidoPagamento" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalProgramacao" | "portalProgramacaoDia" | "portalProgramacaoItem" | "portalProgramacaoEntrega" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
+      modelProps: "usuario" | "refreshToken" | "grupoCliente" | "cliente" | "estoqueVivoConfig" | "relatorioVendasClasseConfig" | "estoqueVivoMix" | "estoqueVivoMixComponente" | "produtoComercial" | "estoqueSemanalPortal" | "portalAcesso" | "portalPedidoPagamento" | "portalConta" | "portalContrato" | "portalContratoAceite" | "portalProgramacao" | "portalProgramacaoDia" | "portalProgramacaoItem" | "portalProgramacaoEntrega" | "portalCadastro" | "portalFoto" | "regraComercialCliente" | "clienteLegadoContaAzulLink" | "precoEspecialCliente" | "pedidoOperacional" | "rotaEntrega" | "paradaEntrega" | "historicoLocalizacaoEntrega" | "pedidoOperacionalItem" | "pedidoOperacionalAvaria" | "pedidoOperacionalAuditoria" | "fechamentoSemanal" | "pedido" | "pedidoConciliacaoEvento" | "itemPedido" | "interacao" | "oportunidade" | "mensagem" | "execucaoApi" | "kpiSnapshot" | "integrationCredential" | "contaAzulEnvioConfig" | "syncState" | "regraClassificacao" | "templateMensagem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2230,6 +2247,72 @@ export namespace Prisma {
           count: {
             args: Prisma.ProdutoComercialCountArgs<ExtArgs>
             result: $Utils.Optional<ProdutoComercialCountAggregateOutputType> | number
+          }
+        }
+      }
+      EstoqueSemanalPortal: {
+        payload: Prisma.$EstoqueSemanalPortalPayload<ExtArgs>
+        fields: Prisma.EstoqueSemanalPortalFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EstoqueSemanalPortalFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EstoqueSemanalPortalFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload>
+          }
+          findFirst: {
+            args: Prisma.EstoqueSemanalPortalFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EstoqueSemanalPortalFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload>
+          }
+          findMany: {
+            args: Prisma.EstoqueSemanalPortalFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload>[]
+          }
+          create: {
+            args: Prisma.EstoqueSemanalPortalCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload>
+          }
+          createMany: {
+            args: Prisma.EstoqueSemanalPortalCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.EstoqueSemanalPortalDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload>
+          }
+          update: {
+            args: Prisma.EstoqueSemanalPortalUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload>
+          }
+          deleteMany: {
+            args: Prisma.EstoqueSemanalPortalDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EstoqueSemanalPortalUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.EstoqueSemanalPortalUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EstoqueSemanalPortalPayload>
+          }
+          aggregate: {
+            args: Prisma.EstoqueSemanalPortalAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEstoqueSemanalPortal>
+          }
+          groupBy: {
+            args: Prisma.EstoqueSemanalPortalGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueSemanalPortalGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EstoqueSemanalPortalCountArgs<ExtArgs>
+            result: $Utils.Optional<EstoqueSemanalPortalCountAggregateOutputType> | number
           }
         }
       }
@@ -4648,6 +4731,7 @@ export namespace Prisma {
     estoqueVivoMix?: EstoqueVivoMixOmit
     estoqueVivoMixComponente?: EstoqueVivoMixComponenteOmit
     produtoComercial?: ProdutoComercialOmit
+    estoqueSemanalPortal?: EstoqueSemanalPortalOmit
     portalAcesso?: PortalAcessoOmit
     portalPedidoPagamento?: PortalPedidoPagamentoOmit
     portalConta?: PortalContaOmit
@@ -4773,6 +4857,7 @@ export namespace Prisma {
     rotasEntrega: number
     rotasCriadas: number
     rotasAtualizadas: number
+    estoquesSemanaisPortalAtualizados: number
   }
 
   export type UsuarioCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4786,6 +4871,7 @@ export namespace Prisma {
     rotasEntrega?: boolean | UsuarioCountOutputTypeCountRotasEntregaArgs
     rotasCriadas?: boolean | UsuarioCountOutputTypeCountRotasCriadasArgs
     rotasAtualizadas?: boolean | UsuarioCountOutputTypeCountRotasAtualizadasArgs
+    estoquesSemanaisPortalAtualizados?: boolean | UsuarioCountOutputTypeCountEstoquesSemanaisPortalAtualizadosArgs
   }
 
   // Custom InputTypes
@@ -4867,6 +4953,13 @@ export namespace Prisma {
    */
   export type UsuarioCountOutputTypeCountRotasAtualizadasArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: RotaEntregaWhereInput
+  }
+
+  /**
+   * UsuarioCountOutputType without action
+   */
+  export type UsuarioCountOutputTypeCountEstoquesSemanaisPortalAtualizadosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueSemanalPortalWhereInput
   }
 
 
@@ -5047,6 +5140,7 @@ export namespace Prisma {
     mixReferenciadoPor: number
     estoqueVivoMixesReferencia: number
     estoqueVivoMixComponentes: number
+    estoquesSemanaisPortal: number
   }
 
   export type ProdutoComercialCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5057,6 +5151,7 @@ export namespace Prisma {
     mixReferenciadoPor?: boolean | ProdutoComercialCountOutputTypeCountMixReferenciadoPorArgs
     estoqueVivoMixesReferencia?: boolean | ProdutoComercialCountOutputTypeCountEstoqueVivoMixesReferenciaArgs
     estoqueVivoMixComponentes?: boolean | ProdutoComercialCountOutputTypeCountEstoqueVivoMixComponentesArgs
+    estoquesSemanaisPortal?: boolean | ProdutoComercialCountOutputTypeCountEstoquesSemanaisPortalArgs
   }
 
   // Custom InputTypes
@@ -5117,6 +5212,13 @@ export namespace Prisma {
    */
   export type ProdutoComercialCountOutputTypeCountEstoqueVivoMixComponentesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EstoqueVivoMixComponenteWhereInput
+  }
+
+  /**
+   * ProdutoComercialCountOutputType without action
+   */
+  export type ProdutoComercialCountOutputTypeCountEstoquesSemanaisPortalArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueSemanalPortalWhereInput
   }
 
 
@@ -5594,6 +5696,7 @@ export namespace Prisma {
     rotasEntrega?: boolean | Usuario$rotasEntregaArgs<ExtArgs>
     rotasCriadas?: boolean | Usuario$rotasCriadasArgs<ExtArgs>
     rotasAtualizadas?: boolean | Usuario$rotasAtualizadasArgs<ExtArgs>
+    estoquesSemanaisPortalAtualizados?: boolean | Usuario$estoquesSemanaisPortalAtualizadosArgs<ExtArgs>
     _count?: boolean | UsuarioCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["usuario"]>
 
@@ -5621,6 +5724,7 @@ export namespace Prisma {
     rotasEntrega?: boolean | Usuario$rotasEntregaArgs<ExtArgs>
     rotasCriadas?: boolean | Usuario$rotasCriadasArgs<ExtArgs>
     rotasAtualizadas?: boolean | Usuario$rotasAtualizadasArgs<ExtArgs>
+    estoquesSemanaisPortalAtualizados?: boolean | Usuario$estoquesSemanaisPortalAtualizadosArgs<ExtArgs>
     _count?: boolean | UsuarioCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -5637,6 +5741,7 @@ export namespace Prisma {
       rotasEntrega: Prisma.$RotaEntregaPayload<ExtArgs>[]
       rotasCriadas: Prisma.$RotaEntregaPayload<ExtArgs>[]
       rotasAtualizadas: Prisma.$RotaEntregaPayload<ExtArgs>[]
+      estoquesSemanaisPortalAtualizados: Prisma.$EstoqueSemanalPortalPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -5996,6 +6101,7 @@ export namespace Prisma {
     rotasEntrega<T extends Usuario$rotasEntregaArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$rotasEntregaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     rotasCriadas<T extends Usuario$rotasCriadasArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$rotasCriadasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     rotasAtualizadas<T extends Usuario$rotasAtualizadasArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$rotasAtualizadasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RotaEntregaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    estoquesSemanaisPortalAtualizados<T extends Usuario$estoquesSemanaisPortalAtualizadosArgs<ExtArgs> = {}>(args?: Subset<T, Usuario$estoquesSemanaisPortalAtualizadosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6612,6 +6718,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: RotaEntregaScalarFieldEnum | RotaEntregaScalarFieldEnum[]
+  }
+
+  /**
+   * Usuario.estoquesSemanaisPortalAtualizados
+   */
+  export type Usuario$estoquesSemanaisPortalAtualizadosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    where?: EstoqueSemanalPortalWhereInput
+    orderBy?: EstoqueSemanalPortalOrderByWithRelationInput | EstoqueSemanalPortalOrderByWithRelationInput[]
+    cursor?: EstoqueSemanalPortalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EstoqueSemanalPortalScalarFieldEnum | EstoqueSemanalPortalScalarFieldEnum[]
   }
 
   /**
@@ -14127,6 +14257,7 @@ export namespace Prisma {
     mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
     estoqueVivoMixesReferencia?: boolean | ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs>
     estoqueVivoMixComponentes?: boolean | ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>
+    estoquesSemanaisPortal?: boolean | ProdutoComercial$estoquesSemanaisPortalArgs<ExtArgs>
     _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["produtoComercial"]>
 
@@ -14173,6 +14304,7 @@ export namespace Prisma {
     mixReferenciadoPor?: boolean | ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>
     estoqueVivoMixesReferencia?: boolean | ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs>
     estoqueVivoMixComponentes?: boolean | ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>
+    estoquesSemanaisPortal?: boolean | ProdutoComercial$estoquesSemanaisPortalArgs<ExtArgs>
     _count?: boolean | ProdutoComercialCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -14188,6 +14320,7 @@ export namespace Prisma {
       mixReferenciadoPor: Prisma.$ProdutoComercialPayload<ExtArgs>[]
       estoqueVivoMixesReferencia: Prisma.$EstoqueVivoMixPayload<ExtArgs>[]
       estoqueVivoMixComponentes: Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>[]
+      estoquesSemanaisPortal: Prisma.$EstoqueSemanalPortalPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -14575,6 +14708,7 @@ export namespace Prisma {
     mixReferenciadoPor<T extends ProdutoComercial$mixReferenciadoPorArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$mixReferenciadoPorArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     estoqueVivoMixesReferencia<T extends ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoqueVivoMixesReferenciaArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     estoqueVivoMixComponentes<T extends ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoqueVivoMixComponentesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueVivoMixComponentePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    estoquesSemanaisPortal<T extends ProdutoComercial$estoquesSemanaisPortalArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercial$estoquesSemanaisPortalArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -15180,6 +15314,30 @@ export namespace Prisma {
   }
 
   /**
+   * ProdutoComercial.estoquesSemanaisPortal
+   */
+  export type ProdutoComercial$estoquesSemanaisPortalArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    where?: EstoqueSemanalPortalWhereInput
+    orderBy?: EstoqueSemanalPortalOrderByWithRelationInput | EstoqueSemanalPortalOrderByWithRelationInput[]
+    cursor?: EstoqueSemanalPortalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EstoqueSemanalPortalScalarFieldEnum | EstoqueSemanalPortalScalarFieldEnum[]
+  }
+
+  /**
    * ProdutoComercial without action
    */
   export type ProdutoComercialDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -15195,6 +15353,1014 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: ProdutoComercialInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model EstoqueSemanalPortal
+   */
+
+  export type AggregateEstoqueSemanalPortal = {
+    _count: EstoqueSemanalPortalCountAggregateOutputType | null
+    _avg: EstoqueSemanalPortalAvgAggregateOutputType | null
+    _sum: EstoqueSemanalPortalSumAggregateOutputType | null
+    _min: EstoqueSemanalPortalMinAggregateOutputType | null
+    _max: EstoqueSemanalPortalMaxAggregateOutputType | null
+  }
+
+  export type EstoqueSemanalPortalAvgAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type EstoqueSemanalPortalSumAggregateOutputType = {
+    quantidade: Decimal | null
+  }
+
+  export type EstoqueSemanalPortalMinAggregateOutputType = {
+    id: string | null
+    semanaInicio: Date | null
+    produtoId: string | null
+    quantidade: Decimal | null
+    atualizadoPorId: string | null
+    atualizadoEm: Date | null
+    criadoEm: Date | null
+  }
+
+  export type EstoqueSemanalPortalMaxAggregateOutputType = {
+    id: string | null
+    semanaInicio: Date | null
+    produtoId: string | null
+    quantidade: Decimal | null
+    atualizadoPorId: string | null
+    atualizadoEm: Date | null
+    criadoEm: Date | null
+  }
+
+  export type EstoqueSemanalPortalCountAggregateOutputType = {
+    id: number
+    semanaInicio: number
+    produtoId: number
+    quantidade: number
+    atualizadoPorId: number
+    atualizadoEm: number
+    criadoEm: number
+    _all: number
+  }
+
+
+  export type EstoqueSemanalPortalAvgAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type EstoqueSemanalPortalSumAggregateInputType = {
+    quantidade?: true
+  }
+
+  export type EstoqueSemanalPortalMinAggregateInputType = {
+    id?: true
+    semanaInicio?: true
+    produtoId?: true
+    quantidade?: true
+    atualizadoPorId?: true
+    atualizadoEm?: true
+    criadoEm?: true
+  }
+
+  export type EstoqueSemanalPortalMaxAggregateInputType = {
+    id?: true
+    semanaInicio?: true
+    produtoId?: true
+    quantidade?: true
+    atualizadoPorId?: true
+    atualizadoEm?: true
+    criadoEm?: true
+  }
+
+  export type EstoqueSemanalPortalCountAggregateInputType = {
+    id?: true
+    semanaInicio?: true
+    produtoId?: true
+    quantidade?: true
+    atualizadoPorId?: true
+    atualizadoEm?: true
+    criadoEm?: true
+    _all?: true
+  }
+
+  export type EstoqueSemanalPortalAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueSemanalPortal to aggregate.
+     */
+    where?: EstoqueSemanalPortalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueSemanalPortals to fetch.
+     */
+    orderBy?: EstoqueSemanalPortalOrderByWithRelationInput | EstoqueSemanalPortalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EstoqueSemanalPortalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueSemanalPortals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueSemanalPortals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EstoqueSemanalPortals
+    **/
+    _count?: true | EstoqueSemanalPortalCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: EstoqueSemanalPortalAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: EstoqueSemanalPortalSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EstoqueSemanalPortalMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EstoqueSemanalPortalMaxAggregateInputType
+  }
+
+  export type GetEstoqueSemanalPortalAggregateType<T extends EstoqueSemanalPortalAggregateArgs> = {
+        [P in keyof T & keyof AggregateEstoqueSemanalPortal]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEstoqueSemanalPortal[P]>
+      : GetScalarType<T[P], AggregateEstoqueSemanalPortal[P]>
+  }
+
+
+
+
+  export type EstoqueSemanalPortalGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstoqueSemanalPortalWhereInput
+    orderBy?: EstoqueSemanalPortalOrderByWithAggregationInput | EstoqueSemanalPortalOrderByWithAggregationInput[]
+    by: EstoqueSemanalPortalScalarFieldEnum[] | EstoqueSemanalPortalScalarFieldEnum
+    having?: EstoqueSemanalPortalScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EstoqueSemanalPortalCountAggregateInputType | true
+    _avg?: EstoqueSemanalPortalAvgAggregateInputType
+    _sum?: EstoqueSemanalPortalSumAggregateInputType
+    _min?: EstoqueSemanalPortalMinAggregateInputType
+    _max?: EstoqueSemanalPortalMaxAggregateInputType
+  }
+
+  export type EstoqueSemanalPortalGroupByOutputType = {
+    id: string
+    semanaInicio: Date
+    produtoId: string
+    quantidade: Decimal
+    atualizadoPorId: string | null
+    atualizadoEm: Date
+    criadoEm: Date
+    _count: EstoqueSemanalPortalCountAggregateOutputType | null
+    _avg: EstoqueSemanalPortalAvgAggregateOutputType | null
+    _sum: EstoqueSemanalPortalSumAggregateOutputType | null
+    _min: EstoqueSemanalPortalMinAggregateOutputType | null
+    _max: EstoqueSemanalPortalMaxAggregateOutputType | null
+  }
+
+  type GetEstoqueSemanalPortalGroupByPayload<T extends EstoqueSemanalPortalGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EstoqueSemanalPortalGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EstoqueSemanalPortalGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EstoqueSemanalPortalGroupByOutputType[P]>
+            : GetScalarType<T[P], EstoqueSemanalPortalGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EstoqueSemanalPortalSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    semanaInicio?: boolean
+    produtoId?: boolean
+    quantidade?: boolean
+    atualizadoPorId?: boolean
+    atualizadoEm?: boolean
+    criadoEm?: boolean
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    atualizadoPor?: boolean | EstoqueSemanalPortal$atualizadoPorArgs<ExtArgs>
+  }, ExtArgs["result"]["estoqueSemanalPortal"]>
+
+
+
+  export type EstoqueSemanalPortalSelectScalar = {
+    id?: boolean
+    semanaInicio?: boolean
+    produtoId?: boolean
+    quantidade?: boolean
+    atualizadoPorId?: boolean
+    atualizadoEm?: boolean
+    criadoEm?: boolean
+  }
+
+  export type EstoqueSemanalPortalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "semanaInicio" | "produtoId" | "quantidade" | "atualizadoPorId" | "atualizadoEm" | "criadoEm", ExtArgs["result"]["estoqueSemanalPortal"]>
+  export type EstoqueSemanalPortalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    produto?: boolean | ProdutoComercialDefaultArgs<ExtArgs>
+    atualizadoPor?: boolean | EstoqueSemanalPortal$atualizadoPorArgs<ExtArgs>
+  }
+
+  export type $EstoqueSemanalPortalPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EstoqueSemanalPortal"
+    objects: {
+      produto: Prisma.$ProdutoComercialPayload<ExtArgs>
+      atualizadoPor: Prisma.$UsuarioPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      semanaInicio: Date
+      produtoId: string
+      quantidade: Prisma.Decimal
+      atualizadoPorId: string | null
+      atualizadoEm: Date
+      criadoEm: Date
+    }, ExtArgs["result"]["estoqueSemanalPortal"]>
+    composites: {}
+  }
+
+  type EstoqueSemanalPortalGetPayload<S extends boolean | null | undefined | EstoqueSemanalPortalDefaultArgs> = $Result.GetResult<Prisma.$EstoqueSemanalPortalPayload, S>
+
+  type EstoqueSemanalPortalCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EstoqueSemanalPortalFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EstoqueSemanalPortalCountAggregateInputType | true
+    }
+
+  export interface EstoqueSemanalPortalDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EstoqueSemanalPortal'], meta: { name: 'EstoqueSemanalPortal' } }
+    /**
+     * Find zero or one EstoqueSemanalPortal that matches the filter.
+     * @param {EstoqueSemanalPortalFindUniqueArgs} args - Arguments to find a EstoqueSemanalPortal
+     * @example
+     * // Get one EstoqueSemanalPortal
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EstoqueSemanalPortalFindUniqueArgs>(args: SelectSubset<T, EstoqueSemanalPortalFindUniqueArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EstoqueSemanalPortal that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EstoqueSemanalPortalFindUniqueOrThrowArgs} args - Arguments to find a EstoqueSemanalPortal
+     * @example
+     * // Get one EstoqueSemanalPortal
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EstoqueSemanalPortalFindUniqueOrThrowArgs>(args: SelectSubset<T, EstoqueSemanalPortalFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueSemanalPortal that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueSemanalPortalFindFirstArgs} args - Arguments to find a EstoqueSemanalPortal
+     * @example
+     * // Get one EstoqueSemanalPortal
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EstoqueSemanalPortalFindFirstArgs>(args?: SelectSubset<T, EstoqueSemanalPortalFindFirstArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EstoqueSemanalPortal that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueSemanalPortalFindFirstOrThrowArgs} args - Arguments to find a EstoqueSemanalPortal
+     * @example
+     * // Get one EstoqueSemanalPortal
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EstoqueSemanalPortalFindFirstOrThrowArgs>(args?: SelectSubset<T, EstoqueSemanalPortalFindFirstOrThrowArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EstoqueSemanalPortals that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueSemanalPortalFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EstoqueSemanalPortals
+     * const estoqueSemanalPortals = await prisma.estoqueSemanalPortal.findMany()
+     * 
+     * // Get first 10 EstoqueSemanalPortals
+     * const estoqueSemanalPortals = await prisma.estoqueSemanalPortal.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const estoqueSemanalPortalWithIdOnly = await prisma.estoqueSemanalPortal.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EstoqueSemanalPortalFindManyArgs>(args?: SelectSubset<T, EstoqueSemanalPortalFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EstoqueSemanalPortal.
+     * @param {EstoqueSemanalPortalCreateArgs} args - Arguments to create a EstoqueSemanalPortal.
+     * @example
+     * // Create one EstoqueSemanalPortal
+     * const EstoqueSemanalPortal = await prisma.estoqueSemanalPortal.create({
+     *   data: {
+     *     // ... data to create a EstoqueSemanalPortal
+     *   }
+     * })
+     * 
+     */
+    create<T extends EstoqueSemanalPortalCreateArgs>(args: SelectSubset<T, EstoqueSemanalPortalCreateArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EstoqueSemanalPortals.
+     * @param {EstoqueSemanalPortalCreateManyArgs} args - Arguments to create many EstoqueSemanalPortals.
+     * @example
+     * // Create many EstoqueSemanalPortals
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EstoqueSemanalPortalCreateManyArgs>(args?: SelectSubset<T, EstoqueSemanalPortalCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a EstoqueSemanalPortal.
+     * @param {EstoqueSemanalPortalDeleteArgs} args - Arguments to delete one EstoqueSemanalPortal.
+     * @example
+     * // Delete one EstoqueSemanalPortal
+     * const EstoqueSemanalPortal = await prisma.estoqueSemanalPortal.delete({
+     *   where: {
+     *     // ... filter to delete one EstoqueSemanalPortal
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EstoqueSemanalPortalDeleteArgs>(args: SelectSubset<T, EstoqueSemanalPortalDeleteArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EstoqueSemanalPortal.
+     * @param {EstoqueSemanalPortalUpdateArgs} args - Arguments to update one EstoqueSemanalPortal.
+     * @example
+     * // Update one EstoqueSemanalPortal
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EstoqueSemanalPortalUpdateArgs>(args: SelectSubset<T, EstoqueSemanalPortalUpdateArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EstoqueSemanalPortals.
+     * @param {EstoqueSemanalPortalDeleteManyArgs} args - Arguments to filter EstoqueSemanalPortals to delete.
+     * @example
+     * // Delete a few EstoqueSemanalPortals
+     * const { count } = await prisma.estoqueSemanalPortal.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EstoqueSemanalPortalDeleteManyArgs>(args?: SelectSubset<T, EstoqueSemanalPortalDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EstoqueSemanalPortals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueSemanalPortalUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EstoqueSemanalPortals
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EstoqueSemanalPortalUpdateManyArgs>(args: SelectSubset<T, EstoqueSemanalPortalUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one EstoqueSemanalPortal.
+     * @param {EstoqueSemanalPortalUpsertArgs} args - Arguments to update or create a EstoqueSemanalPortal.
+     * @example
+     * // Update or create a EstoqueSemanalPortal
+     * const estoqueSemanalPortal = await prisma.estoqueSemanalPortal.upsert({
+     *   create: {
+     *     // ... data to create a EstoqueSemanalPortal
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EstoqueSemanalPortal we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EstoqueSemanalPortalUpsertArgs>(args: SelectSubset<T, EstoqueSemanalPortalUpsertArgs<ExtArgs>>): Prisma__EstoqueSemanalPortalClient<$Result.GetResult<Prisma.$EstoqueSemanalPortalPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EstoqueSemanalPortals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueSemanalPortalCountArgs} args - Arguments to filter EstoqueSemanalPortals to count.
+     * @example
+     * // Count the number of EstoqueSemanalPortals
+     * const count = await prisma.estoqueSemanalPortal.count({
+     *   where: {
+     *     // ... the filter for the EstoqueSemanalPortals we want to count
+     *   }
+     * })
+    **/
+    count<T extends EstoqueSemanalPortalCountArgs>(
+      args?: Subset<T, EstoqueSemanalPortalCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EstoqueSemanalPortalCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EstoqueSemanalPortal.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueSemanalPortalAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EstoqueSemanalPortalAggregateArgs>(args: Subset<T, EstoqueSemanalPortalAggregateArgs>): Prisma.PrismaPromise<GetEstoqueSemanalPortalAggregateType<T>>
+
+    /**
+     * Group by EstoqueSemanalPortal.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EstoqueSemanalPortalGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EstoqueSemanalPortalGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EstoqueSemanalPortalGroupByArgs['orderBy'] }
+        : { orderBy?: EstoqueSemanalPortalGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EstoqueSemanalPortalGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEstoqueSemanalPortalGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EstoqueSemanalPortal model
+   */
+  readonly fields: EstoqueSemanalPortalFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EstoqueSemanalPortal.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EstoqueSemanalPortalClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    produto<T extends ProdutoComercialDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProdutoComercialDefaultArgs<ExtArgs>>): Prisma__ProdutoComercialClient<$Result.GetResult<Prisma.$ProdutoComercialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    atualizadoPor<T extends EstoqueSemanalPortal$atualizadoPorArgs<ExtArgs> = {}>(args?: Subset<T, EstoqueSemanalPortal$atualizadoPorArgs<ExtArgs>>): Prisma__UsuarioClient<$Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EstoqueSemanalPortal model
+   */
+  interface EstoqueSemanalPortalFieldRefs {
+    readonly id: FieldRef<"EstoqueSemanalPortal", 'String'>
+    readonly semanaInicio: FieldRef<"EstoqueSemanalPortal", 'DateTime'>
+    readonly produtoId: FieldRef<"EstoqueSemanalPortal", 'String'>
+    readonly quantidade: FieldRef<"EstoqueSemanalPortal", 'Decimal'>
+    readonly atualizadoPorId: FieldRef<"EstoqueSemanalPortal", 'String'>
+    readonly atualizadoEm: FieldRef<"EstoqueSemanalPortal", 'DateTime'>
+    readonly criadoEm: FieldRef<"EstoqueSemanalPortal", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EstoqueSemanalPortal findUnique
+   */
+  export type EstoqueSemanalPortalFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueSemanalPortal to fetch.
+     */
+    where: EstoqueSemanalPortalWhereUniqueInput
+  }
+
+  /**
+   * EstoqueSemanalPortal findUniqueOrThrow
+   */
+  export type EstoqueSemanalPortalFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueSemanalPortal to fetch.
+     */
+    where: EstoqueSemanalPortalWhereUniqueInput
+  }
+
+  /**
+   * EstoqueSemanalPortal findFirst
+   */
+  export type EstoqueSemanalPortalFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueSemanalPortal to fetch.
+     */
+    where?: EstoqueSemanalPortalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueSemanalPortals to fetch.
+     */
+    orderBy?: EstoqueSemanalPortalOrderByWithRelationInput | EstoqueSemanalPortalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueSemanalPortals.
+     */
+    cursor?: EstoqueSemanalPortalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueSemanalPortals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueSemanalPortals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueSemanalPortals.
+     */
+    distinct?: EstoqueSemanalPortalScalarFieldEnum | EstoqueSemanalPortalScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueSemanalPortal findFirstOrThrow
+   */
+  export type EstoqueSemanalPortalFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueSemanalPortal to fetch.
+     */
+    where?: EstoqueSemanalPortalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueSemanalPortals to fetch.
+     */
+    orderBy?: EstoqueSemanalPortalOrderByWithRelationInput | EstoqueSemanalPortalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EstoqueSemanalPortals.
+     */
+    cursor?: EstoqueSemanalPortalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueSemanalPortals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueSemanalPortals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EstoqueSemanalPortals.
+     */
+    distinct?: EstoqueSemanalPortalScalarFieldEnum | EstoqueSemanalPortalScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueSemanalPortal findMany
+   */
+  export type EstoqueSemanalPortalFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * Filter, which EstoqueSemanalPortals to fetch.
+     */
+    where?: EstoqueSemanalPortalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EstoqueSemanalPortals to fetch.
+     */
+    orderBy?: EstoqueSemanalPortalOrderByWithRelationInput | EstoqueSemanalPortalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EstoqueSemanalPortals.
+     */
+    cursor?: EstoqueSemanalPortalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EstoqueSemanalPortals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EstoqueSemanalPortals.
+     */
+    skip?: number
+    distinct?: EstoqueSemanalPortalScalarFieldEnum | EstoqueSemanalPortalScalarFieldEnum[]
+  }
+
+  /**
+   * EstoqueSemanalPortal create
+   */
+  export type EstoqueSemanalPortalCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * The data needed to create a EstoqueSemanalPortal.
+     */
+    data: XOR<EstoqueSemanalPortalCreateInput, EstoqueSemanalPortalUncheckedCreateInput>
+  }
+
+  /**
+   * EstoqueSemanalPortal createMany
+   */
+  export type EstoqueSemanalPortalCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EstoqueSemanalPortals.
+     */
+    data: EstoqueSemanalPortalCreateManyInput | EstoqueSemanalPortalCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EstoqueSemanalPortal update
+   */
+  export type EstoqueSemanalPortalUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * The data needed to update a EstoqueSemanalPortal.
+     */
+    data: XOR<EstoqueSemanalPortalUpdateInput, EstoqueSemanalPortalUncheckedUpdateInput>
+    /**
+     * Choose, which EstoqueSemanalPortal to update.
+     */
+    where: EstoqueSemanalPortalWhereUniqueInput
+  }
+
+  /**
+   * EstoqueSemanalPortal updateMany
+   */
+  export type EstoqueSemanalPortalUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EstoqueSemanalPortals.
+     */
+    data: XOR<EstoqueSemanalPortalUpdateManyMutationInput, EstoqueSemanalPortalUncheckedUpdateManyInput>
+    /**
+     * Filter which EstoqueSemanalPortals to update
+     */
+    where?: EstoqueSemanalPortalWhereInput
+    /**
+     * Limit how many EstoqueSemanalPortals to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueSemanalPortal upsert
+   */
+  export type EstoqueSemanalPortalUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * The filter to search for the EstoqueSemanalPortal to update in case it exists.
+     */
+    where: EstoqueSemanalPortalWhereUniqueInput
+    /**
+     * In case the EstoqueSemanalPortal found by the `where` argument doesn't exist, create a new EstoqueSemanalPortal with this data.
+     */
+    create: XOR<EstoqueSemanalPortalCreateInput, EstoqueSemanalPortalUncheckedCreateInput>
+    /**
+     * In case the EstoqueSemanalPortal was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EstoqueSemanalPortalUpdateInput, EstoqueSemanalPortalUncheckedUpdateInput>
+  }
+
+  /**
+   * EstoqueSemanalPortal delete
+   */
+  export type EstoqueSemanalPortalDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
+    /**
+     * Filter which EstoqueSemanalPortal to delete.
+     */
+    where: EstoqueSemanalPortalWhereUniqueInput
+  }
+
+  /**
+   * EstoqueSemanalPortal deleteMany
+   */
+  export type EstoqueSemanalPortalDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EstoqueSemanalPortals to delete
+     */
+    where?: EstoqueSemanalPortalWhereInput
+    /**
+     * Limit how many EstoqueSemanalPortals to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EstoqueSemanalPortal.atualizadoPor
+   */
+  export type EstoqueSemanalPortal$atualizadoPorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Usuario
+     */
+    select?: UsuarioSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Usuario
+     */
+    omit?: UsuarioOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UsuarioInclude<ExtArgs> | null
+    where?: UsuarioWhereInput
+  }
+
+  /**
+   * EstoqueSemanalPortal without action
+   */
+  export type EstoqueSemanalPortalDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstoqueSemanalPortal
+     */
+    select?: EstoqueSemanalPortalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EstoqueSemanalPortal
+     */
+    omit?: EstoqueSemanalPortalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstoqueSemanalPortalInclude<ExtArgs> | null
   }
 
 
@@ -24068,6 +25234,7 @@ export namespace Prisma {
     inscricaoEstadual: string | null
     status: string | null
     erro: string | null
+    senhaHash: string | null
     contaAzulId: string | null
     criadoEm: Date | null
     atualizadoEm: Date | null
@@ -24091,6 +25258,7 @@ export namespace Prisma {
     inscricaoEstadual: string | null
     status: string | null
     erro: string | null
+    senhaHash: string | null
     contaAzulId: string | null
     criadoEm: Date | null
     atualizadoEm: Date | null
@@ -24114,6 +25282,7 @@ export namespace Prisma {
     inscricaoEstadual: number
     status: number
     erro: number
+    senhaHash: number
     contaAzulId: number
     criadoEm: number
     atualizadoEm: number
@@ -24139,6 +25308,7 @@ export namespace Prisma {
     inscricaoEstadual?: true
     status?: true
     erro?: true
+    senhaHash?: true
     contaAzulId?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -24162,6 +25332,7 @@ export namespace Prisma {
     inscricaoEstadual?: true
     status?: true
     erro?: true
+    senhaHash?: true
     contaAzulId?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -24185,6 +25356,7 @@ export namespace Prisma {
     inscricaoEstadual?: true
     status?: true
     erro?: true
+    senhaHash?: true
     contaAzulId?: true
     criadoEm?: true
     atualizadoEm?: true
@@ -24281,6 +25453,7 @@ export namespace Prisma {
     inscricaoEstadual: string | null
     status: string
     erro: string | null
+    senhaHash: string | null
     contaAzulId: string | null
     criadoEm: Date
     atualizadoEm: Date
@@ -24321,6 +25494,7 @@ export namespace Prisma {
     inscricaoEstadual?: boolean
     status?: boolean
     erro?: boolean
+    senhaHash?: boolean
     contaAzulId?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
@@ -24346,12 +25520,13 @@ export namespace Prisma {
     inscricaoEstadual?: boolean
     status?: boolean
     erro?: boolean
+    senhaHash?: boolean
     contaAzulId?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
   }
 
-  export type PortalCadastroOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "nomeFantasia" | "cnpj" | "email" | "telefone" | "contato" | "cep" | "logradouro" | "numero" | "complemento" | "bairro" | "cidade" | "estado" | "inscricaoEstadual" | "status" | "erro" | "contaAzulId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalCadastro"]>
+  export type PortalCadastroOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "nomeFantasia" | "cnpj" | "email" | "telefone" | "contato" | "cep" | "logradouro" | "numero" | "complemento" | "bairro" | "cidade" | "estado" | "inscricaoEstadual" | "status" | "erro" | "senhaHash" | "contaAzulId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["portalCadastro"]>
 
   export type $PortalCadastroPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "PortalCadastro"
@@ -24374,6 +25549,10 @@ export namespace Prisma {
       inscricaoEstadual: string | null
       status: string
       erro: string | null
+      /**
+       * Senha escolhida no cadastro do site (hash). Usada ao liberar o acesso.
+       */
+      senhaHash: string | null
       contaAzulId: string | null
       criadoEm: Date
       atualizadoEm: Date
@@ -24763,6 +25942,7 @@ export namespace Prisma {
     readonly inscricaoEstadual: FieldRef<"PortalCadastro", 'String'>
     readonly status: FieldRef<"PortalCadastro", 'String'>
     readonly erro: FieldRef<"PortalCadastro", 'String'>
+    readonly senhaHash: FieldRef<"PortalCadastro", 'String'>
     readonly contaAzulId: FieldRef<"PortalCadastro", 'String'>
     readonly criadoEm: FieldRef<"PortalCadastro", 'DateTime'>
     readonly atualizadoEm: FieldRef<"PortalCadastro", 'DateTime'>
@@ -50835,6 +52015,19 @@ export namespace Prisma {
   export type ProdutoComercialScalarFieldEnum = (typeof ProdutoComercialScalarFieldEnum)[keyof typeof ProdutoComercialScalarFieldEnum]
 
 
+  export const EstoqueSemanalPortalScalarFieldEnum: {
+    id: 'id',
+    semanaInicio: 'semanaInicio',
+    produtoId: 'produtoId',
+    quantidade: 'quantidade',
+    atualizadoPorId: 'atualizadoPorId',
+    atualizadoEm: 'atualizadoEm',
+    criadoEm: 'criadoEm'
+  };
+
+  export type EstoqueSemanalPortalScalarFieldEnum = (typeof EstoqueSemanalPortalScalarFieldEnum)[keyof typeof EstoqueSemanalPortalScalarFieldEnum]
+
+
   export const PortalAcessoScalarFieldEnum: {
     id: 'id',
     clienteId: 'clienteId',
@@ -50979,6 +52172,7 @@ export namespace Prisma {
     inscricaoEstadual: 'inscricaoEstadual',
     status: 'status',
     erro: 'erro',
+    senhaHash: 'senhaHash',
     contaAzulId: 'contaAzulId',
     criadoEm: 'criadoEm',
     atualizadoEm: 'atualizadoEm'
@@ -51529,6 +52723,15 @@ export namespace Prisma {
   export type ProdutoComercialOrderByRelevanceFieldEnum = (typeof ProdutoComercialOrderByRelevanceFieldEnum)[keyof typeof ProdutoComercialOrderByRelevanceFieldEnum]
 
 
+  export const EstoqueSemanalPortalOrderByRelevanceFieldEnum: {
+    id: 'id',
+    produtoId: 'produtoId',
+    atualizadoPorId: 'atualizadoPorId'
+  };
+
+  export type EstoqueSemanalPortalOrderByRelevanceFieldEnum = (typeof EstoqueSemanalPortalOrderByRelevanceFieldEnum)[keyof typeof EstoqueSemanalPortalOrderByRelevanceFieldEnum]
+
+
   export const PortalAcessoOrderByRelevanceFieldEnum: {
     id: 'id',
     clienteId: 'clienteId',
@@ -51655,6 +52858,7 @@ export namespace Prisma {
     inscricaoEstadual: 'inscricaoEstadual',
     status: 'status',
     erro: 'erro',
+    senhaHash: 'senhaHash',
     contaAzulId: 'contaAzulId'
   };
 
@@ -52190,6 +53394,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaListRelationFilter
     rotasCriadas?: RotaEntregaListRelationFilter
     rotasAtualizadas?: RotaEntregaListRelationFilter
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalListRelationFilter
   }
 
   export type UsuarioOrderByWithRelationInput = {
@@ -52210,6 +53415,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaOrderByRelationAggregateInput
     rotasCriadas?: RotaEntregaOrderByRelationAggregateInput
     rotasAtualizadas?: RotaEntregaOrderByRelationAggregateInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalOrderByRelationAggregateInput
     _relevance?: UsuarioOrderByRelevanceInput
   }
 
@@ -52234,6 +53440,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaListRelationFilter
     rotasCriadas?: RotaEntregaListRelationFilter
     rotasAtualizadas?: RotaEntregaListRelationFilter
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalListRelationFilter
   }, "id" | "email">
 
   export type UsuarioOrderByWithAggregationInput = {
@@ -52803,6 +54010,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialListRelationFilter
     estoqueVivoMixesReferencia?: EstoqueVivoMixListRelationFilter
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteListRelationFilter
+    estoquesSemanaisPortal?: EstoqueSemanalPortalListRelationFilter
   }
 
   export type ProdutoComercialOrderByWithRelationInput = {
@@ -52842,6 +54050,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialOrderByRelationAggregateInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixOrderByRelationAggregateInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteOrderByRelationAggregateInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalOrderByRelationAggregateInput
     _relevance?: ProdutoComercialOrderByRelevanceInput
   }
 
@@ -52885,6 +54094,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialListRelationFilter
     estoqueVivoMixesReferencia?: EstoqueVivoMixListRelationFilter
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteListRelationFilter
+    estoquesSemanaisPortal?: EstoqueSemanalPortalListRelationFilter
   }, "id" | "nome" | "contaAzulProdutoId">
 
   export type ProdutoComercialOrderByWithAggregationInput = {
@@ -52953,6 +54163,78 @@ export namespace Prisma {
     estoqueLoja?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
+  }
+
+  export type EstoqueSemanalPortalWhereInput = {
+    AND?: EstoqueSemanalPortalWhereInput | EstoqueSemanalPortalWhereInput[]
+    OR?: EstoqueSemanalPortalWhereInput[]
+    NOT?: EstoqueSemanalPortalWhereInput | EstoqueSemanalPortalWhereInput[]
+    id?: StringFilter<"EstoqueSemanalPortal"> | string
+    semanaInicio?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    produtoId?: StringFilter<"EstoqueSemanalPortal"> | string
+    quantidade?: DecimalFilter<"EstoqueSemanalPortal"> | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: StringNullableFilter<"EstoqueSemanalPortal"> | string | null
+    atualizadoEm?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    criadoEm?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    atualizadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+  }
+
+  export type EstoqueSemanalPortalOrderByWithRelationInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    atualizadoPorId?: SortOrderInput | SortOrder
+    atualizadoEm?: SortOrder
+    criadoEm?: SortOrder
+    produto?: ProdutoComercialOrderByWithRelationInput
+    atualizadoPor?: UsuarioOrderByWithRelationInput
+    _relevance?: EstoqueSemanalPortalOrderByRelevanceInput
+  }
+
+  export type EstoqueSemanalPortalWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    semanaInicio_produtoId?: EstoqueSemanalPortalSemanaInicioProdutoIdCompoundUniqueInput
+    AND?: EstoqueSemanalPortalWhereInput | EstoqueSemanalPortalWhereInput[]
+    OR?: EstoqueSemanalPortalWhereInput[]
+    NOT?: EstoqueSemanalPortalWhereInput | EstoqueSemanalPortalWhereInput[]
+    semanaInicio?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    produtoId?: StringFilter<"EstoqueSemanalPortal"> | string
+    quantidade?: DecimalFilter<"EstoqueSemanalPortal"> | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: StringNullableFilter<"EstoqueSemanalPortal"> | string | null
+    atualizadoEm?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    criadoEm?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    produto?: XOR<ProdutoComercialScalarRelationFilter, ProdutoComercialWhereInput>
+    atualizadoPor?: XOR<UsuarioNullableScalarRelationFilter, UsuarioWhereInput> | null
+  }, "id" | "semanaInicio_produtoId">
+
+  export type EstoqueSemanalPortalOrderByWithAggregationInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    atualizadoPorId?: SortOrderInput | SortOrder
+    atualizadoEm?: SortOrder
+    criadoEm?: SortOrder
+    _count?: EstoqueSemanalPortalCountOrderByAggregateInput
+    _avg?: EstoqueSemanalPortalAvgOrderByAggregateInput
+    _max?: EstoqueSemanalPortalMaxOrderByAggregateInput
+    _min?: EstoqueSemanalPortalMinOrderByAggregateInput
+    _sum?: EstoqueSemanalPortalSumOrderByAggregateInput
+  }
+
+  export type EstoqueSemanalPortalScalarWhereWithAggregatesInput = {
+    AND?: EstoqueSemanalPortalScalarWhereWithAggregatesInput | EstoqueSemanalPortalScalarWhereWithAggregatesInput[]
+    OR?: EstoqueSemanalPortalScalarWhereWithAggregatesInput[]
+    NOT?: EstoqueSemanalPortalScalarWhereWithAggregatesInput | EstoqueSemanalPortalScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EstoqueSemanalPortal"> | string
+    semanaInicio?: DateTimeWithAggregatesFilter<"EstoqueSemanalPortal"> | Date | string
+    produtoId?: StringWithAggregatesFilter<"EstoqueSemanalPortal"> | string
+    quantidade?: DecimalWithAggregatesFilter<"EstoqueSemanalPortal"> | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: StringNullableWithAggregatesFilter<"EstoqueSemanalPortal"> | string | null
+    atualizadoEm?: DateTimeWithAggregatesFilter<"EstoqueSemanalPortal"> | Date | string
+    criadoEm?: DateTimeWithAggregatesFilter<"EstoqueSemanalPortal"> | Date | string
   }
 
   export type PortalAcessoWhereInput = {
@@ -53639,6 +54921,7 @@ export namespace Prisma {
     inscricaoEstadual?: StringNullableFilter<"PortalCadastro"> | string | null
     status?: StringFilter<"PortalCadastro"> | string
     erro?: StringNullableFilter<"PortalCadastro"> | string | null
+    senhaHash?: StringNullableFilter<"PortalCadastro"> | string | null
     contaAzulId?: StringNullableFilter<"PortalCadastro"> | string | null
     criadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
     atualizadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
@@ -53662,6 +54945,7 @@ export namespace Prisma {
     inscricaoEstadual?: SortOrderInput | SortOrder
     status?: SortOrder
     erro?: SortOrderInput | SortOrder
+    senhaHash?: SortOrderInput | SortOrder
     contaAzulId?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -53689,6 +54973,7 @@ export namespace Prisma {
     inscricaoEstadual?: StringNullableFilter<"PortalCadastro"> | string | null
     status?: StringFilter<"PortalCadastro"> | string
     erro?: StringNullableFilter<"PortalCadastro"> | string | null
+    senhaHash?: StringNullableFilter<"PortalCadastro"> | string | null
     contaAzulId?: StringNullableFilter<"PortalCadastro"> | string | null
     criadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
     atualizadoEm?: DateTimeFilter<"PortalCadastro"> | Date | string
@@ -53712,6 +54997,7 @@ export namespace Prisma {
     inscricaoEstadual?: SortOrderInput | SortOrder
     status?: SortOrder
     erro?: SortOrderInput | SortOrder
+    senhaHash?: SortOrderInput | SortOrder
     contaAzulId?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -53741,6 +55027,7 @@ export namespace Prisma {
     inscricaoEstadual?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
     status?: StringWithAggregatesFilter<"PortalCadastro"> | string
     erro?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
+    senhaHash?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
     contaAzulId?: StringNullableWithAggregatesFilter<"PortalCadastro"> | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"PortalCadastro"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"PortalCadastro"> | Date | string
@@ -55878,6 +57165,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateInput = {
@@ -55898,6 +57186,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUpdateInput = {
@@ -55918,6 +57207,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateInput = {
@@ -55938,6 +57228,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioCreateManyInput = {
@@ -56541,6 +57832,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateInput = {
@@ -56579,6 +57871,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUpdateInput = {
@@ -56617,6 +57910,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateInput = {
@@ -56655,6 +57949,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialCreateManyInput = {
@@ -56744,6 +58039,74 @@ export namespace Prisma {
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueSemanalPortalCreateInput = {
+    id?: string
+    semanaInicio: Date | string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+    produto: ProdutoComercialCreateNestedOneWithoutEstoquesSemanaisPortalInput
+    atualizadoPor?: UsuarioCreateNestedOneWithoutEstoquesSemanaisPortalAtualizadosInput
+  }
+
+  export type EstoqueSemanalPortalUncheckedCreateInput = {
+    id?: string
+    semanaInicio: Date | string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: string | null
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+  }
+
+  export type EstoqueSemanalPortalUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    produto?: ProdutoComercialUpdateOneRequiredWithoutEstoquesSemanaisPortalNestedInput
+    atualizadoPor?: UsuarioUpdateOneWithoutEstoquesSemanaisPortalAtualizadosNestedInput
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueSemanalPortalCreateManyInput = {
+    id?: string
+    semanaInicio: Date | string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: string | null
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+  }
+
+  export type EstoqueSemanalPortalUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PortalAcessoCreateInput = {
@@ -57463,6 +58826,7 @@ export namespace Prisma {
     inscricaoEstadual?: string | null
     status?: string
     erro?: string | null
+    senhaHash?: string | null
     contaAzulId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -57486,6 +58850,7 @@ export namespace Prisma {
     inscricaoEstadual?: string | null
     status?: string
     erro?: string | null
+    senhaHash?: string | null
     contaAzulId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -57509,6 +58874,7 @@ export namespace Prisma {
     inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     erro?: NullableStringFieldUpdateOperationsInput | string | null
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57532,6 +58898,7 @@ export namespace Prisma {
     inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     erro?: NullableStringFieldUpdateOperationsInput | string | null
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57555,6 +58922,7 @@ export namespace Prisma {
     inscricaoEstadual?: string | null
     status?: string
     erro?: string | null
+    senhaHash?: string | null
     contaAzulId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
@@ -57578,6 +58946,7 @@ export namespace Prisma {
     inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     erro?: NullableStringFieldUpdateOperationsInput | string | null
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57601,6 +58970,7 @@ export namespace Prisma {
     inscricaoEstadual?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     erro?: NullableStringFieldUpdateOperationsInput | string | null
+    senhaHash?: NullableStringFieldUpdateOperationsInput | string | null
     contaAzulId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -59967,6 +61337,12 @@ export namespace Prisma {
     none?: RotaEntregaWhereInput
   }
 
+  export type EstoqueSemanalPortalListRelationFilter = {
+    every?: EstoqueSemanalPortalWhereInput
+    some?: EstoqueSemanalPortalWhereInput
+    none?: EstoqueSemanalPortalWhereInput
+  }
+
   export type MensagemOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -59992,6 +61368,10 @@ export namespace Prisma {
   }
 
   export type RotaEntregaOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type EstoqueSemanalPortalOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -60929,6 +62309,60 @@ export namespace Prisma {
     _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
+  export type UsuarioNullableScalarRelationFilter = {
+    is?: UsuarioWhereInput | null
+    isNot?: UsuarioWhereInput | null
+  }
+
+  export type EstoqueSemanalPortalOrderByRelevanceInput = {
+    fields: EstoqueSemanalPortalOrderByRelevanceFieldEnum | EstoqueSemanalPortalOrderByRelevanceFieldEnum[]
+    sort: SortOrder
+    search: string
+  }
+
+  export type EstoqueSemanalPortalSemanaInicioProdutoIdCompoundUniqueInput = {
+    semanaInicio: Date | string
+    produtoId: string
+  }
+
+  export type EstoqueSemanalPortalCountOrderByAggregateInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    atualizadoPorId?: SortOrder
+    atualizadoEm?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type EstoqueSemanalPortalAvgOrderByAggregateInput = {
+    quantidade?: SortOrder
+  }
+
+  export type EstoqueSemanalPortalMaxOrderByAggregateInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    atualizadoPorId?: SortOrder
+    atualizadoEm?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type EstoqueSemanalPortalMinOrderByAggregateInput = {
+    id?: SortOrder
+    semanaInicio?: SortOrder
+    produtoId?: SortOrder
+    quantidade?: SortOrder
+    atualizadoPorId?: SortOrder
+    atualizadoEm?: SortOrder
+    criadoEm?: SortOrder
+  }
+
+  export type EstoqueSemanalPortalSumOrderByAggregateInput = {
+    quantidade?: SortOrder
+  }
+
   export type EnumPortalPerfilFilter<$PrismaModel = never> = {
     equals?: $Enums.PortalPerfil | EnumPortalPerfilFieldRefInput<$PrismaModel>
     in?: $Enums.PortalPerfil[]
@@ -61442,6 +62876,7 @@ export namespace Prisma {
     inscricaoEstadual?: SortOrder
     status?: SortOrder
     erro?: SortOrder
+    senhaHash?: SortOrder
     contaAzulId?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -61465,6 +62900,7 @@ export namespace Prisma {
     inscricaoEstadual?: SortOrder
     status?: SortOrder
     erro?: SortOrder
+    senhaHash?: SortOrder
     contaAzulId?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -61488,6 +62924,7 @@ export namespace Prisma {
     inscricaoEstadual?: SortOrder
     status?: SortOrder
     erro?: SortOrder
+    senhaHash?: SortOrder
     contaAzulId?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
@@ -61807,11 +63244,6 @@ export namespace Prisma {
     in?: $Enums.StatusEnvioContaAzul[]
     notIn?: $Enums.StatusEnvioContaAzul[]
     not?: NestedEnumStatusEnvioContaAzulFilter<$PrismaModel> | $Enums.StatusEnvioContaAzul
-  }
-
-  export type UsuarioNullableScalarRelationFilter = {
-    is?: UsuarioWhereInput | null
-    isNot?: UsuarioWhereInput | null
   }
 
   export type PedidoNullableScalarRelationFilter = {
@@ -63292,6 +64724,13 @@ export namespace Prisma {
     connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
   }
 
+  export type EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput> | EstoqueSemanalPortalCreateWithoutAtualizadoPorInput[] | EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput | EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput[]
+    createMany?: EstoqueSemanalPortalCreateManyAtualizadoPorInputEnvelope
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+  }
+
   export type MensagemUncheckedCreateNestedManyWithoutAprovadorInput = {
     create?: XOR<MensagemCreateWithoutAprovadorInput, MensagemUncheckedCreateWithoutAprovadorInput> | MensagemCreateWithoutAprovadorInput[] | MensagemUncheckedCreateWithoutAprovadorInput[]
     connectOrCreate?: MensagemCreateOrConnectWithoutAprovadorInput | MensagemCreateOrConnectWithoutAprovadorInput[]
@@ -63360,6 +64799,13 @@ export namespace Prisma {
     connectOrCreate?: RotaEntregaCreateOrConnectWithoutAtualizadoPorInput | RotaEntregaCreateOrConnectWithoutAtualizadoPorInput[]
     createMany?: RotaEntregaCreateManyAtualizadoPorInputEnvelope
     connect?: RotaEntregaWhereUniqueInput | RotaEntregaWhereUniqueInput[]
+  }
+
+  export type EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput> | EstoqueSemanalPortalCreateWithoutAtualizadoPorInput[] | EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput | EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput[]
+    createMany?: EstoqueSemanalPortalCreateManyAtualizadoPorInputEnvelope
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -63518,6 +64964,20 @@ export namespace Prisma {
     deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
   }
 
+  export type EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput> | EstoqueSemanalPortalCreateWithoutAtualizadoPorInput[] | EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput | EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput[]
+    upsert?: EstoqueSemanalPortalUpsertWithWhereUniqueWithoutAtualizadoPorInput | EstoqueSemanalPortalUpsertWithWhereUniqueWithoutAtualizadoPorInput[]
+    createMany?: EstoqueSemanalPortalCreateManyAtualizadoPorInputEnvelope
+    set?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    disconnect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    delete?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    update?: EstoqueSemanalPortalUpdateWithWhereUniqueWithoutAtualizadoPorInput | EstoqueSemanalPortalUpdateWithWhereUniqueWithoutAtualizadoPorInput[]
+    updateMany?: EstoqueSemanalPortalUpdateManyWithWhereWithoutAtualizadoPorInput | EstoqueSemanalPortalUpdateManyWithWhereWithoutAtualizadoPorInput[]
+    deleteMany?: EstoqueSemanalPortalScalarWhereInput | EstoqueSemanalPortalScalarWhereInput[]
+  }
+
   export type MensagemUncheckedUpdateManyWithoutAprovadorNestedInput = {
     create?: XOR<MensagemCreateWithoutAprovadorInput, MensagemUncheckedCreateWithoutAprovadorInput> | MensagemCreateWithoutAprovadorInput[] | MensagemUncheckedCreateWithoutAprovadorInput[]
     connectOrCreate?: MensagemCreateOrConnectWithoutAprovadorInput | MensagemCreateOrConnectWithoutAprovadorInput[]
@@ -63656,6 +65116,20 @@ export namespace Prisma {
     update?: RotaEntregaUpdateWithWhereUniqueWithoutAtualizadoPorInput | RotaEntregaUpdateWithWhereUniqueWithoutAtualizadoPorInput[]
     updateMany?: RotaEntregaUpdateManyWithWhereWithoutAtualizadoPorInput | RotaEntregaUpdateManyWithWhereWithoutAtualizadoPorInput[]
     deleteMany?: RotaEntregaScalarWhereInput | RotaEntregaScalarWhereInput[]
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput> | EstoqueSemanalPortalCreateWithoutAtualizadoPorInput[] | EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput | EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput[]
+    upsert?: EstoqueSemanalPortalUpsertWithWhereUniqueWithoutAtualizadoPorInput | EstoqueSemanalPortalUpsertWithWhereUniqueWithoutAtualizadoPorInput[]
+    createMany?: EstoqueSemanalPortalCreateManyAtualizadoPorInputEnvelope
+    set?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    disconnect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    delete?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    update?: EstoqueSemanalPortalUpdateWithWhereUniqueWithoutAtualizadoPorInput | EstoqueSemanalPortalUpdateWithWhereUniqueWithoutAtualizadoPorInput[]
+    updateMany?: EstoqueSemanalPortalUpdateManyWithWhereWithoutAtualizadoPorInput | EstoqueSemanalPortalUpdateManyWithWhereWithoutAtualizadoPorInput[]
+    deleteMany?: EstoqueSemanalPortalScalarWhereInput | EstoqueSemanalPortalScalarWhereInput[]
   }
 
   export type UsuarioCreateNestedOneWithoutRefreshTokensInput = {
@@ -64455,6 +65929,13 @@ export namespace Prisma {
     connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
   }
 
+  export type EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutProdutoInput, EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput> | EstoqueSemanalPortalCreateWithoutProdutoInput[] | EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput | EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput[]
+    createMany?: EstoqueSemanalPortalCreateManyProdutoInputEnvelope
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+  }
+
   export type PortalFotoUncheckedCreateNestedOneWithoutProdutoInput = {
     create?: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
     connectOrCreate?: PortalFotoCreateOrConnectWithoutProdutoInput
@@ -64508,6 +65989,13 @@ export namespace Prisma {
     connectOrCreate?: EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput | EstoqueVivoMixComponenteCreateOrConnectWithoutProdutoInput[]
     createMany?: EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope
     connect?: EstoqueVivoMixComponenteWhereUniqueInput | EstoqueVivoMixComponenteWhereUniqueInput[]
+  }
+
+  export type EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutProdutoInput, EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput> | EstoqueSemanalPortalCreateWithoutProdutoInput[] | EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput | EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput[]
+    createMany?: EstoqueSemanalPortalCreateManyProdutoInputEnvelope
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
   }
 
   export type EnumModoCompraProdutoFieldUpdateOperationsInput = {
@@ -64632,6 +66120,20 @@ export namespace Prisma {
     deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
   }
 
+  export type EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutProdutoInput, EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput> | EstoqueSemanalPortalCreateWithoutProdutoInput[] | EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput | EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput[]
+    upsert?: EstoqueSemanalPortalUpsertWithWhereUniqueWithoutProdutoInput | EstoqueSemanalPortalUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: EstoqueSemanalPortalCreateManyProdutoInputEnvelope
+    set?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    disconnect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    delete?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    update?: EstoqueSemanalPortalUpdateWithWhereUniqueWithoutProdutoInput | EstoqueSemanalPortalUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: EstoqueSemanalPortalUpdateManyWithWhereWithoutProdutoInput | EstoqueSemanalPortalUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: EstoqueSemanalPortalScalarWhereInput | EstoqueSemanalPortalScalarWhereInput[]
+  }
+
   export type PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput = {
     create?: XOR<PortalFotoCreateWithoutProdutoInput, PortalFotoUncheckedCreateWithoutProdutoInput>
     connectOrCreate?: PortalFotoCreateOrConnectWithoutProdutoInput
@@ -64738,6 +66240,50 @@ export namespace Prisma {
     update?: EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput | EstoqueVivoMixComponenteUpdateWithWhereUniqueWithoutProdutoInput[]
     updateMany?: EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput | EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput[]
     deleteMany?: EstoqueVivoMixComponenteScalarWhereInput | EstoqueVivoMixComponenteScalarWhereInput[]
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput = {
+    create?: XOR<EstoqueSemanalPortalCreateWithoutProdutoInput, EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput> | EstoqueSemanalPortalCreateWithoutProdutoInput[] | EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput[]
+    connectOrCreate?: EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput | EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput[]
+    upsert?: EstoqueSemanalPortalUpsertWithWhereUniqueWithoutProdutoInput | EstoqueSemanalPortalUpsertWithWhereUniqueWithoutProdutoInput[]
+    createMany?: EstoqueSemanalPortalCreateManyProdutoInputEnvelope
+    set?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    disconnect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    delete?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    connect?: EstoqueSemanalPortalWhereUniqueInput | EstoqueSemanalPortalWhereUniqueInput[]
+    update?: EstoqueSemanalPortalUpdateWithWhereUniqueWithoutProdutoInput | EstoqueSemanalPortalUpdateWithWhereUniqueWithoutProdutoInput[]
+    updateMany?: EstoqueSemanalPortalUpdateManyWithWhereWithoutProdutoInput | EstoqueSemanalPortalUpdateManyWithWhereWithoutProdutoInput[]
+    deleteMany?: EstoqueSemanalPortalScalarWhereInput | EstoqueSemanalPortalScalarWhereInput[]
+  }
+
+  export type ProdutoComercialCreateNestedOneWithoutEstoquesSemanaisPortalInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoquesSemanaisPortalInput, ProdutoComercialUncheckedCreateWithoutEstoquesSemanaisPortalInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoquesSemanaisPortalInput
+    connect?: ProdutoComercialWhereUniqueInput
+  }
+
+  export type UsuarioCreateNestedOneWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    create?: XOR<UsuarioCreateWithoutEstoquesSemanaisPortalAtualizadosInput, UsuarioUncheckedCreateWithoutEstoquesSemanaisPortalAtualizadosInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutEstoquesSemanaisPortalAtualizadosInput
+    connect?: UsuarioWhereUniqueInput
+  }
+
+  export type ProdutoComercialUpdateOneRequiredWithoutEstoquesSemanaisPortalNestedInput = {
+    create?: XOR<ProdutoComercialCreateWithoutEstoquesSemanaisPortalInput, ProdutoComercialUncheckedCreateWithoutEstoquesSemanaisPortalInput>
+    connectOrCreate?: ProdutoComercialCreateOrConnectWithoutEstoquesSemanaisPortalInput
+    upsert?: ProdutoComercialUpsertWithoutEstoquesSemanaisPortalInput
+    connect?: ProdutoComercialWhereUniqueInput
+    update?: XOR<XOR<ProdutoComercialUpdateToOneWithWhereWithoutEstoquesSemanaisPortalInput, ProdutoComercialUpdateWithoutEstoquesSemanaisPortalInput>, ProdutoComercialUncheckedUpdateWithoutEstoquesSemanaisPortalInput>
+  }
+
+  export type UsuarioUpdateOneWithoutEstoquesSemanaisPortalAtualizadosNestedInput = {
+    create?: XOR<UsuarioCreateWithoutEstoquesSemanaisPortalAtualizadosInput, UsuarioUncheckedCreateWithoutEstoquesSemanaisPortalAtualizadosInput>
+    connectOrCreate?: UsuarioCreateOrConnectWithoutEstoquesSemanaisPortalAtualizadosInput
+    upsert?: UsuarioUpsertWithoutEstoquesSemanaisPortalAtualizadosInput
+    disconnect?: UsuarioWhereInput | boolean
+    delete?: UsuarioWhereInput | boolean
+    connect?: UsuarioWhereUniqueInput
+    update?: XOR<XOR<UsuarioUpdateToOneWithWhereWithoutEstoquesSemanaisPortalAtualizadosInput, UsuarioUpdateWithoutEstoquesSemanaisPortalAtualizadosInput>, UsuarioUncheckedUpdateWithoutEstoquesSemanaisPortalAtualizadosInput>
   }
 
   export type ClienteCreateNestedOneWithoutPortalAcessoInput = {
@@ -67330,6 +68876,34 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type EstoqueSemanalPortalCreateWithoutAtualizadoPorInput = {
+    id?: string
+    semanaInicio: Date | string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+    produto: ProdutoComercialCreateNestedOneWithoutEstoquesSemanaisPortalInput
+  }
+
+  export type EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput = {
+    id?: string
+    semanaInicio: Date | string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+  }
+
+  export type EstoqueSemanalPortalCreateOrConnectWithoutAtualizadoPorInput = {
+    where: EstoqueSemanalPortalWhereUniqueInput
+    create: XOR<EstoqueSemanalPortalCreateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput>
+  }
+
+  export type EstoqueSemanalPortalCreateManyAtualizadoPorInputEnvelope = {
+    data: EstoqueSemanalPortalCreateManyAtualizadoPorInput | EstoqueSemanalPortalCreateManyAtualizadoPorInput[]
+    skipDuplicates?: boolean
+  }
+
   export type MensagemUpsertWithWhereUniqueWithoutAprovadorInput = {
     where: MensagemWhereUniqueInput
     update: XOR<MensagemUpdateWithoutAprovadorInput, MensagemUncheckedUpdateWithoutAprovadorInput>
@@ -67622,6 +69196,35 @@ export namespace Prisma {
     data: XOR<RotaEntregaUpdateManyMutationInput, RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorInput>
   }
 
+  export type EstoqueSemanalPortalUpsertWithWhereUniqueWithoutAtualizadoPorInput = {
+    where: EstoqueSemanalPortalWhereUniqueInput
+    update: XOR<EstoqueSemanalPortalUpdateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedUpdateWithoutAtualizadoPorInput>
+    create: XOR<EstoqueSemanalPortalCreateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedCreateWithoutAtualizadoPorInput>
+  }
+
+  export type EstoqueSemanalPortalUpdateWithWhereUniqueWithoutAtualizadoPorInput = {
+    where: EstoqueSemanalPortalWhereUniqueInput
+    data: XOR<EstoqueSemanalPortalUpdateWithoutAtualizadoPorInput, EstoqueSemanalPortalUncheckedUpdateWithoutAtualizadoPorInput>
+  }
+
+  export type EstoqueSemanalPortalUpdateManyWithWhereWithoutAtualizadoPorInput = {
+    where: EstoqueSemanalPortalScalarWhereInput
+    data: XOR<EstoqueSemanalPortalUpdateManyMutationInput, EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorInput>
+  }
+
+  export type EstoqueSemanalPortalScalarWhereInput = {
+    AND?: EstoqueSemanalPortalScalarWhereInput | EstoqueSemanalPortalScalarWhereInput[]
+    OR?: EstoqueSemanalPortalScalarWhereInput[]
+    NOT?: EstoqueSemanalPortalScalarWhereInput | EstoqueSemanalPortalScalarWhereInput[]
+    id?: StringFilter<"EstoqueSemanalPortal"> | string
+    semanaInicio?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    produtoId?: StringFilter<"EstoqueSemanalPortal"> | string
+    quantidade?: DecimalFilter<"EstoqueSemanalPortal"> | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: StringNullableFilter<"EstoqueSemanalPortal"> | string | null
+    atualizadoEm?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+    criadoEm?: DateTimeFilter<"EstoqueSemanalPortal"> | Date | string
+  }
+
   export type UsuarioCreateWithoutRefreshTokensInput = {
     id?: string
     nome: string
@@ -67639,6 +69242,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutRefreshTokensInput = {
@@ -67658,6 +69262,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutRefreshTokensInput = {
@@ -67693,6 +69298,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutRefreshTokensInput = {
@@ -67712,6 +69318,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutGrupoInput = {
@@ -68855,6 +70462,7 @@ export namespace Prisma {
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixesReferenciaInput = {
@@ -68892,6 +70500,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixesReferenciaInput = {
@@ -68967,6 +70576,7 @@ export namespace Prisma {
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixesReferenciaInput = {
@@ -69004,6 +70614,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type EstoqueVivoMixComponenteUpsertWithWhereUniqueWithoutMixInput = {
@@ -69092,6 +70703,7 @@ export namespace Prisma {
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutEstoqueVivoMixComponentesInput = {
@@ -69129,6 +70741,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutEstoqueVivoMixComponentesInput = {
@@ -69213,6 +70826,7 @@ export namespace Prisma {
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutEstoqueVivoMixComponentesInput = {
@@ -69250,6 +70864,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type PortalFotoCreateWithoutProdutoInput = {
@@ -69424,6 +71039,7 @@ export namespace Prisma {
     mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutMixReferenciadoPorInput = {
@@ -69461,6 +71077,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutMixReferenciadoPorInput = {
@@ -69503,6 +71120,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutMixProdutoReferenciaInput = {
@@ -69540,6 +71158,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutMixProdutoReferenciaInput = {
@@ -69601,6 +71220,34 @@ export namespace Prisma {
 
   export type EstoqueVivoMixComponenteCreateManyProdutoInputEnvelope = {
     data: EstoqueVivoMixComponenteCreateManyProdutoInput | EstoqueVivoMixComponenteCreateManyProdutoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EstoqueSemanalPortalCreateWithoutProdutoInput = {
+    id?: string
+    semanaInicio: Date | string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+    atualizadoPor?: UsuarioCreateNestedOneWithoutEstoquesSemanaisPortalAtualizadosInput
+  }
+
+  export type EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput = {
+    id?: string
+    semanaInicio: Date | string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: string | null
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+  }
+
+  export type EstoqueSemanalPortalCreateOrConnectWithoutProdutoInput = {
+    where: EstoqueSemanalPortalWhereUniqueInput
+    create: XOR<EstoqueSemanalPortalCreateWithoutProdutoInput, EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type EstoqueSemanalPortalCreateManyProdutoInputEnvelope = {
+    data: EstoqueSemanalPortalCreateManyProdutoInput | EstoqueSemanalPortalCreateManyProdutoInput[]
     skipDuplicates?: boolean
   }
 
@@ -69774,6 +71421,7 @@ export namespace Prisma {
     mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutMixReferenciadoPorInput = {
@@ -69811,6 +71459,7 @@ export namespace Prisma {
     avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUpsertWithWhereUniqueWithoutMixProdutoReferenciaInput = {
@@ -69905,6 +71554,286 @@ export namespace Prisma {
   export type EstoqueVivoMixComponenteUpdateManyWithWhereWithoutProdutoInput = {
     where: EstoqueVivoMixComponenteScalarWhereInput
     data: XOR<EstoqueVivoMixComponenteUpdateManyMutationInput, EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoInput>
+  }
+
+  export type EstoqueSemanalPortalUpsertWithWhereUniqueWithoutProdutoInput = {
+    where: EstoqueSemanalPortalWhereUniqueInput
+    update: XOR<EstoqueSemanalPortalUpdateWithoutProdutoInput, EstoqueSemanalPortalUncheckedUpdateWithoutProdutoInput>
+    create: XOR<EstoqueSemanalPortalCreateWithoutProdutoInput, EstoqueSemanalPortalUncheckedCreateWithoutProdutoInput>
+  }
+
+  export type EstoqueSemanalPortalUpdateWithWhereUniqueWithoutProdutoInput = {
+    where: EstoqueSemanalPortalWhereUniqueInput
+    data: XOR<EstoqueSemanalPortalUpdateWithoutProdutoInput, EstoqueSemanalPortalUncheckedUpdateWithoutProdutoInput>
+  }
+
+  export type EstoqueSemanalPortalUpdateManyWithWhereWithoutProdutoInput = {
+    where: EstoqueSemanalPortalScalarWhereInput
+    data: XOR<EstoqueSemanalPortalUpdateManyMutationInput, EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoInput>
+  }
+
+  export type ProdutoComercialCreateWithoutEstoquesSemanaisPortalInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
+    exclusivoPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    grupoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
+    precosEspeciais?: PrecoEspecialClienteCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaCreateNestedManyWithoutProdutoInput
+    mixProdutoReferencia?: ProdutoComercialCreateNestedOneWithoutMixReferenciadoPorInput
+    mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialUncheckedCreateWithoutEstoquesSemanaisPortalInput = {
+    id?: string
+    nome: string
+    contaAzulProdutoId?: string | null
+    sku?: string | null
+    statusContaAzul?: string | null
+    sincronizadoEm?: Date | string | null
+    importadoOperacao?: boolean
+    precoBase?: Decimal | DecimalJsLike | number | string | null
+    categoria?: string | null
+    ativo?: boolean
+    modoCompra?: $Enums.ModoCompraProduto
+    fatorCompraUnidade?: Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: boolean
+    mixAtivo?: boolean
+    mixFolhaLeve?: boolean
+    mixProdutoReferenciaId?: string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: string | null
+    visivelPortal?: boolean
+    exclusivoPortal?: boolean
+    descricaoLoja?: string | null
+    aplicacaoLoja?: string | null
+    grupoLoja?: string | null
+    estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    criadoEm?: Date | string
+    atualizadoEm?: Date | string
+    portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
+    programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
+    precosEspeciais?: PrecoEspecialClienteUncheckedCreateNestedManyWithoutProdutoInput
+    itensPedido?: PedidoOperacionalItemUncheckedCreateNestedManyWithoutProdutoInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutProdutoInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+  }
+
+  export type ProdutoComercialCreateOrConnectWithoutEstoquesSemanaisPortalInput = {
+    where: ProdutoComercialWhereUniqueInput
+    create: XOR<ProdutoComercialCreateWithoutEstoquesSemanaisPortalInput, ProdutoComercialUncheckedCreateWithoutEstoquesSemanaisPortalInput>
+  }
+
+  export type UsuarioCreateWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+  }
+
+  export type UsuarioUncheckedCreateWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    id?: string
+    nome: string
+    email: string
+    senhaHash: string
+    perfil: $Enums.PerfilUsuario
+    status?: $Enums.StatusUsuario
+    dataCadastro?: Date | string
+    mensagens?: MensagemUncheckedCreateNestedManyWithoutAprovadorInput
+    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUsuarioInput
+    oportunidades?: OportunidadeUncheckedCreateNestedManyWithoutResponsavelInput
+    pedidosCriados?: PedidoOperacionalUncheckedCreateNestedManyWithoutCriadoPorInput
+    pedidosEditados?: PedidoOperacionalUncheckedCreateNestedManyWithoutEditadoPorInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedCreateNestedManyWithoutCriadoPorInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+    rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
+    rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+  }
+
+  export type UsuarioCreateOrConnectWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    where: UsuarioWhereUniqueInput
+    create: XOR<UsuarioCreateWithoutEstoquesSemanaisPortalAtualizadosInput, UsuarioUncheckedCreateWithoutEstoquesSemanaisPortalAtualizadosInput>
+  }
+
+  export type ProdutoComercialUpsertWithoutEstoquesSemanaisPortalInput = {
+    update: XOR<ProdutoComercialUpdateWithoutEstoquesSemanaisPortalInput, ProdutoComercialUncheckedUpdateWithoutEstoquesSemanaisPortalInput>
+    create: XOR<ProdutoComercialCreateWithoutEstoquesSemanaisPortalInput, ProdutoComercialUncheckedCreateWithoutEstoquesSemanaisPortalInput>
+    where?: ProdutoComercialWhereInput
+  }
+
+  export type ProdutoComercialUpdateToOneWithWhereWithoutEstoquesSemanaisPortalInput = {
+    where?: ProdutoComercialWhereInput
+    data: XOR<ProdutoComercialUpdateWithoutEstoquesSemanaisPortalInput, ProdutoComercialUncheckedUpdateWithoutEstoquesSemanaisPortalInput>
+  }
+
+  export type ProdutoComercialUpdateWithoutEstoquesSemanaisPortalInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
+    precosEspeciais?: PrecoEspecialClienteUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUpdateManyWithoutProdutoNestedInput
+    mixProdutoReferencia?: ProdutoComercialUpdateOneWithoutMixReferenciadoPorNestedInput
+    mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type ProdutoComercialUncheckedUpdateWithoutEstoquesSemanaisPortalInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    contaAzulProdutoId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    statusContaAzul?: NullableStringFieldUpdateOperationsInput | string | null
+    sincronizadoEm?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    importadoOperacao?: BoolFieldUpdateOperationsInput | boolean
+    precoBase?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    categoria?: NullableStringFieldUpdateOperationsInput | string | null
+    ativo?: BoolFieldUpdateOperationsInput | boolean
+    modoCompra?: EnumModoCompraProdutoFieldUpdateOperationsInput | $Enums.ModoCompraProduto
+    fatorCompraUnidade?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    rendimentoPorKg?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    ocultoListaCompra?: BoolFieldUpdateOperationsInput | boolean
+    mixAtivo?: BoolFieldUpdateOperationsInput | boolean
+    mixFolhaLeve?: BoolFieldUpdateOperationsInput | boolean
+    mixProdutoReferenciaId?: NullableStringFieldUpdateOperationsInput | string | null
+    mixVariedades?: NullableJsonNullValueInput | InputJsonValue
+    imagemUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    visivelPortal?: BoolFieldUpdateOperationsInput | boolean
+    exclusivoPortal?: BoolFieldUpdateOperationsInput | boolean
+    descricaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
+    estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
+    programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
+    precosEspeciais?: PrecoEspecialClienteUncheckedUpdateManyWithoutProdutoNestedInput
+    itensPedido?: PedidoOperacionalItemUncheckedUpdateManyWithoutProdutoNestedInput
+    avariasPedido?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutProdutoNestedInput
+    mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
+    estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
+    estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+  }
+
+  export type UsuarioUpsertWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    update: XOR<UsuarioUpdateWithoutEstoquesSemanaisPortalAtualizadosInput, UsuarioUncheckedUpdateWithoutEstoquesSemanaisPortalAtualizadosInput>
+    create: XOR<UsuarioCreateWithoutEstoquesSemanaisPortalAtualizadosInput, UsuarioUncheckedCreateWithoutEstoquesSemanaisPortalAtualizadosInput>
+    where?: UsuarioWhereInput
+  }
+
+  export type UsuarioUpdateToOneWithWhereWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    where?: UsuarioWhereInput
+    data: XOR<UsuarioUpdateWithoutEstoquesSemanaisPortalAtualizadosInput, UsuarioUncheckedUpdateWithoutEstoquesSemanaisPortalAtualizadosInput>
+  }
+
+  export type UsuarioUpdateWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+  }
+
+  export type UsuarioUncheckedUpdateWithoutEstoquesSemanaisPortalAtualizadosInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nome?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    senhaHash?: StringFieldUpdateOperationsInput | string
+    perfil?: EnumPerfilUsuarioFieldUpdateOperationsInput | $Enums.PerfilUsuario
+    status?: EnumStatusUsuarioFieldUpdateOperationsInput | $Enums.StatusUsuario
+    dataCadastro?: DateTimeFieldUpdateOperationsInput | Date | string
+    mensagens?: MensagemUncheckedUpdateManyWithoutAprovadorNestedInput
+    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUsuarioNestedInput
+    oportunidades?: OportunidadeUncheckedUpdateManyWithoutResponsavelNestedInput
+    pedidosCriados?: PedidoOperacionalUncheckedUpdateManyWithoutCriadoPorNestedInput
+    pedidosEditados?: PedidoOperacionalUncheckedUpdateManyWithoutEditadoPorNestedInput
+    avariasCriadas?: PedidoOperacionalAvariaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+    rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
+    rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutPortalAcessoInput = {
@@ -70867,6 +72796,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutProgramacaoItensInput = {
@@ -70904,6 +72834,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutProgramacaoItensInput = {
@@ -70980,6 +72911,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutProgramacaoItensInput = {
@@ -71017,6 +72949,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type PortalProgramacaoCreateWithoutEntregasInput = {
@@ -71234,6 +73167,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutPortalFotoInput = {
@@ -71271,6 +73205,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutPortalFotoInput = {
@@ -71324,6 +73259,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutPortalFotoInput = {
@@ -71361,6 +73297,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ClienteCreateWithoutRegraComercialInput = {
@@ -71779,6 +73716,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutPrecosEspeciaisInput = {
@@ -71816,6 +73754,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutPrecosEspeciaisInput = {
@@ -71918,6 +73857,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutPrecosEspeciaisInput = {
@@ -71955,6 +73895,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ClienteCreateWithoutPedidosOperacionaisInput = {
@@ -72045,6 +73986,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutPedidosCriadosInput = {
@@ -72064,6 +74006,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutPedidosCriadosInput = {
@@ -72088,6 +74031,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutPedidosEditadosInput = {
@@ -72107,6 +74051,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutPedidosEditadosInput = {
@@ -72421,6 +74366,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutPedidosCriadosInput = {
@@ -72440,6 +74386,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUpsertWithoutPedidosEditadosInput = {
@@ -72470,6 +74417,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutPedidosEditadosInput = {
@@ -72489,6 +74437,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type PedidoUpsertWithoutPedidosOperacionaisVinculoInput = {
@@ -72663,6 +74612,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutRotasEntregaInput = {
@@ -72682,6 +74632,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutRotasEntregaInput = {
@@ -72706,6 +74657,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutRotasCriadasInput = {
@@ -72725,6 +74677,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutRotasCriadasInput = {
@@ -72749,6 +74702,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaCreateNestedManyWithoutUsuarioInput
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutRotasAtualizadasInput = {
@@ -72768,6 +74722,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutRotasAtualizadasInput = {
@@ -72869,6 +74824,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutRotasEntregaInput = {
@@ -72888,6 +74844,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUpsertWithoutRotasCriadasInput = {
@@ -72918,6 +74875,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutRotasCriadasInput = {
@@ -72937,6 +74895,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUpsertWithoutRotasAtualizadasInput = {
@@ -72967,6 +74926,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUpdateManyWithoutUsuarioNestedInput
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutRotasAtualizadasInput = {
@@ -72986,6 +74946,7 @@ export namespace Prisma {
     auditoriasPedido?: PedidoOperacionalAuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ParadaEntregaUpsertWithWhereUniqueWithoutRotaInput = {
@@ -73486,6 +75447,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutItensPedidoInput = {
@@ -73523,6 +75485,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutItensPedidoInput = {
@@ -73645,6 +75608,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutItensPedidoInput = {
@@ -73682,6 +75646,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type PedidoOperacionalCreateWithoutAvariasInput = {
@@ -73853,6 +75818,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialUncheckedCreateWithoutAvariasPedidoInput = {
@@ -73890,6 +75856,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedCreateNestedManyWithoutMixProdutoReferenciaInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedCreateNestedManyWithoutProdutoReferenciaInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedCreateNestedManyWithoutProdutoInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutProdutoInput
   }
 
   export type ProdutoComercialCreateOrConnectWithoutAvariasPedidoInput = {
@@ -73914,6 +75881,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutAvariasCriadasInput = {
@@ -73933,6 +75901,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutAvariasCriadasInput = {
@@ -74132,6 +76101,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutAvariasPedidoInput = {
@@ -74169,6 +76139,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type UsuarioUpsertWithoutAvariasCriadasInput = {
@@ -74199,6 +76170,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutAvariasCriadasInput = {
@@ -74218,6 +76190,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type PedidoOperacionalCreateWithoutAuditoriaInput = {
@@ -74300,6 +76273,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutAuditoriasPedidoInput = {
@@ -74319,6 +76293,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutAuditoriasPedidoInput = {
@@ -74423,6 +76398,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutAuditoriasPedidoInput = {
@@ -74442,6 +76418,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutPedidosInput = {
@@ -75348,6 +77325,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutOportunidadesInput = {
@@ -75367,6 +77345,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutOportunidadesInput = {
@@ -75479,6 +77458,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutOportunidadesInput = {
@@ -75498,6 +77478,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutMensagensInput = {
@@ -75588,6 +77569,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioUncheckedCreateWithoutMensagensInput = {
@@ -75607,6 +77589,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedCreateNestedManyWithoutEntregadorInput
     rotasCriadas?: RotaEntregaUncheckedCreateNestedManyWithoutCriadoPorInput
     rotasAtualizadas?: RotaEntregaUncheckedCreateNestedManyWithoutAtualizadoPorInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedCreateNestedManyWithoutAtualizadoPorInput
   }
 
   export type UsuarioCreateOrConnectWithoutMensagensInput = {
@@ -75719,6 +77702,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type UsuarioUncheckedUpdateWithoutMensagensInput = {
@@ -75738,6 +77722,7 @@ export namespace Prisma {
     rotasEntrega?: RotaEntregaUncheckedUpdateManyWithoutEntregadorNestedInput
     rotasCriadas?: RotaEntregaUncheckedUpdateManyWithoutCriadoPorNestedInput
     rotasAtualizadas?: RotaEntregaUncheckedUpdateManyWithoutAtualizadoPorNestedInput
+    estoquesSemanaisPortalAtualizados?: EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorNestedInput
   }
 
   export type ClienteCreateWithoutExecucoesInput = {
@@ -76054,6 +78039,15 @@ export namespace Prisma {
     criadoPorId?: string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
+  }
+
+  export type EstoqueSemanalPortalCreateManyAtualizadoPorInput = {
+    id?: string
+    semanaInicio: Date | string
+    produtoId: string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
   }
 
   export type MensagemUpdateWithoutAprovadorInput = {
@@ -76590,6 +78584,33 @@ export namespace Prisma {
     criadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueSemanalPortalUpdateWithoutAtualizadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    produto?: ProdutoComercialUpdateOneRequiredWithoutEstoquesSemanaisPortalNestedInput
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateWithoutAtualizadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateManyWithoutAtualizadoPorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    produtoId?: StringFieldUpdateOperationsInput | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ClienteCreateManyGrupoInput = {
@@ -77349,6 +79370,15 @@ export namespace Prisma {
     quantidade: Decimal | DecimalJsLike | number | string
   }
 
+  export type EstoqueSemanalPortalCreateManyProdutoInput = {
+    id?: string
+    semanaInicio: Date | string
+    quantidade: Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: string | null
+    atualizadoEm?: Date | string
+    criadoEm?: Date | string
+  }
+
   export type PortalProgramacaoItemUpdateWithoutProdutoInput = {
     id?: StringFieldUpdateOperationsInput | string
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -77507,6 +79537,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateWithoutMixProdutoReferenciaInput = {
@@ -77544,6 +79575,7 @@ export namespace Prisma {
     mixReferenciadoPor?: ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaNestedInput
     estoqueVivoMixesReferencia?: EstoqueVivoMixUncheckedUpdateManyWithoutProdutoReferenciaNestedInput
     estoqueVivoMixComponentes?: EstoqueVivoMixComponenteUncheckedUpdateManyWithoutProdutoNestedInput
+    estoquesSemanaisPortal?: EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoNestedInput
   }
 
   export type ProdutoComercialUncheckedUpdateManyWithoutMixProdutoReferenciaInput = {
@@ -77620,6 +79652,33 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     mixId?: StringFieldUpdateOperationsInput | string
     quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EstoqueSemanalPortalUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    atualizadoPor?: UsuarioUpdateOneWithoutEstoquesSemanaisPortalAtualizadosNestedInput
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstoqueSemanalPortalUncheckedUpdateManyWithoutProdutoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    semanaInicio?: DateTimeFieldUpdateOperationsInput | Date | string
+    quantidade?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    atualizadoPorId?: NullableStringFieldUpdateOperationsInput | string | null
+    atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
+    criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PortalContratoAceiteCreateManyContratoInput = {
