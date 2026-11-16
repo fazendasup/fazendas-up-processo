@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
-  Clock,
   Copy,
   Package,
   PackageCheck,
@@ -649,14 +648,6 @@ export function Pedidos({
     },
     onError: err =>
       toast.error(err.message || "Não foi possível fechar a semana."),
-  });
-  const reabrirSemana = trpc.comercial.pedidos.reabrirSemana.useMutation({
-    onSuccess: async () => {
-      toast.success("Semana reaberta para ajustes.");
-      await invalidarVisaoOperacionalDia();
-    },
-    onError: err =>
-      toast.error(err.message || "Não foi possível reabrir a semana."),
   });
   const cancelarPedido = trpc.comercial.pedidos.cancelarPedido.useMutation({
     onSuccess: async result => {
@@ -1394,18 +1385,6 @@ export function Pedidos({
     setAba("operacional");
   }
 
-  function fecharSemanaAtual(ignorarConciliacao = false) {
-    const info = statusSemana.data?.semanaAtual;
-    if (!info) return;
-    const ok = window.confirm(
-      ignorarConciliacao
-        ? `Fechar a semana de ${info.rotulo} mesmo com divergências na conciliação?\n\nOs pedidos operacionais já revisados serão validados; diferenças com o Conta Azul ficam registradas no histórico.`
-        : `Fechar a semana de ${info.rotulo}?\n\nIsso valida o histórico (${info.entregues} entregue(s), ${info.cancelados} cancelado(s)). Você poderá reabrir depois, se necessário.`,
-    );
-    if (!ok) return;
-    fecharSemana.mutate({ dia: diaDate, ignorarConciliacao });
-  }
-
   function fecharSemanaBloqueante(ignorarConciliacao = false) {
     if (!bloqueioSemana) return;
     const ok = window.confirm(
@@ -1653,129 +1632,6 @@ export function Pedidos({
         canEdit={canEditarComercial}
         onAprovado={abrirDiaEntregaSite}
       />
-
-      {statusSemana.data?.semanaAtual ? (
-        <div className="rounded-lg border bg-muted/30">
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              {statusSemana.data.semanaAtual.fechada ? (
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-              ) : (
-                <Clock className="h-5 w-5 shrink-0 text-amber-600" />
-              )}
-              <div className="min-w-0 space-y-0.5">
-                <p className="text-sm font-semibold">
-                  Semana de {statusSemana.data.semanaAtual.rotulo}
-                  {statusSemana.data.semanaAtual.fechada ? " · fechada" : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {statusSemana.data.semanaAtual.totalPedidos} pedido(s) ·{" "}
-                  {statusSemana.data.semanaAtual.entregues} entregue(s) ·{" "}
-                  {statusSemana.data.semanaAtual.cancelados} cancelado(s) ·{" "}
-                  {statusSemana.data.semanaAtual.pendentes} pendente(s)
-                  {statusSemana.data.semanaAtual.fechada &&
-                  statusSemana.data.semanaAtual.fechadoPorNome
-                    ? ` · por ${statusSemana.data.semanaAtual.fechadoPorNome}`
-                    : ""}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1"
-                onClick={toggleAvisoSemanaMinimizado}
-              >
-                {avisoSemanaMinimizado ? (
-                  <>
-                    <ChevronDown className="h-4 w-4" /> Expandir
-                  </>
-                ) : (
-                  <>
-                    <ChevronUp className="h-4 w-4" /> Minimizar
-                  </>
-                )}
-              </Button>
-              {!avisoSemanaMinimizado && canEditarComercial ? (
-                <div className="flex flex-wrap gap-2">
-                  {statusSemana.data.semanaAtual.fechada ? (
-                    <Button
-                      variant="outline"
-                      disabled={reabrirSemana.isPending}
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Reabrir a semana de ${statusSemana.data!.semanaAtual.rotulo} para ajustes?`
-                          )
-                        ) {
-                          reabrirSemana.mutate({ dia: diaDate });
-                        }
-                      }}
-                    >
-                      {reabrirSemana.isPending
-                        ? "Reabrindo..."
-                        : "Reabrir semana"}
-                    </Button>
-                  ) : statusSemana.data.podeFecharSemanaAtual ? (
-                    <Button
-                      disabled={fecharSemana.isPending}
-                      onClick={() => fecharSemanaAtual(false)}
-                    >
-                      {fecharSemana.isPending
-                        ? "Fechando..."
-                        : "Fechar semana"}
-                    </Button>
-                  ) : statusSemana.data.semanaAtual.totalPedidos > 0 &&
-                    statusSemana.data.semanaAtual.pendentes === 0 &&
-                    statusSemana.data.conciliacaoContaAzul?.conciliado ===
-                      false ? (
-                    <Button
-                      variant="outline"
-                      disabled={fecharSemana.isPending}
-                      onClick={() => fecharSemanaAtual(true)}
-                    >
-                      {fecharSemana.isPending
-                        ? "Fechando..."
-                        : statusSemana.data.semanaAtualIgnoraConciliacao
-                          ? "Fechar semana (piloto)"
-                          : "Fechar sem conciliar"}
-                    </Button>
-                  ) : statusSemana.data.semanaAtual.totalPedidos > 0 ? (
-                    <span className="text-xs text-muted-foreground">
-                      {statusSemana.data.semanaAtual.pendentes > 0
-                        ? "Defina entregue/cancelado em todos os pedidos para fechar."
-                        : statusSemana.data.conciliacaoContaAzul
-                              ?.conciliado === false
-                          ? "Corrija divergências com o Conta Azul antes de fechar."
-                          : "Revise a semana antes de fechar."}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </div>
-          {!avisoSemanaMinimizado &&
-            !isLiderColheita &&
-            statusSemana.data.conciliacaoContaAzul && (
-              <div className="border-t px-4 pb-4">
-                <PainelConciliacaoFechamento
-                  conciliacao={statusSemana.data.conciliacaoContaAzul}
-                  className="mt-3"
-                  onIrConciliacao={contaAzulCustomerId => {
-                    setClienteConciliacaoFoco(contaAzulCustomerId ?? null);
-                    setAba("conciliacao");
-                  }}
-                  onConfigurarRegras={contaAzulCustomerId => {
-                    setClienteRegrasId(contaAzulCustomerId);
-                    setAba("regras");
-                  }}
-                />
-              </div>
-            )}
-        </div>
-      ) : null}
 
       <Tabs
         value={aba}
