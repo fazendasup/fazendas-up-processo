@@ -742,23 +742,6 @@ export async function idsParcelasPortalAtivas(
   return new Set(pags.map((p) => p.parcelaId!).filter(Boolean));
 }
 
-/** Marca como perda parcelas órfãs (ex.: retries/cancelamentos que ficaram no Conta Azul). */
-export async function encerrarParcelasOrfasCa(
-  prisma: PrismaClient,
-  parcelaIds: string[],
-): Promise<number> {
-  const http = await httpContaAzul(prisma);
-  if (!http) return 0;
-  let ok = 0;
-  for (const id of parcelaIds) {
-    const antes = id.trim();
-    if (!antes) continue;
-    await marcarParcelaComoPerda(http, antes);
-    ok += 1;
-  }
-  return ok;
-}
-
 /**
  * Cria (lazy) ou troca Pix ↔ cartão: Conta Azul só neste momento, nunca na aprovação.
  */

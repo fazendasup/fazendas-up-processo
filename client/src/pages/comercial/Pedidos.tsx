@@ -260,23 +260,6 @@ function observacaoOperacional(obs: unknown) {
   return texto;
 }
 
-function pedidoSiteAguardandoAprovacao(pedido: {
-  status?: string;
-  observacoes?: unknown;
-}): boolean {
-  if (pedido.status !== "PENDENTE") return false;
-  const obs = String(pedido.observacoes ?? "");
-  if (!obs.includes("Pedido pelo site")) return false;
-  if (obs.includes("Aprovado pela fazenda.")) return false;
-  return true;
-}
-
-function pedidosSiteAguardandoNoGrupo(grupo: {
-  pedidos?: Array<{ status?: string; observacoes?: unknown; id?: string }>;
-}) {
-  return (grupo.pedidos ?? []).filter(pedidoSiteAguardandoAprovacao);
-}
-
 function observacoesPedidoUnicas(pedidos: { observacoes?: unknown }[]) {
   return Array.from(
     new Set(
@@ -579,34 +562,6 @@ export function Pedidos({
     setLocation(`/comercial/pedidos?dia=${dataEntregaIso}`);
   }
 
-  const aprovarPedidoSite =
-    trpc.comercial.pedidos.aprovarPedidoSite.useMutation({
-      onSuccess: result => {
-        const diaIso = result.dataEntrega
-          ? isoDataEntrega(result.dataEntrega)
-          : "";
-        const pagaAVista = result.pagaAVista ?? result.pessoa;
-        toast.success(
-          pagaAVista
-            ? "Pedido aprovado. Cliente pode pagar Pix/cartão no site (Conta Azul na hora do pagamento)."
-            : diaIso
-              ? `Pedido faturado aprovado. Aberto o dia ${fmtDataEntrega(diaIso)} na operação.`
-              : "Pedido faturado aprovado e liberado na operação.",
-        );
-        void invalidarVisaoOperacionalDia().then(() => {
-          if (diaIso && !pagaAVista) abrirDiaEntregaSite(diaIso);
-        });
-      },
-      onError: err => toast.error(err.message || "Não foi possível aprovar."),
-    });
-  const rejeitarPedidoSite =
-    trpc.comercial.pedidos.rejeitarPedidoSite.useMutation({
-      onSuccess: () => {
-        toast.success("Pedido do site rejeitado. Estoque restaurado.");
-        void invalidarVisaoOperacionalDia();
-      },
-      onError: err => toast.error(err.message || "Não foi possível rejeitar."),
-    });
   const mudarPrioridade =
     trpc.comercial.pedidos.atualizarPrioridadeClienteDia.useMutation({
       onSuccess: () => {
@@ -1121,9 +1076,6 @@ export function Pedidos({
       canEditarComercial &&
       grupo.status !== "CANCELADO" &&
       grupo.status !== "ENTREGUE";
-    const siteAguardando = pedidosSiteAguardandoNoGrupo(grupo);
-    const ocupadoAprovacao =
-      aprovarPedidoSite.isPending || rejeitarPedidoSite.isPending;
     return (
       <Card
         key={`${grupo.contaAzulCustomerId}-${grupo.status}-${grupo.dataEntregaIso ?? ""}`}
@@ -1156,11 +1108,7 @@ export function Pedidos({
                   String(grupo.contaAzulCustomerId),
                 )}
               />
-              {siteAguardando.length > 0 ? (
-                <span className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
-                  Site · aguardando aprovação
-                </span>
-              ) : grupo.origemSite ? (
+              {grupo.origemSite ? (
                 <span className="rounded border border-sky-300 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-900 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-100">
                   Site
                 </span>
@@ -1247,44 +1195,6 @@ export function Pedidos({
             pedidos={grupo.pedidos ?? []}
             className="px-2 py-1.5 [&_p:first-child]:text-[10px] [&_p:not(:first-child)]:mt-0.5 [&_p:not(:first-child)]:text-xs"
           />
-          {canEditarComercial && siteAguardando.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50/70 px-2 py-1.5 dark:border-amber-900/50 dark:bg-amber-950/20">
-              <p className="mr-auto text-[11px] text-amber-950 dark:text-amber-100">
-                Pedido do site: aprove para liberar pagamento (PF) ou programação (empresa).
-              </p>
-              {siteAguardando.map(pedido => (
-                <div key={pedido.id} className="flex flex-wrap gap-1">
-                  <Button
-                    size="sm"
-                    className="h-7 px-2.5 text-[11px]"
-                    disabled={ocupadoAprovacao || !pedido.id}
-                    onClick={() => {
-                      if (!pedido.id) return;
-                      aprovarPedidoSite.mutate({ pedidoId: pedido.id });
-                    }}
-                  >
-                    Aprovar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2.5 text-[11px] text-rose-700"
-                    disabled={ocupadoAprovacao || !pedido.id}
-                    onClick={() => {
-                      if (!pedido.id) return;
-                      const ok = window.confirm(
-                        "Rejeitar este pedido do site?\n\nO estoque volta para a loja e o cliente deixa de ver o pedido em aberto.",
-                      );
-                      if (!ok) return;
-                      rejeitarPedidoSite.mutate({ pedidoId: pedido.id });
-                    }}
-                  >
-                    Rejeitar
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : null}
           <ul className="divide-y divide-border/60 overflow-hidden rounded-md border bg-card/40">
             {itens.map((item: any) => {
               const obsItem = observacaoOperacional(item.observacoes);

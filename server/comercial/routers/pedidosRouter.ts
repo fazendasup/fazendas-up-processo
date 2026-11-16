@@ -72,7 +72,6 @@ import {
 } from "../integrations/conta-azul/produtos-sync.service.js";
 import {
   aprovarPedidoSite as aprovarPedidoSitePortal,
-  garantirCobrancaPedidoSiteAprovado as garantirCobrancaPedidoSiteAprovadoPortal,
   pedidoAguardandoAprovacaoSite,
   pedidoDoSite,
   pedidoPessoaSite,
@@ -740,34 +739,6 @@ export const pedidosRouter = router({
           usuario: { id: usuario.id, nome: usuario.nome },
         });
         return { success: true };
-      } catch (err) {
-        trpcDeLojaErro(err);
-      }
-    }),
-
-  /** Repara pedido do site aprovado sem cobrança Pix/cartão (libera pagamento no portal). */
-  garantirCobrancaPedidoSite: comercialProcedure
-    .input(
-      z.object({
-        pedidoId: z.string().min(1),
-        formaPagamento: z.enum(["pix", "cartao"]).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const usuario = ctx.comercialUsuario;
-      if (!usuario)
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Usuário comercial não identificado",
-        });
-      try {
-        const result = await garantirCobrancaPedidoSiteAprovadoPortal({
-          prisma: ctx.prisma!,
-          pedidoId: input.pedidoId,
-          formaPagamento: input.formaPagamento,
-          usuario: { id: usuario.id, nome: usuario.nome },
-        });
-        return { success: true, pagamento: result.pagamento };
       } catch (err) {
         trpcDeLojaErro(err);
       }
