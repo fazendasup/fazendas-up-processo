@@ -19,8 +19,8 @@ describe("contrato de recorrência", () => {
   it("registra os mínimos, o prazo e a produção", () => {
     expect(texto).toContain("R$ 300,00");
     expect(texto).toContain("R$ 150,00");
-    expect(texto).toContain("1 dia útil");
-    expect(texto).toContain("24 horas antes do envio");
+    expect(texto).toContain("2 dias úteis");
+    expect(texto).toContain("2 dias úteis antes do envio");
     expect(texto).toContain("linha de produção");
     expect(texto).toContain("endereço IP");
   });

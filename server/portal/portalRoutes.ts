@@ -270,7 +270,7 @@ export function registerPortalRoutes(app: Express): void {
       res.json({
         minimoReais,
         taxaEntregaAbaixoMinimoReais: TAXA_ENTREGA_ABAIXO_MINIMO_REAIS,
-        antecedenciaDiasUteis: 1,
+        antecedenciaDiasUteis: 2,
       primeiraData: earliestDeliveryYmd(agora),
       datas: upcomingDeliveryDates(agora),
     });
@@ -1032,7 +1032,7 @@ export function registerPortalRoutes(app: Express): void {
       return;
     }
     if (!entregaPermitida(parsed.data.dataEntrega)) {
-      falha(res, 400, "A entrega precisa cair em dia útil, com 1 dia útil de antecedência.");
+      falha(res, 400, "A entrega precisa cair em dia útil, com 2 dias úteis de antecedência.");
       return;
     }
     const contaAzulId = acesso.cliente.externalId?.trim();
