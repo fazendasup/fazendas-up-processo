@@ -26,14 +26,20 @@ import {
   type ReceitaHistoricoEntry,
 } from "@shared/correcaoEc";
 import {
+  FATOR_ML_ESTOQUE_ACIDO_POR_L_POR_PH_PADRAO,
   FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO,
+  H3PO4_ESTOQUE_ML_PRODUTO,
+  H3PO4_ESTOQUE_VOLUME_L,
+  H3PO4_PRODUTO_NOME,
+  H3PO4_TEOR,
   KOH_ESTOQUE_G_PRODUTO_POR_L,
   KOH_ESTOQUE_MASSA_G,
   KOH_ESTOQUE_VOLUME_L,
   KOH_PA_EMBALAGEM_G,
   KOH_PRODUTO_NOME,
   KOH_TEOR_MIN,
-  calcularCorrecaoPhKoh,
+  VOLUMES_CAIXA_PH_L,
+  calcularCorrecaoPh,
 } from "@shared/correcaoPh";
 import { AlertTriangle, Beaker, Copy, Droplets, FlaskConical, History, Link2, RotateCcw, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -50,6 +56,7 @@ import {
 const STORAGE_KEY_EC = "fazendas.correcaoEc.receita.v2";
 const STORAGE_KEY_EC_HIST = "fazendas.correcaoEc.receita.historico.v1";
 const STORAGE_KEY_PH = "fazendas.correcaoPh.fatorMlEstoque";
+const STORAGE_KEY_PH_ACIDO = "fazendas.correcaoPh.fatorMlEstoqueAcido";
 const HISTORICO_MAX = 40;
 const FASES_ORDEM: Fase[] = ["mudas", "vegetativa", "maturacao"];
 
@@ -177,6 +184,17 @@ function loadFatorPh(): number {
   }
 }
 
+function loadFatorPhAcido(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PH_ACIDO);
+    if (!raw) return FATOR_ML_ESTOQUE_ACIDO_POR_L_POR_PH_PADRAO;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : FATOR_ML_ESTOQUE_ACIDO_POR_L_POR_PH_PADRAO;
+  } catch {
+    return FATOR_ML_ESTOQUE_ACIDO_POR_L_POR_PH_PADRAO;
+  }
+}
+
 function fmtMl(n: number): string {
   if (!Number.isFinite(n)) return "—";
   return `${formatDecimalForInput(n, 1)} mL`;
@@ -257,6 +275,7 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
   const [phAtual, setPhAtual] = useState("");
   const [phAlvo, setPhAlvo] = useState("");
   const [fatorPh, setFatorPh] = useState(() => loadFatorPh());
+  const [fatorPhAcido, setFatorPhAcido] = useState(() => loadFatorPhAcido());
   const [mostrarFatorPh, setMostrarFatorPh] = useState(false);
 
   const fasesConfig = useMemo(() => {
@@ -367,16 +386,14 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
     const a = parseOptDecimal(phAtual);
     const t = parseOptDecimal(phAlvo);
     if (v == null || a == null || t == null) return null;
-    return calcularCorrecaoPhKoh({
+    return calcularCorrecaoPh({
       volumeCaixaL: v,
       phAtual: a,
       phAlvo: t,
-      fatorMlEstoquePorLPorPh: fatorPh,
-      estoqueGProdutoPorL: KOH_ESTOQUE_G_PRODUTO_POR_L,
-      teor: KOH_TEOR_MIN,
-      embalagemG: KOH_PA_EMBALAGEM_G,
+      fatorKoh: fatorPh,
+      fatorAcido: fatorPhAcido,
     });
-  }, [volumePh, phAtual, phAlvo, fatorPh]);
+  }, [volumePh, phAtual, phAlvo, fatorPh, fatorPhAcido]);
 
   const registrarHistorico = (
     acao: ReceitaHistoricoAcao,
@@ -448,13 +465,24 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
 
   const salvarFatorPh = () => {
     localStorage.setItem(STORAGE_KEY_PH, String(fatorPh));
-    toast.success("Fator de correção de pH salvo neste navegador");
+    toast.success("Fator KOH (subir pH) salvo neste navegador");
   };
 
   const restaurarFatorPh = () => {
     setFatorPh(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO);
     localStorage.removeItem(STORAGE_KEY_PH);
-    toast.success("Fator de pH restaurado ao padrão");
+    toast.success("Fator KOH restaurado ao padrão");
+  };
+
+  const salvarFatorPhAcido = () => {
+    localStorage.setItem(STORAGE_KEY_PH_ACIDO, String(fatorPhAcido));
+    toast.success("Fator ácido (baixar pH) salvo neste navegador");
+  };
+
+  const restaurarFatorPhAcido = () => {
+    setFatorPhAcido(FATOR_ML_ESTOQUE_ACIDO_POR_L_POR_PH_PADRAO);
+    localStorage.removeItem(STORAGE_KEY_PH_ACIDO);
+    toast.success("Fator ácido restaurado ao padrão");
   };
 
   const copiarLinkPublico = async () => {
@@ -607,7 +635,7 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
               <Droplets className="w-3.5 h-3.5" /> Correção EC
             </TabsTrigger>
             <TabsTrigger value="ph" className="gap-1.5 text-xs sm:text-sm">
-              <FlaskConical className="w-3.5 h-3.5" /> Correção pH (KOH)
+              <FlaskConical className="w-3.5 h-3.5" /> Correção pH
             </TabsTrigger>
             <TabsTrigger value="solucoes" className="gap-1.5 text-xs sm:text-sm">
               <Beaker className="w-3.5 h-3.5" /> Soluções A e B
@@ -907,10 +935,10 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Dados da caixa</CardTitle>
                 <CardDescription>
-                  Produto: <strong>{KOH_PRODUTO_NOME}</strong> — teor mín. {Math.round(KOH_TEOR_MIN * 100)}%.
-                  Estoque: <strong>{KOH_ESTOQUE_MASSA_G} g</strong> do produto em{" "}
-                  <strong>{KOH_ESTOQUE_VOLUME_L} L</strong> de água. A calculadora indica quantos{" "}
-                  <strong>mL desse estoque</strong> colocar na caixa para subir o pH.
+                  Subir pH: <strong>{KOH_PRODUTO_NOME}</strong> (estoque {KOH_ESTOQUE_MASSA_G} g /{" "}
+                  {KOH_ESTOQUE_VOLUME_L} L). Baixar pH: <strong>{H3PO4_PRODUTO_NOME}</strong> (estoque{" "}
+                  {H3PO4_ESTOQUE_ML_PRODUTO} mL / {H3PO4_ESTOQUE_VOLUME_L} L). A calculadora escolhe o produto
+                  pelo ΔpH e indica os <strong>mL do estoque</strong> na caixa.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-3">
@@ -922,6 +950,20 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
                     value={volumePh}
                     onChange={(e) => setVolumePh(e.target.value)}
                   />
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {VOLUMES_CAIXA_PH_L.map((vol) => (
+                      <Button
+                        key={vol}
+                        type="button"
+                        size="sm"
+                        variant={volumePh === String(vol) ? "default" : "outline"}
+                        className="h-7 px-2.5 text-xs"
+                        onClick={() => setVolumePh(String(vol))}
+                      >
+                        {vol} L
+                      </Button>
+                    ))}
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">pH atual</Label>
@@ -952,83 +994,167 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
             </Card>
 
             {resultadoPh ? (
-              <Card className="border-violet-500/30 bg-violet-500/[0.04]">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FlaskConical className="w-4 h-4 text-violet-600" />
-                    Dose na caixa
-                  </CardTitle>
-                  <CardDescription>
-                    ΔpH {formatDecimalForInput(resultadoPh.deltaPh, 2)} · fator{" "}
-                    {formatDecimalForInput(fatorPh, 3)} mL estoque / L / unidade de pH
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {resultadoPh.aviso ? (
-                    <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
-                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <p>{resultadoPh.aviso}</p>
+              resultadoPh.direcao === "subir" && resultadoPh.koh && resultadoPh.koh.mlEstoque > 0 ? (
+                <Card className="border-violet-500/30 bg-violet-500/[0.04]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FlaskConical className="w-4 h-4 text-violet-600" />
+                      Subir pH — dose KOH
+                    </CardTitle>
+                    <CardDescription>
+                      ΔpH {formatDecimalForInput(resultadoPh.koh.deltaPh, 2)} · fator{" "}
+                      {formatDecimalForInput(fatorPh, 3)} mL estoque / L / unidade de pH
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {resultadoPh.aviso ? (
+                      <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <p>{resultadoPh.aviso}</p>
+                      </div>
+                    ) : null}
+
+                    <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-center">
+                      <p className="text-xs font-semibold text-violet-800 dark:text-violet-200">
+                        Solução estoque KOH a adicionar na caixa
+                      </p>
+                      <p className="font-display text-4xl font-bold tabular-nums mt-1 text-violet-900 dark:text-violet-100">
+                        {fmtMl(resultadoPh.koh.mlEstoque)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        ≈ {fmtG(resultadoPh.koh.produtoGramas)} de produto (
+                        {fmtG(resultadoPh.koh.kohPuroGramas)} KOH puro a{" "}
+                        {Math.round(resultadoPh.koh.teor * 100)}%) · estoque {KOH_ESTOQUE_G_PRODUTO_POR_L}{" "}
+                        g/L
+                        {resultadoPh.koh.dosesPorLitroEstoque != null
+                          ? ` · ~${formatDecimalForInput(resultadoPh.koh.dosesPorLitroEstoque, 0)} doses desse tamanho por litro de estoque`
+                          : ""}
+                      </p>
                     </div>
-                  ) : null}
 
-                  {!resultadoPh.precisaAcido && resultadoPh.mlEstoque > 0 ? (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-center sm:col-span-2">
-                          <p className="text-xs font-semibold text-violet-800 dark:text-violet-200">
-                            Solução estoque KOH a adicionar na caixa
-                          </p>
-                          <p className="font-display text-4xl font-bold tabular-nums mt-1 text-violet-900 dark:text-violet-100">
-                            {fmtMl(resultadoPh.mlEstoque)}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-1">
-                            ≈ {fmtG(resultadoPh.produtoGramas)} de produto (
-                            {fmtG(resultadoPh.kohPuroGramas)} KOH puro a {Math.round(resultadoPh.teor * 100)}%) ·
-                            estoque {KOH_ESTOQUE_G_PRODUTO_POR_L} g/L
-                            {resultadoPh.dosesPorLitroEstoque != null
-                              ? ` · ~${formatDecimalForInput(resultadoPh.dosesPorLitroEstoque, 0)} doses desse tamanho por litro de estoque`
-                              : ""}
-                          </p>
-                        </div>
+                    <div className="rounded-lg border bg-card p-3 text-sm space-y-2">
+                      <p className="font-semibold flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-600" />
+                        Como preparar e aplicar
+                      </p>
+                      <ol className="list-decimal pl-4 space-y-1 text-muted-foreground text-xs sm:text-sm">
+                        <li>
+                          Prepare o estoque (se ainda não tiver): dissolva{" "}
+                          <strong className="text-foreground">{KOH_ESTOQUE_MASSA_G} g</strong> do produto
+                          (teor mín. {Math.round(KOH_TEOR_MIN * 100)}%, embalagem {KOH_PA_EMBALAGEM_G} g) em{" "}
+                          <strong className="text-foreground">{KOH_ESTOQUE_VOLUME_L} L</strong> de água fria —
+                          água primeiro, KOH depois, com EPI.
+                        </li>
+                        <li>
+                          Com seringa ou proveta, meça{" "}
+                          <strong className="text-foreground">{fmtMl(resultadoPh.koh.mlEstoque)}</strong>{" "}
+                          dessa solução estoque.
+                        </li>
+                        <li>
+                          Adicione na caixa, misture bem e meça o pH após estabilizar. Se precisar, corrija de
+                          novo em pequenas doses.
+                        </li>
+                      </ol>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Se na prática você usa bem menos ou mais mL, ajuste o fator KOH abaixo até bater com o
+                      histórico de correção.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : resultadoPh.direcao === "baixar" &&
+                resultadoPh.acido &&
+                resultadoPh.acido.mlEstoque > 0 ? (
+                <Card className="border-amber-500/30 bg-amber-500/[0.04]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FlaskConical className="w-4 h-4 text-amber-700" />
+                      Baixar pH — dose {H3PO4_PRODUTO_NOME}
+                    </CardTitle>
+                    <CardDescription>
+                      Queda {formatDecimalForInput(resultadoPh.acido.quedaPh, 2)} · fator{" "}
+                      {formatDecimalForInput(fatorPhAcido, 3)} mL estoque / L / unidade de pH · caixa{" "}
+                      {volumePh} L
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {resultadoPh.aviso ? (
+                      <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <p>{resultadoPh.aviso}</p>
                       </div>
+                    ) : null}
 
-                      <div className="rounded-lg border bg-card p-3 text-sm space-y-2">
-                        <p className="font-semibold flex items-center gap-2">
-                          <ShieldAlert className="w-4 h-4 text-amber-600" />
-                          Como preparar e aplicar
-                        </p>
-                        <ol className="list-decimal pl-4 space-y-1 text-muted-foreground text-xs sm:text-sm">
-                          <li>
-                            Prepare o estoque (se ainda não tiver): dissolva{" "}
-                            <strong className="text-foreground">{KOH_ESTOQUE_MASSA_G} g</strong> do produto
-                            (teor mín. {Math.round(KOH_TEOR_MIN * 100)}%, embalagem {KOH_PA_EMBALAGEM_G} g) em{" "}
-                            <strong className="text-foreground">{KOH_ESTOQUE_VOLUME_L} L</strong> de água fria —
-                            água primeiro, KOH depois, com EPI.
-                          </li>
-                          <li>
-                            Com seringa ou proveta, meça{" "}
-                            <strong className="text-foreground">{fmtMl(resultadoPh.mlEstoque)}</strong> dessa
-                            solução estoque.
-                          </li>
-                          <li>
-                            Adicione na caixa, misture bem e meça o pH após estabilizar. Se precisar, corrija de
-                            novo em pequenas doses.
-                          </li>
-                        </ol>
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center">
+                      <p className="text-xs font-semibold text-amber-900 dark:text-amber-100">
+                        Solução estoque de ácido a adicionar na caixa
+                      </p>
+                      <p className="font-display text-4xl font-bold tabular-nums mt-1 text-amber-950 dark:text-amber-50">
+                        {fmtMl(resultadoPh.acido.mlEstoque)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        ≈ {fmtMl(resultadoPh.acido.mlConcentrado)} de concentrado 85% (
+                        {fmtG(resultadoPh.acido.produtoGramas)}) · estoque {H3PO4_ESTOQUE_ML_PRODUTO} mL /{" "}
+                        {H3PO4_ESTOQUE_VOLUME_L} L · teor {Math.round(H3PO4_TEOR * 100)}%
+                        {resultadoPh.acido.dosesPorLitroEstoque != null
+                          ? ` · ~${formatDecimalForInput(resultadoPh.acido.dosesPorLitroEstoque, 0)} doses desse tamanho por litro de estoque`
+                          : ""}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border bg-card p-3 text-sm space-y-2">
+                      <p className="font-semibold flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-600" />
+                        Como preparar e aplicar
+                      </p>
+                      <ol className="list-decimal pl-4 space-y-1 text-muted-foreground text-xs sm:text-sm">
+                        <li>
+                          Prepare o estoque (se ainda não tiver): em{" "}
+                          <strong className="text-foreground">{H3PO4_ESTOQUE_VOLUME_L} L</strong> de água,
+                          adicione aos poucos{" "}
+                          <strong className="text-foreground">{H3PO4_ESTOQUE_ML_PRODUTO} mL</strong> de{" "}
+                          {H3PO4_PRODUTO_NOME} — <em>sempre ácido na água</em>, nunca o contrário, com EPI.
+                        </li>
+                        <li>
+                          Com seringa ou proveta, meça{" "}
+                          <strong className="text-foreground">{fmtMl(resultadoPh.acido.mlEstoque)}</strong>{" "}
+                          dessa solução estoque.
+                        </li>
+                        <li>
+                          Adicione na caixa ({volumePh || "—"} L), misture bem e meça o pH após estabilizar.
+                          Corrija de novo em pequenas doses se necessário.
+                        </li>
+                      </ol>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Se na prática a queda for maior ou menor, ajuste o fator do ácido abaixo até bater com o
+                      histórico (caixas 310 L e 500 L usam o mesmo fator por litro).
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="py-6 space-y-3">
+                    {resultadoPh.aviso ? (
+                      <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-50">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <p>{resultadoPh.aviso}</p>
                       </div>
-                    </>
-                  ) : null}
-
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Se na prática você usa bem menos ou mais mL, ajuste o fator abaixo até bater com o seu
-                    histórico de correção.
-                  </p>
-                </CardContent>
-              </Card>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center">
+                        Nenhuma dose necessária com os valores informados.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )
             ) : (
               <Card>
                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                  Preencha volume, pH atual e pH alvo para ver quantos mL do estoque adicionar.
+                  Preencha volume (310 ou 500 L), pH atual e pH alvo. Se o alvo for maior → KOH; se for menor →
+                  ácido fosfórico.
                 </CardContent>
               </Card>
             )}
@@ -1036,37 +1162,71 @@ export default function CorrecaoEcPage({ publicMode = false }: { publicMode?: bo
             <Card>
               <CardHeader className="pb-2 flex flex-row flex-wrap items-center justify-between gap-2">
                 <div>
-                  <CardTitle className="text-base">Calibração do fator</CardTitle>
+                  <CardTitle className="text-base">Calibração dos fatores</CardTitle>
                   <CardDescription>
-                    Padrão {formatDecimalForInput(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO, 3)} mL de estoque (100
-                    g/L) por litro da caixa para subir 1,0 de pH
+                    KOH: {formatDecimalForInput(FATOR_ML_ESTOQUE_POR_L_POR_PH_PADRAO, 3)} mL estoque / L / pH ·
+                    Ácido: {formatDecimalForInput(FATOR_ML_ESTOQUE_ACIDO_POR_L_POR_PH_PADRAO, 3)} mL estoque / L
+                    / pH
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setMostrarFatorPh((v) => !v)}>
-                  {mostrarFatorPh ? "Ocultar" : "Ajustar fator"}
+                  {mostrarFatorPh ? "Ocultar" : "Ajustar fatores"}
                 </Button>
               </CardHeader>
               {mostrarFatorPh ? (
-                <CardContent className="space-y-3">
-                  <div className="space-y-1 max-w-xs">
-                    <Label className="text-xs">mL estoque / L caixa / unidade de pH</Label>
-                    <Input
-                      inputMode="decimal"
-                      value={formatDecimalForInput(fatorPh, 3)}
-                      onChange={(e) => {
-                        const n = parseOptDecimal(e.target.value);
-                        if (n != null && n > 0) setFatorPh(n);
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={salvarFatorPh}>
-                      Salvar fator
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={restaurarFatorPh}>
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      Restaurar padrão
-                    </Button>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2 rounded-lg border p-3">
+                      <p className="text-xs font-semibold">Subir pH — KOH</p>
+                      <div className="space-y-1">
+                        <Label className="text-xs">mL estoque / L caixa / unidade de pH</Label>
+                        <Input
+                          inputMode="decimal"
+                          value={formatDecimalForInput(fatorPh, 3)}
+                          onChange={(e) => {
+                            const n = parseOptDecimal(e.target.value);
+                            if (n != null && n > 0) setFatorPh(n);
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={salvarFatorPh}>
+                          Salvar KOH
+                        </Button>
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={restaurarFatorPh}>
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Padrão
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 rounded-lg border p-3">
+                      <p className="text-xs font-semibold">Baixar pH — {H3PO4_PRODUTO_NOME}</p>
+                      <div className="space-y-1">
+                        <Label className="text-xs">mL estoque / L caixa / unidade de pH</Label>
+                        <Input
+                          inputMode="decimal"
+                          value={formatDecimalForInput(fatorPhAcido, 3)}
+                          onChange={(e) => {
+                            const n = parseOptDecimal(e.target.value);
+                            if (n != null && n > 0) setFatorPhAcido(n);
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={salvarFatorPhAcido}>
+                          Salvar ácido
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5"
+                          onClick={restaurarFatorPhAcido}
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Padrão
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               ) : null}
