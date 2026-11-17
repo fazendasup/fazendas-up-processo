@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, FileUp, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, FileUp, Loader2, Trash2 } from "lucide-react";
 import {
   draftImportProntoParaSalvar,
   type DraftImportarPedidoPdf,
   type ItemDraftImportPdf,
 } from "@shared/importarPedidoPdf";
 import { trpc } from "@/lib/trpc";
+import { useIsMobile } from "@/hooks/useMobile";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PdfBlobViewer } from "@/components/comercial/PdfBlobViewer";
 
 const TIPOS = [
   ["RECORRENTE_SEMANAL", "Recorrente Semanal"],
@@ -71,6 +73,9 @@ export function ImportarPedidoPdfDialog({
   const [notaRegra, setNotaRegra] = useState("");
   const [atualizarRegra, setAtualizarRegra] = useState(false);
   const [buscaClienteManual, setBuscaClienteManual] = useState("");
+  /** No celular: abas Pedido | PDF (iframe/blob não renderiza). */
+  const [abaMobile, setAbaMobile] = useState<"pedido" | "pdf">("pedido");
+  const isMobile = useIsMobile();
 
   const clientesQ = trpc.comercial.pedidos.clientes.useQuery(
     { busca: buscaClienteManual || undefined, limite: 100 },
@@ -143,10 +148,16 @@ export function ImportarPedidoPdfDialog({
       return;
     }
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    const url = URL.createObjectURL(file);
+    // Garante MIME application/pdf — no Android o File às vezes vem sem type.
+    const typed =
+      file.type === "application/pdf"
+        ? file
+        : new File([file], file.name, { type: "application/pdf" });
+    const url = URL.createObjectURL(typed);
     setPdfUrl(url);
     setArquivoNome(file.name);
     setDraft(null);
+    setAbaMobile("pedido");
     try {
       const b64 = await readFileAsBase64(file);
       setPdfBase64(b64);
@@ -312,10 +323,34 @@ export function ImportarPedidoPdfDialog({
             Importar pedido em PDF
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Compare o lançamento (esquerda) com o PDF (direita). Ajuste cliente, itens e dia antes de
-            confirmar.
+            {isMobile
+              ? "Confira o pedido e alterne para a aba PDF para comparar. Ajuste cliente, itens e dia antes de confirmar."
+              : "Compare o lançamento (esquerda) com o PDF (direita). Ajuste cliente, itens e dia antes de confirmar."}
           </DialogDescription>
         </DialogHeader>
+
+        {isMobile && pdfUrl ? (
+          <div className="flex shrink-0 gap-1 rounded-lg border bg-muted/40 p-1">
+            <Button
+              type="button"
+              size="sm"
+              variant={abaMobile === "pedido" ? "default" : "ghost"}
+              className="h-8 flex-1 text-xs"
+              onClick={() => setAbaMobile("pedido")}
+            >
+              Pedido
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={abaMobile === "pdf" ? "default" : "ghost"}
+              className="h-8 flex-1 text-xs"
+              onClick={() => setAbaMobile("pdf")}
+            >
+              PDF
+            </Button>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <input
@@ -357,7 +392,11 @@ export function ImportarPedidoPdfDialog({
         </div>
 
         <div className="grid min-h-0 flex-1 gap-3 grid-cols-1 lg:grid-cols-[minmax(380px,0.9fr)_minmax(0,1.2fr)]">
-          <div className="min-h-0 overflow-y-auto rounded-lg border bg-card p-3 sm:p-4 space-y-3">
+          <div
+            className={`min-h-0 overflow-y-auto rounded-lg border bg-card p-3 sm:p-4 space-y-3 ${
+              isMobile && abaMobile === "pdf" ? "hidden" : ""
+            }`}
+          >
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Pedido a lançar
             </p>
@@ -553,7 +592,11 @@ export function ImportarPedidoPdfDialog({
             ) : null}
           </div>
 
-          <div className="min-h-[45vh] lg:min-h-0 overflow-hidden rounded-lg border bg-muted/20 flex flex-col">
+          <div
+            className={`min-h-[50vh] lg:min-h-0 overflow-hidden rounded-lg border bg-muted/20 flex flex-col ${
+              isMobile && abaMobile !== "pdf" ? "hidden" : ""
+            }`}
+          >
             <div className="shrink-0 border-b px-3 py-2 flex items-center justify-between gap-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 PDF original
@@ -563,18 +606,15 @@ export function ImportarPedidoPdfDialog({
                   href={pdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs text-primary underline-offset-2 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
                 >
+                  <ExternalLink className="h-3 w-3" />
                   Abrir em nova aba
                 </a>
               ) : null}
             </div>
             {pdfUrl ? (
-              <iframe
-                title="PDF do pedido"
-                src={`${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width`}
-                className="min-h-0 flex-1 w-full bg-white"
-              />
+              <PdfBlobViewer pdfUrl={pdfUrl} />
             ) : (
               <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground text-center">
                 O PDF aparece aqui para comparar com o lançamento.
