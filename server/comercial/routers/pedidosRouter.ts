@@ -64,6 +64,7 @@ import {
   criarResolverChaveItemConciliacao,
   listarProdutosFaltantesVenda,
 } from "../lib/produto-operacional.js";
+import { analisarPedidoPdf } from "../lib/importar-pedido-pdf.js";
 import {
   desativarProdutosInativosNoContaAzul,
   importarProdutosParaOperacao,
@@ -1523,6 +1524,64 @@ export const pedidosRouter = router({
           alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
         };
       });
+    }),
+
+  /**
+   * Lê PDF de pedido (layouts variados) via LLM + casa cliente/produtos do catálogo.
+   * Não grava — o usuário confirma na tela split (PDF × rascunho).
+   */
+  analisarPedidoPdf: comercialProcedure
+    .input(
+      z.object({
+        arquivoNome: z.string().min(1).max(240),
+        pdfBase64: z.string().min(32).max(16_000_000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.comercialUsuario) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      }
+      const [clientes, produtos] = await Promise.all([
+        ctx.prisma!.cliente.findMany({
+          where: { externalId: { not: null } },
+          select: { externalId: true, nome: true, cnpjCpf: true },
+          orderBy: { nome: "asc" },
+          take: 800,
+        }),
+        ctx.prisma!.produtoComercial.findMany({
+          where: {
+            ativo: true,
+            importadoOperacao: true,
+            contaAzulProdutoId: { not: null },
+          },
+          select: { id: true, nome: true, sku: true },
+          orderBy: { nome: "asc" },
+          take: 800,
+        }),
+      ]);
+
+      try {
+        return await analisarPedidoPdf({
+          pdfBase64: input.pdfBase64,
+          arquivoNome: input.arquivoNome,
+          clientes: clientes
+            .filter((c): c is { externalId: string; nome: string; cnpjCpf: string | null } =>
+              Boolean(c.externalId),
+            )
+            .map((c) => ({
+              externalId: c.externalId,
+              nome: c.nome,
+              cnpjCpf: c.cnpjCpf,
+            })),
+          produtos,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Falha ao analisar PDF.";
+        throw new TRPCError({ code: "BAD_REQUEST", message: msg });
+      }
     }),
 
   salvarPedido: comercialProcedure

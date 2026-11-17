@@ -9,6 +9,7 @@ import {
   ChevronUp,
   ClipboardList,
   Copy,
+  FileUp,
   Package,
   PackageCheck,
   Plus,
@@ -42,6 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConciliacaoContaAzulPanel } from "@/components/comercial/ConciliacaoContaAzulPanel";
 import { PedidosSiteAprovacaoPanel } from "@/components/comercial/PedidosSiteAprovacaoPanel";
 import { EstoqueSemanalPortalPanel } from "@/components/comercial/EstoqueSemanalPortalPanel";
+import { ImportarPedidoPdfDialog } from "@/components/comercial/ImportarPedidoPdfDialog";
 import { AcoesPedidoConciliacao } from "@/components/comercial/ConciliacaoResolucaoDialogs";
 import {
   InadimplenciaClienteBadge,
@@ -414,6 +416,7 @@ export function Pedidos({
   const [avarias, setAvarias] = useState<AvariaLinha[]>([]);
   const [clienteRegrasId, setClienteRegrasId] = useState("");
   const [produtoEdit, setProdutoEdit] = useState<any>(null);
+  const [importarPdfAberto, setImportarPdfAberto] = useState(false);
 
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const [clienteConciliacaoFoco, setClienteConciliacaoFoco] = useState<
@@ -1926,24 +1929,39 @@ export function Pedidos({
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Plus className="h-4 w-4" /> Emitir / agendar pedido
                 </CardTitle>
-                {podeSyncClientesCa ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5 text-xs"
-                    disabled={syncClientesCaBusy}
-                    onClick={() => iniciarSyncClientesCa({ escopo: "clientes" })}
-                    title="Busca no Conta Azul os clientes ativos e atualiza a lista da emissão"
-                  >
-                    <RefreshCcw
-                      className={`h-3.5 w-3.5 ${syncClientesCaBusy ? "animate-spin" : ""}`}
-                    />
-                    {syncClientesCaBusy
-                      ? "Sincronizando clientes…"
-                      : "Sincronizar clientes CA"}
-                  </Button>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {canEditarComercial ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => setImportarPdfAberto(true)}
+                      title="Ler PDF do cliente, comparar e lançar na agenda"
+                    >
+                      <FileUp className="h-3.5 w-3.5" />
+                      Importar PDF
+                    </Button>
+                  ) : null}
+                  {podeSyncClientesCa ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 text-xs"
+                      disabled={syncClientesCaBusy}
+                      onClick={() => iniciarSyncClientesCa({ escopo: "clientes" })}
+                      title="Busca no Conta Azul os clientes ativos e atualiza a lista da emissão"
+                    >
+                      <RefreshCcw
+                        className={`h-3.5 w-3.5 ${syncClientesCaBusy ? "animate-spin" : ""}`}
+                      />
+                      {syncClientesCaBusy
+                        ? "Sincronizando clientes…"
+                        : "Sincronizar clientes CA"}
+                    </Button>
+                  ) : null}
+                </div>
               </div>
               {pedidoEditId && (
                 <p className="text-xs text-muted-foreground">
@@ -2795,6 +2813,17 @@ export function Pedidos({
       ) : null}
       </>
       )}
+
+      <ImportarPedidoPdfDialog
+        open={importarPdfAberto}
+        onOpenChange={setImportarPdfAberto}
+        diaPadrao={dia}
+        onPedidoSalvo={(diaLancado) => {
+          setDia(diaLancado);
+          setAba("agenda");
+          void invalidarVisaoOperacionalDia();
+        }}
+      />
     </div>
   );
 }
