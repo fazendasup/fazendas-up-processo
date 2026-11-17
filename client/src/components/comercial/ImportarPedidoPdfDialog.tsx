@@ -309,8 +309,9 @@ export function ImportarPedidoPdfDialog({
             Importar pedido em PDF
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
-            O sistema lê o PDF (layouts diferentes), reconhece cliente/itens e monta o lançamento.
-            Confira na tela dividida, ajuste o dia na agenda e confirme.
+            Lê o texto do PDF (sem OpenAI), casa com clientes/produtos do catálogo e monta o
+            lançamento. Confira na tela dividida, ajuste o dia na agenda e confirme. PDF escaneado
+            (só imagem) exige preenchimento manual.
           </DialogDescription>
         </DialogHeader>
 

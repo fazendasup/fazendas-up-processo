@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { matchClienteImport, matchProdutoImport } from "./importar-pedido-pdf";
+import {
+  extrairItensDoTexto,
+  extrairPedidoDoTexto,
+  matchClienteImport,
+  matchProdutoImport,
+} from "./importar-pedido-pdf";
 import { draftImportProntoParaSalvar } from "@shared/importarPedidoPdf";
 
 describe("matchClienteImport", () => {
@@ -54,5 +59,31 @@ describe("draftImportProntoParaSalvar", () => {
       itens: [{ produtoId: "p1", quantidade: 2 }],
     });
     expect(r.ok).toBe(true);
+  });
+});
+
+describe("extrairPedidoDoTexto (sem OpenAI)", () => {
+  const clientes = [
+    { externalId: "ca-1", nome: "Mercado Bom Preço LTDA", cnpjCpf: "12.345.678/0001-90" },
+  ];
+  const produtos = [
+    { id: "p1", nome: "Alface Crespa", sku: "ALC" },
+    { id: "p2", nome: "Rúcula Hidropônica", sku: null },
+  ];
+
+  it("acha cliente, data e itens no texto", () => {
+    const texto = `
+Pedido de compra
+Cliente: Mercado Bom Preço LTDA
+CNPJ 12.345.678/0001-90
+Entrega: 20/11/2026
+Alface Crespa 12 un
+Rúcula Hidropônica x 5
+`;
+    const r = extrairPedidoDoTexto(texto, clientes, produtos);
+    expect(r.clienteDocumento).toMatch(/12345678000190|12\.345\.678\/0001-90/);
+    expect(r.dataEntrega).toBe("2026-11-20");
+    expect(extrairItensDoTexto(texto, produtos).length).toBeGreaterThanOrEqual(2);
+    expect(r.itens.some((i) => i.nome.includes("Alface"))).toBe(true);
   });
 });

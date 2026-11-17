@@ -1527,7 +1527,7 @@ export const pedidosRouter = router({
     }),
 
   /**
-   * Lê PDF de pedido (layouts variados) via LLM + casa cliente/produtos do catálogo.
+   * Lê texto do PDF (pdf-parse, sem OpenAI) e casa cliente/produtos do catálogo.
    * Não grava — o usuário confirma na tela split (PDF × rascunho).
    */
   analisarPedidoPdf: comercialProcedure
