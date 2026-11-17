@@ -2,7 +2,7 @@
  * Service worker — PWA + Web Push.
  * Não faz cache agressivo de API nem de bundles — evita dados/versões antigas presas.
  */
-const SW_VERSION = "fazendas-up-pwa-v3";
+const SW_VERSION = "fazendas-up-pwa-v4";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

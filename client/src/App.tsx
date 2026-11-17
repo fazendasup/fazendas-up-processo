@@ -17,7 +17,11 @@ import { RoutePageFallback } from "./components/RoutePageFallback";
 import { useAuth } from "./_core/hooks/useAuth";
 import { isProcessAccessRole } from "@shared/const";
 import { canAccessCommercialPath, homeForCommercialPerfil, homeForUserRole } from "./lib/accessPolicy";
-import { syncPwaManifestForLocation } from "./lib/pwa";
+import {
+  isPwaStandalone,
+  publicPwaRecoveryHref,
+  syncPwaManifestForLocation,
+} from "./lib/pwa";
 import { trpc } from "./lib/trpc";
 
 const LoginPage = lazy(() => import(/* @vite-ignore */"./pages/LoginPage"));
@@ -61,7 +65,12 @@ const BpfDocumentosPage = lazy(() => import(/* @vite-ignore */"./pages/BpfDocume
 const NotFound = lazy(() => import(/* @vite-ignore */"./pages/NotFound"));
 
 function RoleRootRoute() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  // PWA da calculadora/terceiros com start_url antigo (`/`) não deve cair no login.
+  if (!loading && !user && isPwaStandalone()) {
+    const recovery = publicPwaRecoveryHref();
+    if (recovery) return <Redirect to={recovery} />;
+  }
   if (user?.role === "comercial") {
     const comercialPerfil =
       "comercialPerfil" in user ? (user.comercialPerfil as string | null) : null;
@@ -423,7 +432,7 @@ function AppChrome() {
     return (
       <PwaInstallHint
         title="Instale a Calculadora EC/pH"
-        descriptionApp="Abre direto na calculadora, sem pedir login. Ideal para o celular na estufa."
+        descriptionApp="Abre direto em /calculadora, sem pedir login. Se um ícone antigo abrir a tela de entrar, apague e instale de novo por esta página."
       />
     );
   }

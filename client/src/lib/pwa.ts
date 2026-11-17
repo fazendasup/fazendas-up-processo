@@ -1,6 +1,10 @@
 const DISMISS_KEY = "fazendas-up-pwa-install-dismissed";
 export const CALCULADORA_PROJETO_STORAGE_KEY = "fazendas.calculadora.projetoId";
-const DEFAULT_MANIFEST_HREF = "/manifest.webmanifest?v=6";
+/** Última página pública visitada — recupera ícone antigo que abria em `/` (login). */
+export const PUBLIC_PWA_START_KEY = "fazendas.pwa.publicStart";
+const DEFAULT_MANIFEST_HREF = "/manifest.webmanifest?v=7";
+const CALCULADORA_MANIFEST_HREF = "/manifest-calculadora.webmanifest?v=7";
+const TERCEIROS_MANIFEST_HREF = "/manifest-terceiros.webmanifest?v=7";
 
 export function isPwaStandalone(): boolean {
   if (typeof window === "undefined") return false;
@@ -46,16 +50,53 @@ function getManifestLink(): HTMLLinkElement {
 type PublicManifestOpts = {
   name: string;
   shortName: string;
-  description: string;
-  /** Caminho absoluto no site, ex. `/terceiros` ou `/calculadora?projeto=1` */
+  /** Caminho canônico sem query, ex. `/calculadora` — também é o scope do PWA. */
   startPath: string;
+  /** Manifest estático servido na origem (evita blob: que o Chrome ignora no install). */
+  manifestHref: string;
   themeColor?: string;
 };
 
+export function rememberPublicPwaStart(path: string): void {
+  try {
+    const clean = path.split("?")[0] ?? path;
+    if (clean === "/calculadora" || clean === "/terceiros") {
+      localStorage.setItem(PUBLIC_PWA_START_KEY, clean);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+export function recallPublicPwaStart(): "/calculadora" | "/terceiros" | null {
+  try {
+    const v = localStorage.getItem(PUBLIC_PWA_START_KEY);
+    if (v === "/calculadora" || v === "/terceiros") return v;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Manifest dinâmico para páginas públicas.
- * Usa URLs absolutas: em blob, paths relativos resolvem contra `blob:` e o
- * start_url cai em `/` → tela de login.
+ * URL de recuperação quando o ícone antigo abre em `/` → login.
+ * Inclui ?projeto= se a calculadora já tiver projeto memorizado.
+ */
+export function publicPwaRecoveryHref(): string | null {
+  const start = recallPublicPwaStart();
+  if (!start) return null;
+  if (start === "/calculadora") {
+    const projeto = recallCalculadoraProjetoId();
+    return projeto ? `/calculadora?projeto=${projeto}` : "/calculadora";
+  }
+  return start;
+}
+
+/**
+ * Manifest estático para páginas públicas.
+ * Blob manifests costumam ser ignorados no "Adicionar à tela inicial" → o browser
+ * usa o manifest padrão (start_url `/`) e o app pede login.
+ * Scope restrito (`/calculadora`) evita misturar com o PWA autenticado.
  */
 export function applyPublicPwaManifest(opts: PublicManifestOpts): void {
   if (typeof document === "undefined" || typeof window === "undefined") return;
@@ -64,41 +105,13 @@ export function applyPublicPwaManifest(opts: PublicManifestOpts): void {
     ? opts.startPath
     : `/${opts.startPath}`;
   const theme = opts.themeColor ?? "#059669";
-  const icon = (src: string, sizes: string, purpose: string) => ({
-    src: absUrl(src),
-    sizes,
-    type: src.endsWith(".svg") ? "image/svg+xml" : "image/png",
-    purpose,
-  });
 
-  const manifest = {
-    name: opts.name,
-    short_name: opts.shortName,
-    description: opts.description,
-    start_url: absUrl(startPath),
-    scope: absUrl("/"),
-    id: absUrl(startPath.split("?")[0] ?? startPath),
-    display: "standalone",
-    orientation: "any",
-    background_color: "#f8fafc",
-    theme_color: theme,
-    lang: "pt-BR",
-    categories: ["utilities", "productivity"],
-    icons: [
-      icon("/pwa-icon-192.png?v=6", "192x192", "any"),
-      icon("/pwa-icon-512.png?v=6", "512x512", "any"),
-      icon("/pwa-icon-512.png?v=6", "512x512", "maskable"),
-      icon("/pwa-icon.svg?v=6", "any", "any"),
-    ],
-  };
+  rememberPublicPwaStart(startPath);
 
   const link = getManifestLink();
-  const blob = new Blob([JSON.stringify(manifest)], {
-    type: "application/manifest+json",
-  });
   const prev = link.href;
   if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-  link.href = URL.createObjectURL(blob);
+  link.href = absUrl(opts.manifestHref);
 
   document.title = opts.name;
   const appTitle = document.querySelector(
@@ -126,15 +139,14 @@ export function restoreDefaultPwaManifest(): void {
 }
 
 export function applyCalculadoraPublicManifest(projetoId?: number | null): void {
-  const qs =
-    projetoId != null && Number.isFinite(projetoId) && projetoId > 0
-      ? `?projeto=${Math.floor(projetoId)}`
-      : "";
+  if (projetoId != null && Number.isFinite(projetoId) && projetoId > 0) {
+    rememberCalculadoraProjetoId(Math.floor(projetoId));
+  }
   applyPublicPwaManifest({
     name: "Calculadora EC/pH — Fazendas UP",
     shortName: "Calculadora UP",
-    description: "Correção de EC e pH — ferramenta pública sem login.",
-    startPath: `/calculadora${qs}`,
+    startPath: "/calculadora",
+    manifestHref: CALCULADORA_MANIFEST_HREF,
     themeColor: "#0891b2",
   });
 }
@@ -143,8 +155,8 @@ export function applyTerceirosPublicManifest(): void {
   applyPublicPwaManifest({
     name: "Prestação de serviços — Fazendas UP",
     shortName: "Serviços UP",
-    description: "Registro de horas e almoço — acesso público sem login do sistema.",
     startPath: "/terceiros",
+    manifestHref: TERCEIROS_MANIFEST_HREF,
     themeColor: "#059669",
   });
 }

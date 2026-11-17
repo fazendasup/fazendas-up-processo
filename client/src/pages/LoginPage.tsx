@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { setActiveProjetoId } from '@/lib/projeto-header';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Sprout, AlertCircle } from 'lucide-react';
+import { Beaker, Loader2, Sprout, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
 import { homeForUserRole } from '@/lib/accessPolicy';
+import { isPwaStandalone, publicPwaRecoveryHref } from '@/lib/pwa';
 
 function normalizeLoginEmail(value: string) {
   return value
@@ -37,6 +38,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [publicRecoveryHref] = useState(() => publicPwaRecoveryHref());
+
+  // Ícone antigo da calculadora abria em `/` → login. Em standalone, volta ao link público.
+  useEffect(() => {
+    if (!isPwaStandalone() || !publicRecoveryHref) return;
+    window.location.replace(publicRecoveryHref);
+  }, [publicRecoveryHref]);
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
@@ -60,6 +68,22 @@ export default function LoginPage() {
     loginMutation.mutate({ email: emailNormalizado, password });
   };
 
+  if (isPwaStandalone() && publicRecoveryHref) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center max-w-sm space-y-3">
+          <Beaker className="w-8 h-8 text-cyan-600 mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Abrindo a calculadora pública (sem login)…
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <a href={publicRecoveryHref}>Abrir agora</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -75,6 +99,21 @@ export default function LoginPage() {
             Sistema Supervisório
           </p>
         </div>
+
+        {publicRecoveryHref ? (
+          <div className="mb-4 rounded-xl border border-cyan-200 bg-cyan-50/80 p-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/30 dark:text-cyan-50">
+            <p className="font-medium flex items-center gap-1.5">
+              <Beaker className="w-4 h-4 shrink-0" />
+              Instalou a Calculadora EC/pH?
+            </p>
+            <p className="text-xs mt-1 text-cyan-900/80 dark:text-cyan-100/80">
+              Esse atalho é público e não precisa de login.
+            </p>
+            <Button asChild size="sm" className="mt-2 h-8" variant="secondary">
+              <a href={publicRecoveryHref}>Abrir calculadora sem login</a>
+            </Button>
+          </div>
+        ) : null}
 
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center pb-4">
