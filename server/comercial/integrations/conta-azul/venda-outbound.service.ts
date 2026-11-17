@@ -10,6 +10,7 @@ import {
   periodoAcumuloContendo,
 } from "../../lib/periodo-acumulo";
 import { inicioSemana } from "../../lib/semana";
+import { enviarBoletoClientePorEmail } from "../../lib/boleto-email";
 import {
   contaAzulGet,
   contaAzulPost,
@@ -46,6 +47,12 @@ export type BoletoEmitidoCa = {
   id: string;
   url: string | null;
   status: string | null;
+};
+
+export type EmailBoletoResultado = {
+  enviado: boolean;
+  destinatario?: string;
+  motivo?: string;
 };
 
 function round2(n: number): number {
@@ -331,7 +338,12 @@ type PedidoEnvioLoaded = {
   statusEnvioContaAzul: string;
   pedidoContaAzulId: string | null;
   contaAzulEnvioExternalId: string | null;
-  cliente: { id: string; nome: string; externalId: string | null } | null;
+  cliente: {
+    id: string;
+    nome: string;
+    externalId: string | null;
+    emailPrincipal: string | null;
+  } | null;
   itens: Array<{
     produtoId: string;
     produtoNome: string;
@@ -352,7 +364,7 @@ async function carregarPedido(
   const pedido = await prisma.pedidoOperacional.findUnique({
     where: { id: pedidoId },
     include: {
-      cliente: { select: { id: true, nome: true, externalId: true } },
+      cliente: { select: { id: true, nome: true, externalId: true, emailPrincipal: true } },
       itens: {
         include: {
           produto: {
@@ -954,6 +966,7 @@ export async function enviarOperacionalContaAzul(
   pedidoContaAzulLocalId: string;
   boleto?: BoletoEmitidoCa | null;
   boletoErro?: string | null;
+  emailBoleto?: EmailBoletoResultado | null;
   reenvioOrcamento?: boolean;
   reenvioVenda?: boolean;
 }> {
@@ -1022,6 +1035,7 @@ export async function enviarOperacionalContaAzul(
     let numeroVenda: string | undefined;
     let boleto: BoletoEmitidoCa | null = null;
     let boletoErro: string | null = null;
+    let emailBoleto: EmailBoletoResultado | null = null;
     let dataVencimentoBoleto: string | null = null;
 
     if (modo === "ORCAMENTO") {
@@ -1084,6 +1098,21 @@ export async function enviarOperacionalContaAzul(
               descricaoFatura: `Venda ${created.numero} — ${pedido.cliente?.nome ?? ""}`.trim(),
               descontoPercentual: num(regra?.descontoBoletoPercentual),
             });
+            if (boleto?.id) {
+              const mail = await enviarBoletoClientePorEmail({
+                env,
+                http,
+                cobrancaId: boleto.id,
+                boletoUrl: boleto.url,
+                emailCliente: pedido.cliente?.emailPrincipal,
+                nomeCliente: pedido.cliente?.nome ?? "Cliente",
+                numeroVenda: String(created.numero),
+                dataVencimento: created.dataVencimento,
+              });
+              emailBoleto = mail.enviado
+                ? { enviado: true, destinatario: mail.destinatario }
+                : { enviado: false, motivo: mail.motivo };
+            }
           } catch (err) {
             boletoErro = err instanceof Error ? err.message : String(err);
             logger.warn(
@@ -1135,6 +1164,7 @@ export async function enviarOperacionalContaAzul(
             reenvioOrcamento: Boolean(reenvioOrcamento),
             boleto: boleto ?? undefined,
             boletoErro: boletoErro ?? undefined,
+            emailBoleto: emailBoleto ?? undefined,
             dataVencimentoBoleto: dataVencimentoBoleto ?? undefined,
           },
         },
@@ -1153,6 +1183,7 @@ export async function enviarOperacionalContaAzul(
           reenvioVenda: Boolean(reenvioVenda),
           boleto: boleto ?? undefined,
           boletoErro: boletoErro ?? undefined,
+          emailBoleto: emailBoleto ?? undefined,
         },
       },
     });
@@ -1167,6 +1198,7 @@ export async function enviarOperacionalContaAzul(
           externalId,
           boletoId: boleto?.id,
           boletoErro: boletoErro ?? undefined,
+          emailBoleto: emailBoleto ?? undefined,
           reenvioVenda: Boolean(reenvioVenda),
         },
       },
@@ -1178,6 +1210,7 @@ export async function enviarOperacionalContaAzul(
       pedidoContaAzulLocalId: local.id,
       boleto,
       boletoErro,
+      emailBoleto,
       reenvioOrcamento: Boolean(reenvioOrcamento),
       reenvioVenda: Boolean(reenvioVenda),
     };
@@ -1370,6 +1403,7 @@ export async function fecharPeriodoAcumuloContaAzul(
   periodo: { inicio: string; fim: string };
   boleto?: BoletoEmitidoCa | null;
   boletoErro?: string | null;
+  emailBoleto?: EmailBoletoResultado | null;
 }> {
   const regra = await prisma.regraComercialCliente.findUnique({
     where: { contaAzulCustomerId: input.contaAzulCustomerId },
@@ -1401,7 +1435,7 @@ export async function fecharPeriodoAcumuloContaAzul(
       statusEnvioContaAzul: { not: "ENVIADO_VENDA" },
     },
     include: {
-      cliente: { select: { id: true, nome: true, externalId: true } },
+      cliente: { select: { id: true, nome: true, externalId: true, emailPrincipal: true } },
       itens: {
         include: {
           produto: {
@@ -1465,6 +1499,7 @@ export async function fecharPeriodoAcumuloContaAzul(
 
     let boleto: BoletoEmitidoCa | null = null;
     let boletoErro: string | null = null;
+    let emailBoleto: EmailBoletoResultado | null = null;
     if ((cfg.tipoPagamentoPadrao || "BOLETO_BANCARIO") === "BOLETO_BANCARIO") {
       const contaBoleto = escolherContaCobrancaBoleto(syncContas.contas, cfg.idContaFinanceira);
       if (!contaBoleto) {
@@ -1479,6 +1514,21 @@ export async function fecharPeriodoAcumuloContaAzul(
             descricaoFatura: `Venda acumulada ${created.numero} — ${cliente?.nome ?? ""}`.trim(),
             descontoPercentual: num(regra?.descontoBoletoPercentual),
           });
+          if (boleto?.id) {
+            const mail = await enviarBoletoClientePorEmail({
+              env,
+              http,
+              cobrancaId: boleto.id,
+              boletoUrl: boleto.url,
+              emailCliente: cliente?.emailPrincipal,
+              nomeCliente: cliente?.nome ?? "Cliente",
+              numeroVenda: String(created.numero),
+              dataVencimento: created.dataVencimento,
+            });
+            emailBoleto = mail.enviado
+              ? { enviado: true, destinatario: mail.destinatario }
+              : { enviado: false, motivo: mail.motivo };
+          }
         } catch (err) {
           boletoErro = err instanceof Error ? err.message : String(err);
           logger.warn(
@@ -1524,6 +1574,7 @@ export async function fecharPeriodoAcumuloContaAzul(
           },
           boleto: boleto ?? undefined,
           boletoErro: boletoErro ?? undefined,
+          emailBoleto: emailBoleto ?? undefined,
         },
       },
     });
@@ -1538,6 +1589,7 @@ export async function fecharPeriodoAcumuloContaAzul(
           pedidos: ids.length,
           boletoId: boleto?.id,
           boletoErro: boletoErro ?? undefined,
+          emailBoleto: emailBoleto ?? undefined,
         },
       },
     });
@@ -1552,6 +1604,7 @@ export async function fecharPeriodoAcumuloContaAzul(
       },
       boleto,
       boletoErro,
+      emailBoleto,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

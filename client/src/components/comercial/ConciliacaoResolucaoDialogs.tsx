@@ -106,6 +106,11 @@ export function AcoesPedidoConciliacao({
         } else if (r.boletoErro) {
           toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
         }
+        if (r.emailBoleto?.enviado) {
+          toast.success(`Cobrança enviada por e-mail para ${r.emailBoleto.destinatario}.`);
+        } else if (r.boleto && r.emailBoleto && !r.emailBoleto.enviado) {
+          toast.warning(`Boleto ok, mas o e-mail não foi enviado: ${r.emailBoleto.motivo ?? "sem detalhe"}`);
+        }
       }
       void utils.comercial.pedidos.invalidate();
       onEnviadoContaAzul?.();
@@ -136,6 +141,11 @@ export function AcoesPedidoConciliacao({
         toast.success("Boleto emitido. A Conta Azul ainda está registrando o link.");
       } else if (r.boletoErro) {
         toast.warning(`Venda ok, mas o boleto falhou: ${r.boletoErro}`);
+      }
+      if (r.emailBoleto?.enviado) {
+        toast.success(`Cobrança enviada por e-mail para ${r.emailBoleto.destinatario}.`);
+      } else if (r.boleto && r.emailBoleto && !r.emailBoleto.enviado) {
+        toast.warning(`Boleto ok, mas o e-mail não foi enviado: ${r.emailBoleto.motivo ?? "sem detalhe"}`);
       }
       setConfirmarFechamentoAberto(false);
       void utils.comercial.pedidos.invalidate();

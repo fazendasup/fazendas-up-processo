@@ -2,11 +2,21 @@ import nodemailer from "nodemailer";
 import type { Env } from "./env";
 import { logger } from "./logger";
 
+export type MailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+};
+
 export async function sendMail(
   env: Env,
   destinatario: string,
   assunto: string,
   texto: string,
+  opts?: {
+    html?: string;
+    attachments?: MailAttachment[];
+  },
 ) {
   if (!env.SMTP_HOST || !env.MAIL_FROM) {
     logger.debug({ destinatario, assunto }, "E-mail não enviado (SMTP não configurado)");
@@ -28,6 +38,12 @@ export async function sendMail(
     to: destinatario,
     subject: assunto,
     text: texto,
+    html: opts?.html,
+    attachments: opts?.attachments?.map((a) => ({
+      filename: a.filename,
+      content: a.content,
+      contentType: a.contentType,
+    })),
   });
 
   return { enviado: true as const };
