@@ -302,16 +302,18 @@ export function ImportarPedidoPdfDialog({
         onOpenChange(v);
       }}
     >
-      <DialogContent className="flex h-[min(96vh,920px)] w-[min(98vw,1280px)] max-w-none flex-col gap-3 overflow-hidden p-4 sm:p-5">
-        <DialogHeader className="shrink-0 space-y-1">
+      <DialogContent
+        showCloseButton
+        className="flex h-[98vh] max-h-[98vh] w-[98vw] max-w-[98vw] translate-x-[-50%] translate-y-[-50%] flex-col gap-2 overflow-hidden rounded-lg p-3 sm:max-w-[98vw] sm:p-4"
+      >
+        <DialogHeader className="shrink-0 space-y-0.5 pr-8">
           <DialogTitle className="flex items-center gap-2 text-base">
             <FileUp className="h-4 w-4" />
             Importar pedido em PDF
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
-            Lê o texto do PDF (sem OpenAI), casa com clientes/produtos do catálogo e monta o
-            lançamento. Confira na tela dividida, ajuste o dia na agenda e confirme. PDF escaneado
-            (só imagem) exige preenchimento manual.
+          <DialogDescription className="text-xs">
+            Compare o lançamento (esquerda) com o PDF (direita). Ajuste cliente, itens e dia antes de
+            confirmar.
           </DialogDescription>
         </DialogHeader>
 
@@ -343,18 +345,19 @@ export function ImportarPedidoPdfDialog({
             )}
           </Button>
           {arquivoNome ? (
-            <span className="text-xs text-muted-foreground truncate max-w-[240px]">{arquivoNome}</span>
+            <span className="text-xs text-muted-foreground truncate max-w-[min(420px,50vw)]">
+              {arquivoNome}
+            </span>
           ) : null}
           {draft ? (
             <span className="text-[11px] text-muted-foreground">
-              Modelo {draft.modeloUsado} · confiança{" "}
-              {Math.round((draft.confiancaGeral || 0) * 100)}%
+              {draft.modeloUsado} · {Math.round((draft.confiancaGeral || 0) * 100)}%
             </span>
           ) : null}
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2">
-          <div className="min-h-0 overflow-y-auto rounded-lg border bg-card p-3 space-y-3">
+        <div className="grid min-h-0 flex-1 gap-3 grid-cols-1 lg:grid-cols-[minmax(380px,0.9fr)_minmax(0,1.2fr)]">
+          <div className="min-h-0 overflow-y-auto rounded-lg border bg-card p-3 sm:p-4 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Pedido a lançar
             </p>
@@ -395,19 +398,19 @@ export function ImportarPedidoPdfDialog({
                     </span>
                   </div>
                   {draft.cliente.nomePdf ? (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground break-words">
                       No PDF: {draft.cliente.nomePdf}
                       {draft.cliente.documentoPdf ? ` · ${draft.cliente.documentoPdf}` : ""}
                     </p>
                   ) : null}
                   <Input
-                    className="h-8 text-xs"
+                    className="h-9 text-sm"
                     placeholder="Buscar outro cliente…"
                     value={buscaClienteManual}
                     onChange={(e) => setBuscaClienteManual(e.target.value)}
                   />
                   <select
-                    className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                    className="h-10 w-full rounded-md border bg-background px-2 text-sm"
                     value={draft.cliente.contaAzulCustomerId ?? ""}
                     onChange={(e) => patchCliente(e.target.value)}
                   >
@@ -451,14 +454,22 @@ export function ImportarPedidoPdfDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs">Itens</Label>
+                  <Label className="text-xs">Itens ({draft.itens.length})</Label>
                   {draft.itens.map((item) => (
-                    <div key={item.chave} className="rounded-md border p-2 space-y-1.5">
+                    <div key={item.chave} className="rounded-md border p-2.5 space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium truncate">PDF: {item.nomePdf}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium leading-snug break-words">
+                            PDF: {item.nomePdf}
+                            {item.unidadePdf ? ` (${item.unidadePdf})` : ""}
+                          </p>
+                          {item.nomeResolvido ? (
+                            <p className="text-xs text-muted-foreground mt-0.5 break-words">
+                              Catálogo: {item.nomeResolvido}
+                            </p>
+                          ) : null}
                           <span
-                            className={`inline-block mt-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${statusBadge(item.status)}`}
+                            className={`inline-block mt-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${statusBadge(item.status)}`}
                           >
                             {item.status}
                           </span>
@@ -467,15 +478,15 @@ export function ImportarPedidoPdfDialog({
                           type="button"
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 shrink-0"
+                          className="h-8 w-8 shrink-0"
                           onClick={() => removerItem(item.chave)}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="grid grid-cols-[1fr_88px] gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_100px]">
                         <select
-                          className="h-8 w-full rounded-md border bg-background px-2 text-xs"
+                          className="h-10 w-full rounded-md border bg-background px-2 text-sm"
                           value={item.produtoId ?? ""}
                           onChange={(e) => patchItem(item.chave, { produtoId: e.target.value || null })}
                         >
@@ -493,15 +504,18 @@ export function ImportarPedidoPdfDialog({
                               </option>
                             ))}
                         </select>
-                        <Input
-                          className="h-8 text-xs"
-                          inputMode="decimal"
-                          value={String(item.quantidade)}
-                          onChange={(e) => {
-                            const n = Number(e.target.value.replace(",", "."));
-                            if (Number.isFinite(n)) patchItem(item.chave, { quantidade: n });
-                          }}
-                        />
+                        <div className="space-y-0.5">
+                          <Label className="text-[10px] text-muted-foreground">Qtd</Label>
+                          <Input
+                            className="h-10 text-sm tabular-nums"
+                            inputMode="decimal"
+                            value={String(item.quantidade)}
+                            onChange={(e) => {
+                              const n = Number(e.target.value.replace(",", "."));
+                              if (Number.isFinite(n)) patchItem(item.chave, { quantidade: n });
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -539,12 +553,28 @@ export function ImportarPedidoPdfDialog({
             ) : null}
           </div>
 
-          <div className="min-h-0 overflow-hidden rounded-lg border bg-muted/20 flex flex-col">
-            <p className="shrink-0 border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              PDF original
-            </p>
+          <div className="min-h-[45vh] lg:min-h-0 overflow-hidden rounded-lg border bg-muted/20 flex flex-col">
+            <div className="shrink-0 border-b px-3 py-2 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                PDF original
+              </p>
+              {pdfUrl ? (
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-primary underline-offset-2 hover:underline"
+                >
+                  Abrir em nova aba
+                </a>
+              ) : null}
+            </div>
             {pdfUrl ? (
-              <iframe title="PDF do pedido" src={pdfUrl} className="min-h-0 flex-1 w-full bg-white" />
+              <iframe
+                title="PDF do pedido"
+                src={`${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width`}
+                className="min-h-0 flex-1 w-full bg-white"
+              />
             ) : (
               <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground text-center">
                 O PDF aparece aqui para comparar com o lançamento.
