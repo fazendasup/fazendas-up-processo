@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Copy,
   FileUp,
+  MessageSquareText,
   Package,
   PackageCheck,
   Plus,
@@ -68,6 +69,7 @@ import {
   ordemCategoriaOperacao,
   type CategoriaOperacaoOuOutros,
 } from "@shared/produtoCategoriaOperacao";
+import type { DraftComandoPedidoTexto } from "@shared/comandoPedidoTexto";
 
 type ProdutoRotulo = {
   nome?: string | null;
@@ -417,6 +419,52 @@ export function Pedidos({
   const [clienteRegrasId, setClienteRegrasId] = useState("");
   const [produtoEdit, setProdutoEdit] = useState<any>(null);
   const [importarPdfAberto, setImportarPdfAberto] = useState(false);
+  const [frasePedido, setFrasePedido] = useState("");
+  const [draftFrase, setDraftFrase] = useState<DraftComandoPedidoTexto | null>(
+    null,
+  );
+  const aplicarDraftFraseNoForm = (draft: DraftComandoPedidoTexto) => {
+    if (draft.dataEntregaSugerida) setDia(draft.dataEntregaSugerida);
+    if (draft.cliente.contaAzulCustomerId) {
+      setClienteId(draft.cliente.contaAzulCustomerId);
+      setClienteBusca(
+        draft.cliente.nomeResolvido || draft.cliente.nomeTexto || "",
+      );
+    }
+    if (draft.itens.length) {
+      setLinhas(
+        draft.itens.map(i => ({
+          produtoId: i.produtoId ?? "",
+          quantidade: String(i.quantidade).replace(".", ","),
+          observacoes: "",
+        })),
+      );
+    }
+    setTipoVenda(prev => prev || "AVULSO");
+    setObsPedido(prev =>
+      prev.trim() ? prev : `Via texto: ${draft.fraseOriginal}`.slice(0, 500),
+    );
+  };
+  const analisarTexto = trpc.comercial.pedidos.analisarPedidoTexto.useMutation({
+    onSuccess: draft => {
+      setDraftFrase(draft);
+      aplicarDraftFraseNoForm(draft);
+      const duvida =
+        draft.cliente.status !== "ok" ||
+        draft.itens.some(i => i.status !== "ok");
+      if (duvida) {
+        toast.message(
+          "Interpretação parcial — escolha a opção mais próxima abaixo.",
+        );
+      } else if (draft.avisos.length) {
+        toast.message(draft.avisos.join(" · "));
+      } else {
+        toast.success("Frase interpretada — confira e salve o pedido.");
+      }
+    },
+    onError: err =>
+      toast.error(err.message || "Não foi possível interpretar a frase."),
+  });
 
   const diaDate = useMemo(() => new Date(`${dia}T12:00:00`), [dia]);
   const [clienteConciliacaoFoco, setClienteConciliacaoFoco] = useState<
@@ -1971,6 +2019,247 @@ export function Pedidos({
               )}
             </CardHeader>
             <CardContent className="min-w-0 space-y-3 overflow-x-hidden">
+              {canEditarComercial ? (
+                <div className="rounded-lg border border-dashed bg-muted/20 p-3 space-y-2">
+                  <Label className="text-xs flex items-center gap-1.5">
+                    <MessageSquareText className="h-3.5 w-3.5" />
+                    Pedido em texto (sem OpenAI)
+                  </Label>
+                  <Textarea
+                    rows={2}
+                    className="text-sm"
+                    placeholder='Ex.: coloque para quarta 10 manjericões para o Spoleto'
+                    value={frasePedido}
+                    onChange={e => setFrasePedido(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 text-xs"
+                      disabled={
+                        analisarTexto.isPending || frasePedido.trim().length < 4
+                      }
+                      onClick={() =>
+                        analisarTexto.mutate({
+                          frase: frasePedido.trim(),
+                          dataReferencia: hojeIso(),
+                        })
+                      }
+                    >
+                      {analisarTexto.isPending
+                        ? "Interpretando…"
+                        : "Interpretar e preencher"}
+                    </Button>
+                    <p className="text-[11px] text-muted-foreground self-center">
+                      Preenche cliente, dia e itens — você confere e salva.
+                    </p>
+                  </div>
+                  {draftFrase &&
+                  ((draftFrase.cliente.status !== "ok" &&
+                    draftFrase.cliente.status !== "manual") ||
+                    draftFrase.itens.some(
+                      i => i.status !== "ok" && i.status !== "manual",
+                    )) ? (
+                    <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 space-y-3">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-800 dark:text-amber-200" />
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="text-xs font-medium text-amber-950 dark:text-amber-50">
+                            Escolha a interpretação mais próxima
+                          </p>
+                          <p className="text-[11px] text-amber-900/80 dark:text-amber-100/80">
+                            Clique na opção correta. O formulário abaixo
+                            atualiza na hora.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 shrink-0 text-[11px]"
+                          onClick={() => setDraftFrase(null)}
+                        >
+                          Fechar
+                        </Button>
+                      </div>
+
+                      {draftFrase.cliente.status !== "ok" ? (
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] font-medium">
+                            Cliente
+                            {draftFrase.cliente.nomeTexto
+                              ? ` · texto: “${draftFrase.cliente.nomeTexto}”`
+                              : ""}
+                          </p>
+                          {draftFrase.cliente.candidatos.length ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {draftFrase.cliente.candidatos.map(c => (
+                                <Button
+                                  key={c.id}
+                                  type="button"
+                                  size="sm"
+                                  variant={
+                                    clienteId === c.id ? "default" : "outline"
+                                  }
+                                  className="h-8 text-xs"
+                                  onClick={() => {
+                                    setClienteId(c.id);
+                                    setClienteBusca(c.nome);
+                                    setDraftFrase(prev =>
+                                      prev
+                                        ? {
+                                            ...prev,
+                                            cliente: {
+                                              ...prev.cliente,
+                                              contaAzulCustomerId: c.id,
+                                              nomeResolvido: c.nome,
+                                              status: "manual",
+                                            },
+                                          }
+                                        : prev,
+                                    );
+                                  }}
+                                >
+                                  {c.nome}
+                                  {c.detalhe ? ` (${c.detalhe})` : ""}
+                                </Button>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground">
+                              Sem candidatos próximos — use o seletor de
+                              cliente abaixo.
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+
+                      {draftFrase.itens
+                        .filter(i => i.status !== "ok" && i.status !== "manual")
+                        .map(item => (
+                          <div key={item.chave} className="space-y-1.5">
+                            <p className="text-[11px] font-medium">
+                              Produto · texto: “{item.nomeTexto}” · qtd{" "}
+                              {item.quantidade}
+                            </p>
+                            {item.candidatos.length ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {item.candidatos.map(p => (
+                                  <Button
+                                    key={p.id}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                      linhas.some(
+                                        l =>
+                                          l.produtoId === p.id &&
+                                          Number(
+                                            l.quantidade.replace(",", "."),
+                                          ) === item.quantidade,
+                                      )
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    className="h-8 text-xs"
+                                    onClick={() => {
+                                      setLinhas(prev => {
+                                        const idx = prev.findIndex(
+                                          l =>
+                                            !l.produtoId &&
+                                            Number(
+                                              l.quantidade.replace(",", "."),
+                                            ) === item.quantidade,
+                                        );
+                                        const qtd = String(
+                                          item.quantidade,
+                                        ).replace(".", ",");
+                                        if (idx >= 0) {
+                                          const next = [...prev];
+                                          next[idx] = {
+                                            ...next[idx]!,
+                                            produtoId: p.id,
+                                            quantidade: qtd,
+                                          };
+                                          return next;
+                                        }
+                                        const byNome = prev.findIndex(
+                                          l =>
+                                            Number(
+                                              l.quantidade.replace(",", "."),
+                                            ) === item.quantidade &&
+                                            !l.produtoId,
+                                        );
+                                        if (byNome >= 0) {
+                                          const next = [...prev];
+                                          next[byNome] = {
+                                            ...next[byNome]!,
+                                            produtoId: p.id,
+                                          };
+                                          return next;
+                                        }
+                                        // substitui linha do mesmo item do draft ou acrescenta
+                                        const fromDraftIdx =
+                                          draftFrase.itens.findIndex(
+                                            x => x.chave === item.chave,
+                                          );
+                                        if (
+                                          fromDraftIdx >= 0 &&
+                                          fromDraftIdx < prev.length
+                                        ) {
+                                          const next = [...prev];
+                                          next[fromDraftIdx] = {
+                                            produtoId: p.id,
+                                            quantidade: qtd,
+                                            observacoes: "",
+                                          };
+                                          return next;
+                                        }
+                                        return [
+                                          ...prev.filter(l => l.produtoId),
+                                          {
+                                            produtoId: p.id,
+                                            quantidade: qtd,
+                                            observacoes: "",
+                                          },
+                                        ];
+                                      });
+                                      setDraftFrase(prev => {
+                                        if (!prev) return prev;
+                                        return {
+                                          ...prev,
+                                          itens: prev.itens.map(i =>
+                                            i.chave === item.chave
+                                              ? {
+                                                  ...i,
+                                                  produtoId: p.id,
+                                                  nomeResolvido: p.nome,
+                                                  status: "manual" as const,
+                                                }
+                                              : i,
+                                          ),
+                                        };
+                                      });
+                                    }}
+                                  >
+                                    {p.nome}
+                                    {p.detalhe ? ` (${p.detalhe})` : ""}
+                                  </Button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-muted-foreground">
+                                Sem candidatos — escolha o produto na linha do
+                                pedido.
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <ClientePicker
                 busca={clienteBusca}
                 setBusca={setClienteBusca}

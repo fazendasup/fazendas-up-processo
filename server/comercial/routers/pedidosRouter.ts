@@ -65,6 +65,7 @@ import {
   listarProdutosFaltantesVenda,
 } from "../lib/produto-operacional.js";
 import { analisarPedidoPdf } from "../lib/importar-pedido-pdf.js";
+import { interpretarComandoPedidoTexto } from "@shared/comandoPedidoTexto";
 import {
   desativarProdutosInativosNoContaAzul,
   importarProdutosParaOperacao,
@@ -1523,6 +1524,62 @@ export const pedidosRouter = router({
           avarias: base.avarias.map(comNomeCatalogoProduto),
           alertaAvariasPendentes: alertas.get(pedido.id) ?? null,
         };
+      });
+    }),
+
+  /**
+   * Interpreta frase de pedido em português (sem OpenAI) e casa cliente/produtos.
+   * Não grava — a UI preenche o formulário / pede confirmação.
+   */
+  analisarPedidoTexto: comercialProcedure
+    .input(
+      z.object({
+        frase: z.string().min(4).max(2000),
+        /** YYYY-MM-DD de referência para "quarta"/"amanhã". */
+        dataReferencia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.comercialUsuario) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Usuário comercial não identificado",
+        });
+      }
+      const [clientes, produtos] = await Promise.all([
+        ctx.prisma!.cliente.findMany({
+          where: { externalId: { not: null } },
+          select: { externalId: true, nome: true, cnpjCpf: true },
+          orderBy: { nome: "asc" },
+          take: 800,
+        }),
+        ctx.prisma!.produtoComercial.findMany({
+          where: {
+            ativo: true,
+            importadoOperacao: true,
+            contaAzulProdutoId: { not: null },
+          },
+          select: { id: true, nome: true, sku: true },
+          orderBy: { nome: "asc" },
+          take: 800,
+        }),
+      ]);
+      const ref = input.dataReferencia
+        ? new Date(`${input.dataReferencia}T12:00:00`)
+        : new Date();
+      return interpretarComandoPedidoTexto({
+        frase: input.frase,
+        dataReferencia: ref,
+        clientes: clientes
+          .filter((c): c is { externalId: string; nome: string; cnpjCpf: string | null } =>
+            Boolean(c.externalId),
+          )
+          .map((c) => ({
+            externalId: c.externalId,
+            nome: c.nome,
+            cnpjCpf: c.cnpjCpf,
+          })),
+        produtos,
       });
     }),
 
