@@ -1701,11 +1701,15 @@ export function registerPortalRoutes(app: Express): void {
       falha(res, 401, "Entre com o acesso da equipe.");
       return;
     }
+    if (req.body && typeof req.body === "object" && "preco" in req.body) {
+      falha(res, 400, "Preço base do ERP não pode ser alterado pelo site. Use margem % do site.");
+      return;
+    }
     const parsed = z
       .object({
         naLoja: z.boolean().optional(),
         exclusivo: z.boolean().optional(),
-        preco: z.number().positive().max(99999).optional(),
+        // precoBase/ERP só via Conta Azul — site altera só margemSite
         margemSite: z.number().min(-500).max(99.99).nullable().optional(),
         imagemUrl: z.string().max(500).nullable().optional(),
         descricao: z.string().trim().max(400).optional(),
@@ -1718,7 +1722,6 @@ export function registerPortalRoutes(app: Express): void {
       parsed.success &&
       (parsed.data.naLoja != null ||
         parsed.data.exclusivo != null ||
-        parsed.data.preco != null ||
         parsed.data.margemSite !== undefined ||
         parsed.data.imagemUrl !== undefined ||
         parsed.data.descricao != null ||
@@ -1726,7 +1729,7 @@ export function registerPortalRoutes(app: Express): void {
         parsed.data.estoque !== undefined ||
         parsed.data.grupo != null);
     if (!parsed.success || !temCampo) {
-      falha(res, 400, "Informe preço, margem, foto, estoque, classe ou se o item fica na loja.");
+      falha(res, 400, "Informe margem, foto, estoque, classe ou se o item fica na loja.");
       return;
     }
     if (parsed.data.imagemUrl && !imagemValida(parsed.data.imagemUrl)) {
@@ -1754,7 +1757,6 @@ export function registerPortalRoutes(app: Express): void {
         data: {
           ...(parsed.data.naLoja != null ? { visivelPortal: parsed.data.naLoja } : {}),
           ...(parsed.data.exclusivo != null ? { exclusivoPortal: parsed.data.exclusivo } : {}),
-          ...(parsed.data.preco != null ? { precoBase: parsed.data.preco.toFixed(2) } : {}),
           ...(parsed.data.margemSite !== undefined
             ? { margemSite: parsed.data.margemSite == null ? null : parsed.data.margemSite.toFixed(2) }
             : {}),
