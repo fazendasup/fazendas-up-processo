@@ -13883,6 +13883,7 @@ export namespace Prisma {
     fatorCompraUnidade: Decimal | null
     rendimentoPorKg: Decimal | null
     estoqueLoja: Decimal | null
+    margemSite: Decimal | null
   }
 
   export type ProdutoComercialSumAggregateOutputType = {
@@ -13890,6 +13891,7 @@ export namespace Prisma {
     fatorCompraUnidade: Decimal | null
     rendimentoPorKg: Decimal | null
     estoqueLoja: Decimal | null
+    margemSite: Decimal | null
   }
 
   export type ProdutoComercialMinAggregateOutputType = {
@@ -13917,6 +13919,7 @@ export namespace Prisma {
     aplicacaoLoja: string | null
     grupoLoja: string | null
     estoqueLoja: Decimal | null
+    margemSite: Decimal | null
     criadoEm: Date | null
     atualizadoEm: Date | null
   }
@@ -13946,6 +13949,7 @@ export namespace Prisma {
     aplicacaoLoja: string | null
     grupoLoja: string | null
     estoqueLoja: Decimal | null
+    margemSite: Decimal | null
     criadoEm: Date | null
     atualizadoEm: Date | null
   }
@@ -13976,6 +13980,7 @@ export namespace Prisma {
     aplicacaoLoja: number
     grupoLoja: number
     estoqueLoja: number
+    margemSite: number
     criadoEm: number
     atualizadoEm: number
     _all: number
@@ -13987,6 +13992,7 @@ export namespace Prisma {
     fatorCompraUnidade?: true
     rendimentoPorKg?: true
     estoqueLoja?: true
+    margemSite?: true
   }
 
   export type ProdutoComercialSumAggregateInputType = {
@@ -13994,6 +14000,7 @@ export namespace Prisma {
     fatorCompraUnidade?: true
     rendimentoPorKg?: true
     estoqueLoja?: true
+    margemSite?: true
   }
 
   export type ProdutoComercialMinAggregateInputType = {
@@ -14021,6 +14028,7 @@ export namespace Prisma {
     aplicacaoLoja?: true
     grupoLoja?: true
     estoqueLoja?: true
+    margemSite?: true
     criadoEm?: true
     atualizadoEm?: true
   }
@@ -14050,6 +14058,7 @@ export namespace Prisma {
     aplicacaoLoja?: true
     grupoLoja?: true
     estoqueLoja?: true
+    margemSite?: true
     criadoEm?: true
     atualizadoEm?: true
   }
@@ -14080,6 +14089,7 @@ export namespace Prisma {
     aplicacaoLoja?: true
     grupoLoja?: true
     estoqueLoja?: true
+    margemSite?: true
     criadoEm?: true
     atualizadoEm?: true
     _all?: true
@@ -14197,6 +14207,7 @@ export namespace Prisma {
     aplicacaoLoja: string | null
     grupoLoja: string | null
     estoqueLoja: Decimal | null
+    margemSite: Decimal | null
     criadoEm: Date
     atualizadoEm: Date
     _count: ProdutoComercialCountAggregateOutputType | null
@@ -14246,6 +14257,7 @@ export namespace Prisma {
     aplicacaoLoja?: boolean
     grupoLoja?: boolean
     estoqueLoja?: boolean
+    margemSite?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
     portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
@@ -14289,11 +14301,12 @@ export namespace Prisma {
     aplicacaoLoja?: boolean
     grupoLoja?: boolean
     estoqueLoja?: boolean
+    margemSite?: boolean
     criadoEm?: boolean
     atualizadoEm?: boolean
   }
 
-  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "exclusivoPortal" | "descricaoLoja" | "aplicacaoLoja" | "grupoLoja" | "estoqueLoja" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
+  export type ProdutoComercialOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nome" | "contaAzulProdutoId" | "sku" | "statusContaAzul" | "sincronizadoEm" | "importadoOperacao" | "precoBase" | "categoria" | "ativo" | "modoCompra" | "fatorCompraUnidade" | "rendimentoPorKg" | "ocultoListaCompra" | "mixAtivo" | "mixFolhaLeve" | "mixProdutoReferenciaId" | "mixVariedades" | "imagemUrl" | "visivelPortal" | "exclusivoPortal" | "descricaoLoja" | "aplicacaoLoja" | "grupoLoja" | "estoqueLoja" | "margemSite" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["produtoComercial"]>
   export type ProdutoComercialInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     portalFoto?: boolean | ProdutoComercial$portalFotoArgs<ExtArgs>
     programacaoItens?: boolean | ProdutoComercial$programacaoItensArgs<ExtArgs>
@@ -14357,6 +14370,11 @@ export namespace Prisma {
        */
       grupoLoja: string | null
       estoqueLoja: Prisma.Decimal | null
+      /**
+       * Margem % aplicada só no preço do site/portal. Nunca altera precoBase nem Conta Azul.
+       * Fórmula: preçoSite = precoBase ÷ (1 − margemSite/100). Ex.: 30 → preço ÷ 0,7.
+       */
+      margemSite: Prisma.Decimal | null
       criadoEm: Date
       atualizadoEm: Date
     }, ExtArgs["result"]["produtoComercial"]>
@@ -14763,6 +14781,7 @@ export namespace Prisma {
     readonly aplicacaoLoja: FieldRef<"ProdutoComercial", 'String'>
     readonly grupoLoja: FieldRef<"ProdutoComercial", 'String'>
     readonly estoqueLoja: FieldRef<"ProdutoComercial", 'Decimal'>
+    readonly margemSite: FieldRef<"ProdutoComercial", 'Decimal'>
     readonly criadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
     readonly atualizadoEm: FieldRef<"ProdutoComercial", 'DateTime'>
   }
@@ -52008,6 +52027,7 @@ export namespace Prisma {
     aplicacaoLoja: 'aplicacaoLoja',
     grupoLoja: 'grupoLoja',
     estoqueLoja: 'estoqueLoja',
+    margemSite: 'margemSite',
     criadoEm: 'criadoEm',
     atualizadoEm: 'atualizadoEm'
   };
@@ -53999,6 +54019,7 @@ export namespace Prisma {
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     grupoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    margemSite?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     portalFoto?: XOR<PortalFotoNullableScalarRelationFilter, PortalFotoWhereInput> | null
@@ -54039,6 +54060,7 @@ export namespace Prisma {
     aplicacaoLoja?: SortOrderInput | SortOrder
     grupoLoja?: SortOrderInput | SortOrder
     estoqueLoja?: SortOrderInput | SortOrder
+    margemSite?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
     portalFoto?: PortalFotoOrderByWithRelationInput
@@ -54083,6 +54105,7 @@ export namespace Prisma {
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     grupoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    margemSite?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     portalFoto?: XOR<PortalFotoNullableScalarRelationFilter, PortalFotoWhereInput> | null
@@ -54123,6 +54146,7 @@ export namespace Prisma {
     aplicacaoLoja?: SortOrderInput | SortOrder
     grupoLoja?: SortOrderInput | SortOrder
     estoqueLoja?: SortOrderInput | SortOrder
+    margemSite?: SortOrderInput | SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
     _count?: ProdutoComercialCountOrderByAggregateInput
@@ -54161,6 +54185,7 @@ export namespace Prisma {
     aplicacaoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     grupoLoja?: StringNullableWithAggregatesFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    margemSite?: DecimalNullableWithAggregatesFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeWithAggregatesFilter<"ProdutoComercial"> | Date | string
   }
@@ -57821,6 +57846,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -57861,6 +57887,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -57899,6 +57926,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -57939,6 +57967,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -57978,6 +58007,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
   }
@@ -58007,6 +58037,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -58037,6 +58068,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -62197,6 +62229,7 @@ export namespace Prisma {
     aplicacaoLoja?: SortOrder
     grupoLoja?: SortOrder
     estoqueLoja?: SortOrder
+    margemSite?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -62206,6 +62239,7 @@ export namespace Prisma {
     fatorCompraUnidade?: SortOrder
     rendimentoPorKg?: SortOrder
     estoqueLoja?: SortOrder
+    margemSite?: SortOrder
   }
 
   export type ProdutoComercialMaxOrderByAggregateInput = {
@@ -62233,6 +62267,7 @@ export namespace Prisma {
     aplicacaoLoja?: SortOrder
     grupoLoja?: SortOrder
     estoqueLoja?: SortOrder
+    margemSite?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -62262,6 +62297,7 @@ export namespace Prisma {
     aplicacaoLoja?: SortOrder
     grupoLoja?: SortOrder
     estoqueLoja?: SortOrder
+    margemSite?: SortOrder
     criadoEm?: SortOrder
     atualizadoEm?: SortOrder
   }
@@ -62271,6 +62307,7 @@ export namespace Prisma {
     fatorCompraUnidade?: SortOrder
     rendimentoPorKg?: SortOrder
     estoqueLoja?: SortOrder
+    margemSite?: SortOrder
   }
 
   export type EnumModoCompraProdutoWithAggregatesFilter<$PrismaModel = never> = {
@@ -70452,6 +70489,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -70491,6 +70529,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -70566,6 +70605,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -70605,6 +70645,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -70693,6 +70734,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -70732,6 +70774,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -70816,6 +70859,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -70855,6 +70899,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -71029,6 +71074,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -71068,6 +71114,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -71110,6 +71157,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -71148,6 +71196,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -71411,6 +71460,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -71450,6 +71500,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -71507,6 +71558,7 @@ export namespace Prisma {
     aplicacaoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     grupoLoja?: StringNullableFilter<"ProdutoComercial"> | string | null
     estoqueLoja?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
+    margemSite?: DecimalNullableFilter<"ProdutoComercial"> | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
     atualizadoEm?: DateTimeFilter<"ProdutoComercial"> | Date | string
   }
@@ -71597,6 +71649,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -71636,6 +71689,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -71734,6 +71788,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -71773,6 +71828,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -72786,6 +72842,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -72825,6 +72882,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -72901,6 +72959,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -72940,6 +72999,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -73157,6 +73217,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     programacaoItens?: PortalProgramacaoItemCreateNestedManyWithoutProdutoInput
@@ -73196,6 +73257,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     programacaoItens?: PortalProgramacaoItemUncheckedCreateNestedManyWithoutProdutoInput
@@ -73249,6 +73311,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     programacaoItens?: PortalProgramacaoItemUpdateManyWithoutProdutoNestedInput
@@ -73288,6 +73351,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     programacaoItens?: PortalProgramacaoItemUncheckedUpdateManyWithoutProdutoNestedInput
@@ -73706,6 +73770,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -73745,6 +73810,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -73847,6 +73913,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -73886,6 +73953,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -75437,6 +75505,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -75476,6 +75545,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -75598,6 +75668,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -75637,6 +75708,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -75808,6 +75880,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoCreateNestedOneWithoutProdutoInput
@@ -75847,6 +75920,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
     portalFoto?: PortalFotoUncheckedCreateNestedOneWithoutProdutoInput
@@ -76091,6 +76165,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -76130,6 +76205,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -79351,6 +79427,7 @@ export namespace Prisma {
     aplicacaoLoja?: string | null
     grupoLoja?: string | null
     estoqueLoja?: Decimal | DecimalJsLike | number | string | null
+    margemSite?: Decimal | DecimalJsLike | number | string | null
     criadoEm?: Date | string
     atualizadoEm?: Date | string
   }
@@ -79527,6 +79604,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUpdateOneWithoutProdutoNestedInput
@@ -79565,6 +79643,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     portalFoto?: PortalFotoUncheckedUpdateOneWithoutProdutoNestedInput
@@ -79603,6 +79682,7 @@ export namespace Prisma {
     aplicacaoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     grupoLoja?: NullableStringFieldUpdateOperationsInput | string | null
     estoqueLoja?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    margemSite?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     criadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
     atualizadoEm?: DateTimeFieldUpdateOperationsInput | Date | string
   }

@@ -32,6 +32,15 @@ function dinheiro(valor: unknown): number | null {
   return Math.round(numero * 100) / 100;
 }
 
+function precoSiteComMargem(base: number | null, margemSite: unknown): number | null {
+  if (base == null) return null;
+  const m = Number(margemSite);
+  if (!Number.isFinite(m) || m === 0) return base;
+  const denominador = 1 - m / 100;
+  if (Math.abs(denominador) < 1e-9) return base;
+  return Math.round((base / denominador) * 100) / 100;
+}
+
 function ymdManaus(data: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Manaus",
@@ -81,7 +90,7 @@ export async function lerProgramacao(
       produtoId: item.produtoId,
       nome: item.produto.nome,
       quantidade: Number(item.quantidade),
-      preco: especiais.get(item.produtoId) ?? dinheiro(item.produto.precoBase),
+      preco: especiais.get(item.produtoId) ?? precoSiteComMargem(dinheiro(item.produto.precoBase), item.produto.margemSite),
       peso: pesoDoProduto(item.produto.nome, item.produto.modoCompra),
     })),
   }));
@@ -153,8 +162,8 @@ export async function salvarProgramacao(
     const linhas = dia.itens.map((item) => {
       const produto = porId.get(item.produtoId)!;
       const especial = especiais.get(produto.id);
-      const preco = especial ?? dinheiro(produto.precoBase);
-      if (preco == null || preco <= 0) throw new LojaErro(400, "Há produto sem preço.");
+      const preco = especial ?? precoSiteComMargem(dinheiro(produto.precoBase), produto.margemSite);
+        if (preco == null || preco <= 0) throw new LojaErro(400, "Há produto sem preço.");
       total += preco * item.quantidade;
       return {
         produtoId: produto.id,

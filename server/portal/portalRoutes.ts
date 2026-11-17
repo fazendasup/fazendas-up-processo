@@ -119,6 +119,19 @@ function dinheiro(valor: unknown): number | null {
   return Math.round(n * 100) / 100;
 }
 
+/**
+ * Preço exibido no site = precoBase ÷ (1 − margemSite / 100).
+ * margemSite é uma margem % exclusiva do portal e NUNCA altera o precoBase/ERP.
+ */
+function precoSiteComMargem(base: number | null, margemSite: unknown): number | null {
+  if (base == null) return null;
+  const m = Number(margemSite);
+  if (!Number.isFinite(m) || m === 0) return base;
+  const denominador = 1 - m / 100;
+  if (Math.abs(denominador) < 1e-9) return base;
+  return Math.round((base / denominador) * 100) / 100;
+}
+
 function podeEditarLoja(role: string | null | undefined) {
   return role === "comercial" || role === "admin" || role === "platform_admin";
 }
@@ -312,7 +325,8 @@ export function registerPortalRoutes(app: Express): void {
             return [];
           }
           const base = dinheiro(produto.precoBase);
-          const preco = especial ?? base;
+          const siteBase = precoSiteComMargem(base, produto.margemSite);
+          const preco = especial ?? siteBase;
           if (preco == null || preco <= 0) return [];
           const ficha = fichaDoProduto(produto.nome);
           return [
@@ -847,7 +861,8 @@ export function registerPortalRoutes(app: Express): void {
           return [];
         }
         const base = dinheiro(produto.precoBase);
-        const preco = especial ?? base;
+        const siteBase = precoSiteComMargem(base, produto.margemSite);
+        const preco = especial ?? siteBase;
         if (preco == null || preco <= 0) return [];
         return [
           {
@@ -1098,7 +1113,8 @@ export function registerPortalRoutes(app: Express): void {
       const linhas = parsed.data.itens.map((item) => {
         const produto = porId.get(item.produtoId)!;
         const especial = especiais.get(produto.id);
-        const preco = especial ?? dinheiro(produto.precoBase);
+        const siteBase = precoSiteComMargem(dinheiro(produto.precoBase), produto.margemSite);
+        const preco = especial ?? siteBase;
         if (preco == null || preco <= 0) return null;
         total += preco * item.quantidade;
         return { produto, quantidade: item.quantidade, preco, especial: especial != null };
@@ -1627,6 +1643,8 @@ export function registerPortalRoutes(app: Express): void {
       res.json({
         produtos: produtos.map((produto) => {
           const ficha = fichaDoProduto(produto.nome);
+          const base = dinheiro(produto.precoBase);
+          const margem = dinheiro(produto.margemSite);
           return {
             id: produto.id,
             nome: produto.nome,
@@ -1636,7 +1654,9 @@ export function registerPortalRoutes(app: Express): void {
             aplicacao: produto.aplicacaoLoja || ficha.aplicacao,
             naLoja: produto.visivelPortal,
             exclusivo: produto.exclusivoPortal,
-            preco: dinheiro(produto.precoBase),
+            preco: base,
+            precoSite: precoSiteComMargem(base, margem),
+            margemSite: margem,
             imagemUrl: produto.imagemUrl || ficha.foto,
             unidade: produto.modoCompra === "KG" ? "kg" : "un",
             peso: pesoDoProduto(produto.nome, produto.modoCompra),
@@ -1686,6 +1706,7 @@ export function registerPortalRoutes(app: Express): void {
         naLoja: z.boolean().optional(),
         exclusivo: z.boolean().optional(),
         preco: z.number().positive().max(99999).optional(),
+        margemSite: z.number().min(-500).max(99.99).nullable().optional(),
         imagemUrl: z.string().max(500).nullable().optional(),
         descricao: z.string().trim().max(400).optional(),
         aplicacao: z.string().trim().max(240).optional(),
@@ -1698,13 +1719,14 @@ export function registerPortalRoutes(app: Express): void {
       (parsed.data.naLoja != null ||
         parsed.data.exclusivo != null ||
         parsed.data.preco != null ||
+        parsed.data.margemSite !== undefined ||
         parsed.data.imagemUrl !== undefined ||
         parsed.data.descricao != null ||
         parsed.data.aplicacao != null ||
         parsed.data.estoque !== undefined ||
         parsed.data.grupo != null);
     if (!parsed.success || !temCampo) {
-      falha(res, 400, "Informe preço, foto, estoque, classe ou se o item fica na loja.");
+      falha(res, 400, "Informe preço, margem, foto, estoque, classe ou se o item fica na loja.");
       return;
     }
     if (parsed.data.imagemUrl && !imagemValida(parsed.data.imagemUrl)) {
@@ -1733,6 +1755,9 @@ export function registerPortalRoutes(app: Express): void {
           ...(parsed.data.naLoja != null ? { visivelPortal: parsed.data.naLoja } : {}),
           ...(parsed.data.exclusivo != null ? { exclusivoPortal: parsed.data.exclusivo } : {}),
           ...(parsed.data.preco != null ? { precoBase: parsed.data.preco.toFixed(2) } : {}),
+          ...(parsed.data.margemSite !== undefined
+            ? { margemSite: parsed.data.margemSite == null ? null : parsed.data.margemSite.toFixed(2) }
+            : {}),
           ...(parsed.data.imagemUrl !== undefined ? { imagemUrl: parsed.data.imagemUrl || null } : {}),
           ...(parsed.data.descricao != null ? { descricaoLoja: parsed.data.descricao } : {}),
           ...(parsed.data.aplicacao != null ? { aplicacaoLoja: parsed.data.aplicacao } : {}),
@@ -1742,11 +1767,15 @@ export function registerPortalRoutes(app: Express): void {
             : {}),
         },
       });
+      const baseResp = dinheiro(atualizado.precoBase);
+      const margemResp = dinheiro(atualizado.margemSite);
       res.json({
         id: atualizado.id,
         naLoja: atualizado.visivelPortal,
         exclusivo: atualizado.exclusivoPortal,
-        preco: dinheiro(atualizado.precoBase),
+        preco: baseResp,
+        precoSite: precoSiteComMargem(baseResp, margemResp),
+        margemSite: margemResp,
         imagemUrl: atualizado.imagemUrl,
         descricao: atualizado.descricaoLoja,
         aplicacao: atualizado.aplicacaoLoja,

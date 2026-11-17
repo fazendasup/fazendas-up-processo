@@ -347,6 +347,9 @@ model ProdutoComercial {
   /// Classe da vitrine (ex.: Folhas). Se vazio, usa a classificação automática pelo nome.
   grupoLoja              String?           @map("grupo_loja") @db.VarChar(80)
   estoqueLoja            Decimal?          @map("estoque_loja") @db.Decimal(14, 3)
+  /// Margem % aplicada só no preço do site/portal. Nunca altera precoBase nem Conta Azul.
+  /// Fórmula: preçoSite = precoBase ÷ (1 − margemSite/100). Ex.: 30 → preço ÷ 0,7.
+  margemSite             Decimal?          @map("margem_site") @db.Decimal(5, 2)
   criadoEm               DateTime          @default(now()) @map("criado_em")
   atualizadoEm           DateTime          @updatedAt @map("atualizado_em")
 

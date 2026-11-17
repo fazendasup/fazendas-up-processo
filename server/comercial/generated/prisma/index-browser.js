@@ -224,6 +224,7 @@ exports.Prisma.ProdutoComercialScalarFieldEnum = {
   aplicacaoLoja: 'aplicacaoLoja',
   grupoLoja: 'grupoLoja',
   estoqueLoja: 'estoqueLoja',
+  margemSite: 'margemSite',
   criadoEm: 'criadoEm',
   atualizadoEm: 'atualizadoEm'
 };
