@@ -210,6 +210,8 @@ export default function TorreDetail() {
   const faseLabelExibicao = isMicroverdes ? labelFaseTorreMicroverdes(torre.fase) : fConfig.label;
   const caixa = data.caixasAgua.find((c) => c.id === torre.caixaAguaId);
   const andares = andaresDaTorreDeclarados(data.andares, torre).sort((a, b) => b.numero - a.numero);
+  const andaresPendentesLavagem = andares.filter((a) => andarPrecisaLavagem(a));
+  const qtdPendentesLavagem = andaresPendentesLavagem.length;
   const andarSelecionado = andares.find((a) => a.id === selectedAndar);
   const variedadesAtivasNoAndar = new Set(
     (andarSelecionado?.perfis || [])
@@ -1094,6 +1096,35 @@ export default function TorreDetail() {
     toast.success(isMicroverdes ? 'Bandejas marcadas como lavadas!' : 'Perfis marcados como lavados!');
   };
 
+  /** Marca lavagem em todos os andares da torre que ainda estão pendentes. */
+  const handleMarcarLavadoTorreToda = async () => {
+    if (isReadOnly) return blockReadOnlyAction();
+    const pendentes = andaresPendentesLavagem;
+    if (pendentes.length === 0) {
+      toast.message('Nenhum andar aguardando lavagem nesta torre.');
+      return;
+    }
+    const ok = window.confirm(
+      isMicroverdes
+        ? `Marcar lavagem em toda a torre (${pendentes.length} andar(es) com bandejas pendentes)?`
+        : `Marcar lavagem em toda a torre (${pendentes.length} andar(es) com perfis pendentes)?`,
+    );
+    if (!ok) return;
+
+    let feitos = 0;
+    for (const andar of pendentes) {
+      const andarDbId = resolver.andarFrontIdToDbId.get(andar.id);
+      if (!andarDbId) continue;
+      await mutations.updateAndar.mutateAsync({ id: andarDbId, lavado: true });
+      feitos += 1;
+    }
+    toast.success(
+      isMicroverdes
+        ? `Torre toda: ${feitos} andar(es) com bandejas marcadas como lavadas.`
+        : `Torre toda: ${feitos} andar(es) com perfis marcados como lavados.`,
+    );
+  };
+
   const handleAddAplicacaoAndar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isReadOnly) return blockReadOnlyAction();
@@ -1308,8 +1339,27 @@ export default function TorreDetail() {
 
             {/* Andares list */}
             <div className="bg-card rounded-xl shadow-sm border overflow-hidden">
-              <div className="p-3 border-b">
-                <h3 className="font-display font-semibold text-sm">Andares</h3>
+              <div className="p-3 border-b space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-display font-semibold text-sm">Andares</h3>
+                  {qtdPendentesLavagem > 0 && !isReadOnly ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-300 dark:border-emerald-700 dark:hover:bg-emerald-950/40"
+                      disabled={mutations.updateAndar.isPending}
+                      onClick={() => void handleMarcarLavadoTorreToda()}
+                      title="Marca lavagem em todos os andares pendentes desta torre"
+                    >
+                      <Droplet className="w-3.5 h-3.5" />
+                      Lavar torre toda
+                      <span className="tabular-nums text-muted-foreground">
+                        ({qtdPendentesLavagem})
+                      </span>
+                    </Button>
+                  ) : null}
+                </div>
               </div>
               <div className="max-h-[500px] overflow-y-auto">
                 {andares.map((andar) => {
@@ -1631,19 +1681,41 @@ export default function TorreDetail() {
 
                 {/* Alerta lavagem */}
                 {andarPrecisaLavagem(andarSelecionado) && (
-                  <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Droplet className="w-4 h-4 text-red-600 animate-pulse" />
-                      <div>
+                  <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Droplet className="w-4 h-4 text-red-600 animate-pulse shrink-0" />
+                      <div className="min-w-0">
                         <p className="text-xs font-semibold text-red-700">
                           {isMicroverdes ? 'Lavagem de bandejas pendente!' : 'Lavagem de Perfis Pendente!'}
                         </p>
-                        <p className="text-[10px] text-red-600">Colheita total em {formatarData(andarSelecionado.dataColheitaTotal || null)}</p>
+                        <p className="text-[10px] text-red-600">
+                          Colheita total em {formatarData(andarSelecionado.dataColheitaTotal || null)}
+                          {qtdPendentesLavagem > 1
+                            ? ` · ${qtdPendentesLavagem} andares pendentes na torre`
+                            : ''}
+                        </p>
                       </div>
                     </div>
-                    <Button variant="outline" className="text-sm gap-1.5 h-9 px-3 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50" disabled={isReadOnly} onClick={handleMarcarLavado}>
-                      <CheckCircle2 className="w-3 h-3" /> Marcar Lavado
-                    </Button>
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        className="text-sm gap-1.5 h-9 px-3 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                        disabled={isReadOnly || mutations.updateAndar.isPending}
+                        onClick={handleMarcarLavado}
+                      >
+                        <CheckCircle2 className="w-3 h-3" /> Marcar Lavado
+                      </Button>
+                      {qtdPendentesLavagem > 1 ? (
+                        <Button
+                          variant="default"
+                          className="text-sm gap-1.5 h-9 px-3 bg-emerald-600 hover:bg-emerald-700"
+                          disabled={isReadOnly || mutations.updateAndar.isPending}
+                          onClick={() => void handleMarcarLavadoTorreToda()}
+                        >
+                          <Droplet className="w-3 h-3" /> Torre toda
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 )}
 
