@@ -249,7 +249,14 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
             nome: legadoPeroxido ? dados.nome : ja.nome,
             produto: legadoPeroxido ? dados.produto : ja.produto,
             tipo: legadoPeroxido ? dados.tipo : ja.tipo,
-            dosagem: legadoPeroxido ? dados.dosagem : ja.dosagem,
+            // Atualiza dosagem se ainda estiver no placeholder "Conforme SOP"
+            // (ex.: Thyper após troca do peróxido) ou se for migração legado.
+            dosagem:
+              legadoPeroxido ||
+              !ja.dosagem?.trim() ||
+              /conforme\s+sop/i.test(ja.dosagem)
+                ? dados.dosagem
+                : ja.dosagem,
             dataInicio: reiniciar ? dados.dataInicio : (ja.dataInicio ?? dados.dataInicio),
             ...(reiniciar
               ? { ultimaExecucao: null, ultimoExecutorId: null, ultimoExecutorNome: null }

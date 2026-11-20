@@ -153,12 +153,12 @@ export function cartoesSolucao(): CartaoSolucao[] {
       frequenciaLabel: "Substitui o peróxido. A cada 2 dias, em todas as fases.",
       fases: FASES_TODAS,
       linhas: [
-        { rotulo: "310 L", valor: "Conforme SOP" },
-        { rotulo: "500 L", valor: "Conforme SOP" },
+        { rotulo: "310 L", valor: tanque310.thyper },
+        { rotulo: "500 L", valor: tanque500.thyper },
       ],
       notas: [],
       aviso: "Nesse dia não entra Infinito nem Cercobin. Folga mínima 1 dia com sistêmicos.",
-      dosagemAgenda: "Substitui o peróxido. A cada 2 dias. Conforme SOP.",
+      dosagemAgenda: `310 L: ${tanque310.thyper}. 500 L: ${tanque500.thyper}. A cada 2 dias.`,
     },
     {
       id: "infinito",
