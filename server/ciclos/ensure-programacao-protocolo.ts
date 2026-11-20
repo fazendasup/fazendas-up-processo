@@ -249,9 +249,10 @@ export async function ensureProgramacaoCiclosProtocolo(agora = new Date()): Prom
             nome: legadoPeroxido ? dados.nome : ja.nome,
             produto: legadoPeroxido ? dados.produto : ja.produto,
             tipo: legadoPeroxido ? dados.tipo : ja.tipo,
-            // Atualiza dosagem se ainda estiver no placeholder "Conforme SOP"
-            // (ex.: Thyper após troca do peróxido) ou se for migração legado.
+            // Thyper: dose vem do protocolo (não deixar placeholder/valor antigo).
+            // Demais: só sobrescreve se vazio, "Conforme SOP" ou migração legado.
             dosagem:
+              item.chave === "thyper" ||
               legadoPeroxido ||
               !ja.dosagem?.trim() ||
               /conforme\s+sop/i.test(ja.dosagem)
