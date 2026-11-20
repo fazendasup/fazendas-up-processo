@@ -18,14 +18,14 @@
   },
   "thyper": {
     "produto": "Thyper S-50",
-    "rotina": "Substitui o peróxido. A cada 2 dias, em todas as fases.",
-    "nota": "Mesma dose de pulso usada no H₂O₂ 200V do tanque (1,0 ml / 310 L e 1,5 ml / 500 L)."
+    "rotina": "NFT: a cada 2 dias, em todas as fases. Preferir reforço no top-up diário.",
+    "nota": "Alvo ~20 ppm de produto (classe H₂O₂ ~50% + prata / IFU hidroponia 20–40 ml/1000 L). Em pressão de Pythium, subir até ~40 ppm e preferir dose diária. Medir residual com fita no ponto mais longe da bomba. Não misturar no concentrado A/B."
   },
   "bioNota": "Bio ~0,1 ml/L",
   "sistemico": "Infinito e Cercobin são o mesmo protocolo preventivo. No máximo 1 de cada por fase de 10 dias (vegetativa e maturação). Nunca em Mudas.",
   "variantes": {
-    "310": { "litros": 310, "h2o2": "1,0 ml", "thyper": "1,0 ml", "infinito": "20 ml", "cercobin": "6 g", "bio": "31 ml" },
-    "500": { "litros": 500, "h2o2": "1,5 ml", "thyper": "1,5 ml", "infinito": "35 ml", "cercobin": "10 g", "bio": "50 ml" }
+    "310": { "litros": 310, "h2o2": "1,0 ml", "thyper": "6,2 ml", "infinito": "20 ml", "cercobin": "6 g", "bio": "31 ml" },
+    "500": { "litros": 500, "h2o2": "1,5 ml", "thyper": "10 ml", "infinito": "35 ml", "cercobin": "10 g", "bio": "50 ml" }
   },
   "pdfs": [
     { "variante": "310", "arquivo": "Protocolo_Fases_14d_310L.pdf", "rotulo": "PDF 310 L" },

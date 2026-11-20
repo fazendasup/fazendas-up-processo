@@ -15,13 +15,13 @@ describe("protocolo fases 10 dias (veg/mat)", () => {
   it("troca a dose exata ao mudar o tanque", () => {
     expect(dosesDaVariante("310")).toMatchObject({
       h2o2: "1,0 ml",
-      thyper: "1,0 ml",
+      thyper: "6,2 ml",
       infinito: "20 ml",
       cercobin: "6 g",
       bio: "31 ml",
     });
     expect(dosesDaVariante("500").h2o2).toBe("1,5 ml");
-    expect(dosesDaVariante("500").thyper).toBe("1,5 ml");
+    expect(dosesDaVariante("500").thyper).toBe("10 ml");
     expect(dosesDaVariante("500").cercobin).toBe("10 g");
   });
 
@@ -85,11 +85,12 @@ describe("protocolo fases 10 dias (veg/mat)", () => {
       intervaloDias: 2,
     });
     expect(cartaoSolucao("thyper").linhas.map((linha) => linha.valor)).toEqual([
-      "1,0 ml",
-      "1,5 ml",
+      "6,2 ml",
+      "10 ml",
     ]);
-    expect(cartaoSolucao("thyper").dosagemAgenda).toMatch(/1,0 ml/);
-    expect(cartaoSolucao("thyper").dosagemAgenda).toMatch(/1,5 ml/);
+    expect(cartaoSolucao("thyper").dosagemAgenda).toMatch(/6,2 ml/);
+    expect(cartaoSolucao("thyper").dosagemAgenda).toMatch(/10 ml/);
+    expect(cartaoSolucao("thyper").dosagemAgenda).toMatch(/20 ppm/i);
     expect(cartaoSolucao("thyper").dosagemAgenda).not.toMatch(/Conforme SOP/i);
     expect(cartaoSolucao("infinito").fases).toEqual(["vegetativa", "maturacao"]);
     expect(cartaoSolucao("cercobin").linhas.map((linha) => linha.valor)).toEqual(["6 g", "10 g"]);

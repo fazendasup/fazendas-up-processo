@@ -150,15 +150,18 @@ export function cartoesSolucao(): CartaoSolucao[] {
       produto: "Thyper S-50",
       frequencia: "personalizada",
       intervaloDias: 2,
-      frequenciaLabel: "Substitui o peróxido. A cada 2 dias, em todas as fases.",
+      frequenciaLabel: "NFT · ~20 ppm. A cada 2 dias; reforçar no top-up diário.",
       fases: FASES_TODAS,
       linhas: [
         { rotulo: "310 L", valor: tanque310.thyper },
         { rotulo: "500 L", valor: tanque500.thyper },
       ],
-      notas: [],
+      notas: [
+        "Alvo ~20 ppm (prevenção NFT). Até ~40 ppm se houver pressão de Pythium.",
+        "Top-up ~50 L/dia: +1 ml (20 ppm) ou +2 ml (40 ppm) na reposição.",
+      ],
       aviso: "Nesse dia não entra Infinito nem Cercobin. Folga mínima 1 dia com sistêmicos.",
-      dosagemAgenda: `310 L: ${tanque310.thyper}. 500 L: ${tanque500.thyper}. A cada 2 dias.`,
+      dosagemAgenda: `310 L: ${tanque310.thyper}. 500 L: ${tanque500.thyper}. NFT ~20 ppm.`,
     },
     {
       id: "infinito",
