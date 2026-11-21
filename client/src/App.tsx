@@ -33,6 +33,7 @@ const CiclosPage = lazy(() => import(/* @vite-ignore */"./pages/CiclosPage"));
 const ConfigPage = lazy(() => import(/* @vite-ignore */"./pages/ConfigPage"));
 const GerminacaoPage = lazy(() => import(/* @vite-ignore */"./pages/GerminacaoPage"));
 const ManutencaoPage = lazy(() => import(/* @vite-ignore */"./pages/ManutencaoPage"));
+const TestesPage = lazy(() => import(/* @vite-ignore */"./pages/TestesPage"));
 const UsersPage = lazy(() => import(/* @vite-ignore */"./pages/UsersPage"));
 const AnalyticsPage = lazy(() => import(/* @vite-ignore */"./pages/AnalyticsPage"));
 const ReceitasPage = lazy(() => import(/* @vite-ignore */"./pages/ReceitasPage"));
@@ -188,6 +189,16 @@ function Router() {
           <Route path="/manutencao">
             <ProtectedRoute requiredRole="processo">
               <ManutencaoPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/testes/:slug">
+            <ProtectedRoute requiredRole="processo">
+              <TestesPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/testes">
+            <ProtectedRoute requiredRole="processo">
+              <TestesPage />
             </ProtectedRoute>
           </Route>
           <Route path="/estoque">

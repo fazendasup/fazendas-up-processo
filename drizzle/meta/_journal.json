@@ -281,6 +281,13 @@
                         "when":  1794159232624,
                         "tag":  "0063_solicitacoes_alteracao_sistema",
                         "breakpoints":  true
+                    },
+                    {
+                        "idx":  51,
+                        "version":  "5",
+                        "when":  1794300000000,
+                        "tag":  "0064_testes_acompanhamento",
+                        "breakpoints":  true
                     }
                 ]
 }

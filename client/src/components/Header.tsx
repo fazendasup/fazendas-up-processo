@@ -66,6 +66,7 @@ import {
   Sprout,
   Bell,
   ScrollText,
+  FlaskConical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -95,6 +96,7 @@ const OPERACAO_ITEMS: NavItem[] = [
   { href: "/ciclos", label: "Ciclos", icon: CalendarClock },
   { href: "/automacao", label: "Automação", icon: Cpu },
   { href: "/correcao-ec", label: "Correção EC/pH", icon: Beaker },
+  { href: "/testes", label: "Testes", icon: FlaskConical },
   { href: "/manutencao", label: "Manutenção", icon: Wrench },
   { href: "/bpf", label: "POP e FIT", icon: ScrollText },
   {

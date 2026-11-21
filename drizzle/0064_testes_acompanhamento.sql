@@ -1,0 +1,59 @@
+CREATE TABLE IF NOT EXISTS `testes_experimentos` (
+  `id` int AUTO_INCREMENT NOT NULL,
+  `slug` varchar(64) NOT NULL,
+  `titulo` varchar(255) NOT NULL,
+  `produto` varchar(255) NOT NULL,
+  `status` varchar(32) NOT NULL DEFAULT 'ativo',
+  `protocoloResumo` text NULL,
+  `doseAlvoMlPorL` float NOT NULL DEFAULT 0.2,
+  `intervaloLembreteDias` int NOT NULL DEFAULT 2,
+  `notas` text NULL,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_testes_experimentos_slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `teste_parcelas` (
+  `id` int AUTO_INCREMENT NOT NULL,
+  `testeId` int NOT NULL,
+  `cultura` varchar(32) NOT NULL,
+  `variedadeNome` varchar(128) NOT NULL,
+  `variedadeId` int NULL,
+  `diasEscuro` int NULL,
+  `diasFotoperiodo` int NULL,
+  `horasLuz` int NULL,
+  `diasMudas` int NULL,
+  `diasVegetativa` int NULL,
+  `diasMaturacao` int NULL,
+  `biomassaEsperadaGramas` float NULL,
+  `biomassaObservadaGramas` float NULL,
+  `dataInicio` date NULL,
+  `dataColheita` date NULL,
+  `observacoes` text NULL,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_teste_parcelas_teste` (`testeId`),
+  KEY `idx_teste_parcelas_cultura` (`testeId`, `cultura`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `teste_dosagens` (
+  `id` int AUTO_INCREMENT NOT NULL,
+  `testeId` int NOT NULL,
+  `cultura` varchar(32) NOT NULL,
+  `fase` varchar(32) NULL,
+  `tipoAplicacao` varchar(48) NOT NULL DEFAULT 'tanque',
+  `doseMlPorL` float NOT NULL,
+  `volumeTanqueLitros` int NOT NULL,
+  `doseTotalMl` float NOT NULL,
+  `dataAplicacao` date NOT NULL,
+  `proximaPrevista` date NULL,
+  `observacoes` text NULL,
+  `registradoPorId` int NULL,
+  `registradoPorNome` varchar(128) NULL,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_teste_dosagens_teste` (`testeId`),
+  KEY `idx_teste_dosagens_cultura` (`testeId`, `cultura`, `dataAplicacao`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

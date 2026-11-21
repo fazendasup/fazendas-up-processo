@@ -11,6 +11,7 @@ const STATIC: Record<string, string> = {
   "/analytics": "Analytics",
   "/germinacao": "Germinação",
   "/manutencao": "Manutenção",
+  "/testes": "Testes",
   "/estoque": "Estoque",
   "/ciclos": "Ciclos",
   "/config": "Configuração",
@@ -59,6 +60,7 @@ function normalizePath(raw: string): string {
 
 function titleForPath(path: string): string {
   if (STATIC[path]) return `${STATIC[path]} · ${BASE}`;
+  if (path.startsWith("/testes/")) return `Teste · ${BASE}`;
   if (path.startsWith("/torre/")) return `Torre · ${BASE}`;
   if (path.startsWith("/bancada/")) return `Bancada · ${BASE}`;
   return `Página não encontrada · ${BASE}`;

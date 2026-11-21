@@ -1585,3 +1585,80 @@ export const solicitacoesAlteracaoSistema = mysqlTable("solicitacoes_alteracao_s
 
 export type SolicitacaoAlteracaoSistema = typeof solicitacoesAlteracaoSistema.$inferSelect;
 export type InsertSolicitacaoAlteracaoSistema = typeof solicitacoesAlteracaoSistema.$inferInsert;
+
+// ---- Acompanhamento de testes (ex.: Chlorella) ----
+export const testesExperimentos = mysqlTable(
+  "testes_experimentos",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    slug: varchar("slug", { length: 64 }).notNull(),
+    titulo: varchar("titulo", { length: 255 }).notNull(),
+    produto: varchar("produto", { length: 255 }).notNull(),
+    /** ativo | pausado | concluido */
+    status: varchar("status", { length: 32 }).notNull().default("ativo"),
+    protocoloResumo: text("protocoloResumo"),
+    doseAlvoMlPorL: float("doseAlvoMlPorL").notNull().default(0.2),
+    intervaloLembreteDias: int("intervaloLembreteDias").notNull().default(2),
+    notas: text("notas"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    uqSlug: uniqueIndex("uq_testes_experimentos_slug").on(table.slug),
+  }),
+);
+
+export type TesteExperimento = typeof testesExperimentos.$inferSelect;
+export type InsertTesteExperimento = typeof testesExperimentos.$inferInsert;
+
+export const testeParcelas = mysqlTable("teste_parcelas", {
+  id: int("id").autoincrement().primaryKey(),
+  testeId: int("testeId").notNull(),
+  /** microverdes | alface */
+  cultura: varchar("cultura", { length: 32 }).notNull(),
+  variedadeNome: varchar("variedadeNome", { length: 128 }).notNull(),
+  variedadeId: int("variedadeId"),
+  /** Microverdes: dias no escuro */
+  diasEscuro: int("diasEscuro"),
+  /** Microverdes: dias sob fotoperíodo / iluminação */
+  diasFotoperiodo: int("diasFotoperiodo"),
+  /** Horas de luz por dia (fotoperíodo) */
+  horasLuz: int("horasLuz"),
+  /** Alface: dias por fase */
+  diasMudas: int("diasMudas"),
+  diasVegetativa: int("diasVegetativa"),
+  diasMaturacao: int("diasMaturacao"),
+  biomassaEsperadaGramas: float("biomassaEsperadaGramas"),
+  biomassaObservadaGramas: float("biomassaObservadaGramas"),
+  dataInicio: date("dataInicio"),
+  dataColheita: date("dataColheita"),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TesteParcela = typeof testeParcelas.$inferSelect;
+export type InsertTesteParcela = typeof testeParcelas.$inferInsert;
+
+export const testeDosagens = mysqlTable("teste_dosagens", {
+  id: int("id").autoincrement().primaryKey(),
+  testeId: int("testeId").notNull(),
+  /** microverdes | alface — uma dosagem vale para todas as variedades da cultura */
+  cultura: varchar("cultura", { length: 32 }).notNull(),
+  /** Alface: mudas | vegetativa | maturacao. Microverdes: null */
+  fase: varchar("fase", { length: 32 }),
+  /** tanque | primeira_rega_pre_escuro */
+  tipoAplicacao: varchar("tipoAplicacao", { length: 48 }).notNull().default("tanque"),
+  doseMlPorL: float("doseMlPorL").notNull(),
+  volumeTanqueLitros: int("volumeTanqueLitros").notNull(),
+  doseTotalMl: float("doseTotalMl").notNull(),
+  dataAplicacao: date("dataAplicacao").notNull(),
+  proximaPrevista: date("proximaPrevista"),
+  observacoes: text("observacoes"),
+  registradoPorId: int("registradoPorId"),
+  registradoPorNome: varchar("registradoPorNome", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TesteDosagem = typeof testeDosagens.$inferSelect;
+export type InsertTesteDosagem = typeof testeDosagens.$inferInsert;
