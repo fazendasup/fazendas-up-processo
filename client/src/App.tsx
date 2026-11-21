@@ -75,9 +75,15 @@ function RoleRootRoute() {
   if (user?.role === "comercial") {
     const comercialPerfil =
       "comercialPerfil" in user ? (user.comercialPerfil as string | null) : null;
-    return <Redirect to={homeForUserRole("comercial", comercialPerfil)} />;
+    // Operador + Pedidos usa a home de operação (não o hub comercial).
+    if (!isProcessAccessRole(user.role, comercialPerfil)) {
+      return <Redirect to={homeForUserRole("comercial", comercialPerfil)} />;
+    }
   }
-  if (user && !isProcessAccessRole(user.role)) {
+  if (user && !isProcessAccessRole(
+    user.role,
+    "comercialPerfil" in user ? (user.comercialPerfil as string | null) : null,
+  )) {
     return <Redirect to={homeForUserRole(user.role)} />;
   }
   return (
@@ -193,16 +199,12 @@ function Router() {
           </Route>
           <Route path="/testes/:slug">
             <ProtectedRoute requiredRole="operacao">
-              <ComercialPerfilRouteGuard path="/testes">
-                <TestesPage />
-              </ComercialPerfilRouteGuard>
+              <TestesPage />
             </ProtectedRoute>
           </Route>
           <Route path="/testes">
             <ProtectedRoute requiredRole="operacao">
-              <ComercialPerfilRouteGuard path="/testes">
-                <TestesPage />
-              </ComercialPerfilRouteGuard>
+              <TestesPage />
             </ProtectedRoute>
           </Route>
           <Route path="/estoque">

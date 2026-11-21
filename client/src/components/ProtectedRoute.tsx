@@ -49,9 +49,14 @@ export default function ProtectedRoute({ children, requiredRole = "user", fallba
     );
   }
 
+  const comercialPerfil =
+    "comercialPerfil" in user
+      ? ((user as { comercialPerfil?: string | null }).comercialPerfil ?? null)
+      : null;
+
   if (
     requiredRole === "operacao" &&
-    !isProcessAccessRole(user.role) &&
+    !isProcessAccessRole(user.role, comercialPerfil) &&
     !isCommercialAccessRole(user.role)
   ) {
     if (fallback) return <>{fallback}</>;
@@ -69,7 +74,7 @@ export default function ProtectedRoute({ children, requiredRole = "user", fallba
     );
   }
 
-  if (requiredRole === "processo" && !isProcessAccessRole(user.role)) {
+  if (requiredRole === "processo" && !isProcessAccessRole(user.role, comercialPerfil)) {
     if (fallback) return <>{fallback}</>;
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

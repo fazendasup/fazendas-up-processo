@@ -170,7 +170,8 @@ function UsersContent() {
     } else if (next === 'promoter') {
       msg = 'Alterar para Promoter? Terá acesso somente a Pedidos e Acompanhamento de avarias nos projetos vinculados.';
     } else if (next === 'lider_colheita') {
-      msg = 'Alterar para Líder de colheita? Terá acesso somente a Pedidos e Acompanhamento de avarias, sem números de vendas.';
+      msg =
+        'Alterar para Operador + Pedidos? Terá todo o acesso de operador e, no comercial, somente a página de Pedidos (sem painel/faturamento).';
     } else if (next === 'logistica') {
       msg = 'Alterar para Logística? Terá acesso somente ao modo entregador das entregas.';
     } else if (next === 'financeiro') {
@@ -362,7 +363,7 @@ function UsersContent() {
                       <SelectItem value="admin">Administrador operacional</SelectItem>
                       <SelectItem value="comercial">Comercial</SelectItem>
                       <SelectItem value="promoter">Promoter</SelectItem>
-                      <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
+                      <SelectItem value="lider_colheita">Operador + Pedidos</SelectItem>
                       <SelectItem value="logistica">Logística</SelectItem>
                       <SelectItem value="financeiro">Financeiro</SelectItem>
                       {isPlatformAdmin && (
@@ -621,7 +622,7 @@ function UsersContent() {
                         <SelectItem value="admin">Administrador operacional</SelectItem>
                         <SelectItem value="comercial">Comercial</SelectItem>
                         <SelectItem value="promoter">Promoter</SelectItem>
-                        <SelectItem value="lider_colheita">Líder de colheita</SelectItem>
+                        <SelectItem value="lider_colheita">Operador + Pedidos</SelectItem>
                         <SelectItem value="logistica">Logística</SelectItem>
                         <SelectItem value="financeiro">Financeiro</SelectItem>
                         {isPlatformAdmin && (

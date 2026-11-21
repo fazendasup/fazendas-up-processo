@@ -7,6 +7,10 @@ import { isCommercialAccessRole, isOperationalAdminRole, isPlatformCommercialRol
 
 export function useRole() {
   const { user, isAuthenticated, loading } = useAuth();
+  const comercialPerfil =
+    user && "comercialPerfil" in user
+      ? ((user as { comercialPerfil?: string | null }).comercialPerfil ?? null)
+      : null;
 
   const isAdmin = isAuthenticated && isOperationalAdminRole(user?.role);
   const isPlatformAdmin = isAuthenticated && isPlatformCommercialRole(user?.role);
@@ -14,7 +18,8 @@ export function useRole() {
   const isComercial = isAuthenticated && user?.role === 'comercial';
   const isVisitante = isAuthenticated && isVisitorRole(user?.role);
   const canAccessComercial = isAuthenticated && isCommercialAccessRole(user?.role);
-  const canAccessProcesso = isAuthenticated && isProcessAccessRole(user?.role);
+  const canAccessProcesso =
+    isAuthenticated && isProcessAccessRole(user?.role, comercialPerfil);
   const isLoggedIn = isAuthenticated && !!user;
 
   return {
@@ -26,6 +31,7 @@ export function useRole() {
     isVisitante,
     canAccessComercial,
     canAccessProcesso,
+    comercialPerfil,
     isLoggedIn,
     loading,
     role: user?.role || null,

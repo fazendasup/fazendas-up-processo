@@ -34,8 +34,28 @@ export function isCommercialAccessRole(role: string | null | undefined): boolean
   return role === "comercial" || isVisitorRole(role) || isOperationalAdminRole(role);
 }
 
-export function isProcessAccessRole(role: string | null | undefined): boolean {
-  return role === "user" || isVisitorRole(role) || isOperationalAdminRole(role);
+/**
+ * Perfil comercial que opera como operador de processo + Pedidos
+ * (sem painel/financeiro/faturamento).
+ */
+export function isOperadorComPedidosPerfil(
+  perfil: string | null | undefined,
+): boolean {
+  return perfil === "LIDER_COLHEITA";
+}
+
+export function isProcessAccessRole(
+  role: string | null | undefined,
+  comercialPerfil?: string | null,
+): boolean {
+  if (role === "user" || isVisitorRole(role) || isOperationalAdminRole(role)) {
+    return true;
+  }
+  // Conta comercial “Operador + Pedidos”: mesmo acesso de operação do operador.
+  if (role === "comercial" && isOperadorComPedidosPerfil(comercialPerfil)) {
+    return true;
+  }
+  return false;
 }
 export const PROJETO_REQUIRED_ERR_MSG = 'Projeto não selecionado (10003)';
 export const PROJETO_FORBIDDEN_ERR_MSG = 'Sem acesso a este projeto (10004)';

@@ -27,7 +27,20 @@ function nomeUsuario(user: { name?: string | null; email?: string | null }): str
 export function registerBpfRoutes(app: Express): void {
   app.get("/api/bpf", async (req: Request, res: Response) => {
     const user = await usuario(req);
-    if (!user || !isProcessAccessRole(user.role)) {
+    let comercialPerfil: string | null = null;
+    if (user?.role === "comercial" && user.email) {
+      try {
+        const { getComercialPrisma } = await import("./comercial/db");
+        const cu = await getComercialPrisma().usuario.findFirst({
+          where: { email: user.email.toLowerCase().trim(), status: "ATIVO" },
+          select: { perfil: true },
+        });
+        comercialPerfil = cu?.perfil ?? null;
+      } catch {
+        comercialPerfil = null;
+      }
+    }
+    if (!user || !isProcessAccessRole(user.role, comercialPerfil)) {
       res.status(401).json({ error: "Sem acesso aos procedimentos." });
       return;
     }

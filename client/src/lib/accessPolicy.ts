@@ -1,4 +1,8 @@
-import { isOperationalAdminRole, type AppUserRole } from "@shared/const";
+import {
+  isOperadorComPedidosPerfil,
+  isOperationalAdminRole,
+  type AppUserRole,
+} from "@shared/const";
 
 export type ComercialPerfil =
   | "VENDEDOR"
@@ -35,6 +39,8 @@ export function homeForUserRole(
   if (isOperationalAdminRole(role)) return "/projetos";
   if (role === "comercial") {
     if (isFinanceiroPerfil(comercialPerfil)) return "/financeiro-cfo";
+    // Operador + Pedidos entra na operação, não no hub comercial.
+    if (isOperadorComPedidosPerfil(comercialPerfil)) return "/";
     return "/comercial";
   }
   return "/";
@@ -47,6 +53,7 @@ export function dashboardPathForUserRole(
 ): string {
   if (role === "comercial") {
     if (isFinanceiroPerfil(comercialPerfil)) return "/financeiro-cfo";
+    if (isOperadorComPedidosPerfil(comercialPerfil)) return "/";
     return "/comercial";
   }
   return "/";
@@ -55,7 +62,7 @@ export function dashboardPathForUserRole(
 export function homeForCommercialPerfil(perfil: string | null | undefined): string {
   if (isFinanceiroPerfil(perfil)) return "/financeiro-cfo";
   if (perfil === "LOGISTICA") return "/comercial/entregador";
-  if (isLiderColheitaPerfil(perfil)) return "/comercial/pedidos";
+  if (isOperadorComPedidosPerfil(perfil)) return "/comercial/pedidos";
   return isPromoterPerfil(perfil) ? "/comercial/acompanhamento-avarias" : "/comercial/dashboard";
 }
 
@@ -67,8 +74,9 @@ export function canAccessCommercialPath(path: string, perfil: string | null | un
     const allowed = ["/comercial/entregas", "/comercial/entregador"];
     return allowed.some((allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`));
   }
-  if (isLiderColheitaPerfil(perfil)) {
-    return path === "/comercial/acompanhamento-avarias" || path === "/comercial/pedidos";
+  if (isOperadorComPedidosPerfil(perfil)) {
+    // Somente Pedidos no comercial (sem painel/faturamento/financeiro).
+    return path === "/comercial/pedidos" || path.startsWith("/comercial/pedidos/");
   }
   if (isPromoterPerfil(perfil)) {
     return path === "/comercial/acompanhamento-avarias" || path === "/comercial/pedidos" || path === "/comercial/varejo";
@@ -108,7 +116,8 @@ export function roleLabel(role: AppUserRole | string | null | undefined, comerci
   if (role === "comercial") {
     if (isFinanceiroPerfil(comercialPerfil)) return "Financeiro";
     if (comercialPerfil === "LOGISTICA") return "Logística";
-    if (isLiderColheitaPerfil(comercialPerfil)) return "Líder de colheita";
+    if (isOperadorComPedidosPerfil(comercialPerfil)) return "Operador + Pedidos";
+    if (comercialPerfil === "OPERACOES") return "Operações";
     return isPromoterPerfil(comercialPerfil) ? "Promoter" : "Comercial";
   }
   if (role === "visitante") return "Visitante";

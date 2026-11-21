@@ -94,9 +94,9 @@ const OPERACAO_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/planejamento", label: "Plantio", icon: CalendarIcon },
   { href: "/ciclos", label: "Ciclos", icon: CalendarClock },
+  { href: "/testes", label: "Testes", icon: FlaskConical },
   { href: "/automacao", label: "Automação", icon: Cpu },
   { href: "/correcao-ec", label: "Correção EC/pH", icon: Beaker },
-  { href: "/testes", label: "Testes", icon: FlaskConical },
   { href: "/manutencao", label: "Manutenção", icon: Wrench },
   { href: "/bpf", label: "POP e FIT", icon: ScrollText },
   {
@@ -189,6 +189,14 @@ const COMERCIAL_ITEMS: NavItem[] = [
     label: "Acompanhamento avarias",
     icon: BarChart3,
     requiredRole: "comercial",
+    comercialPerfis: [
+      "OPERACOES",
+      "COMERCIAL",
+      "GERENTE_COMERCIAL",
+      "ADMIN",
+      "PROMOTER",
+      "VENDEDOR",
+    ],
   },
 ];
 
@@ -224,12 +232,6 @@ const SISTEMA_PROCESSO_ITEMS: NavItem[] = [
     href: "/ciclos",
     label: "Ciclos",
     icon: CalendarClock,
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
-  {
-    href: "/testes",
-    label: "Testes",
-    icon: FlaskConical,
     comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
 ];
@@ -325,11 +327,18 @@ export default function Header() {
     if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
     if (isPerfilFinanceiro) return [] as NavItem[];
     return OPERACAO_ITEMS.filter(item => {
-      if (!canAccessProcesso && item.requiredRole !== "comercial") return false;
       if (item.requiredRole === "admin" && !isAdmin) return false;
       if (item.requiredRole === "comercial" && !canAccessComercial)
         return false;
       if (item.comercialPerfis && !isAdmin && (!comercialPerfil || !item.comercialPerfis.includes(comercialPerfil as any))) return false;
+      // Operador vê tudo; comercial (ex.: OPERACOES) só itens liberados no perfil.
+      if (!canAccessProcesso) {
+        if (item.requiredRole === "comercial") {
+          // ok
+        } else if (!canAccessCommercialPath(item.href, comercialPerfil)) {
+          return false;
+        }
+      }
       if (item.projetoTipo != null) {
         if (!activeProjeto || activeProjeto.tipo !== item.projetoTipo)
           return false;
