@@ -395,6 +395,10 @@ export function Pedidos({
   const [dashboardClienteFiltro, setDashboardClienteFiltro] = useState<string[]>(
     []
   );
+  /** Filtro por canal (tipo do cliente): atualiza indicadores + lista juntos. */
+  const [dashboardCanalFiltro, setDashboardCanalFiltro] = useState<
+    "todos" | CanalPedidoCliente
+  >("todos");
   const [avisoSemanaMinimizado, setAvisoSemanaMinimizado] = useState(() => {
     try {
       return localStorage.getItem("pedidos.avisoSemanaMinimizado") === "1";
@@ -830,12 +834,19 @@ export function Pedidos({
   }, [clientesDashboardFiltro, dashboardClienteFiltro]);
 
   const gruposDashboard = useMemo(() => {
-    if (dashboardClienteFiltro.length === 0) return gruposDashboardAll;
-    const selected = new Set(dashboardClienteFiltro);
-    return gruposDashboardAll.filter((g: any) =>
-      selected.has(g.contaAzulCustomerId)
-    );
-  }, [gruposDashboardAll, dashboardClienteFiltro]);
+    let grupos = gruposDashboardAll;
+    if (dashboardClienteFiltro.length > 0) {
+      const selected = new Set(dashboardClienteFiltro);
+      grupos = grupos.filter((g: any) => selected.has(g.contaAzulCustomerId));
+    }
+    if (dashboardCanalFiltro !== "todos") {
+      grupos = grupos.filter(
+        (g: any) =>
+          canalPedidoDoTipoCliente(g.cliente?.tipo) === dashboardCanalFiltro,
+      );
+    }
+    return grupos;
+  }, [gruposDashboardAll, dashboardClienteFiltro, dashboardCanalFiltro]);
 
   const dashboardKpis = useMemo(() => {
     const grupos = gruposDashboard;
@@ -865,7 +876,15 @@ export function Pedidos({
     >();
     const categoriasMap = new Map<
       string,
-      { quantidade: number; pendente: number; pronto: number; entregue: number }
+      {
+        quantidade: number;
+        pendente: number;
+        pronto: number;
+        entregue: number;
+        supermercado: number;
+        restaurante: number;
+        outrosCanal: number;
+      }
     >();
     let pedidos = 0;
     let unidades = 0;
@@ -967,8 +986,14 @@ export function Pedidos({
           pendente: 0,
           pronto: 0,
           entregue: 0,
+          supermercado: 0,
+          restaurante: 0,
+          outrosCanal: 0,
         };
         cat.quantidade += quantidade;
+        if (canal === "supermercado") cat.supermercado += quantidade;
+        else if (canal === "restaurante") cat.restaurante += quantidade;
+        else cat.outrosCanal += quantidade;
         if (grupo.status === "ENTREGUE") cat.entregue += quantidade;
         else {
           cat.pronto += prontaLinha;
@@ -1050,8 +1075,10 @@ export function Pedidos({
       produtos,
       categorias,
       filtradoPorCliente: dashboardClienteFiltro.length > 0,
+      filtradoPorCanal: dashboardCanalFiltro !== "todos",
+      canalFiltro: dashboardCanalFiltro,
     };
-  }, [gruposDashboard, dashboardClienteFiltro]);
+  }, [gruposDashboard, dashboardClienteFiltro, dashboardCanalFiltro]);
   const gruposAtivosDashboard = gruposDashboard.filter(
     grupo => grupo.status !== "CANCELADO"
   );
@@ -1799,46 +1826,86 @@ export function Pedidos({
                 kpis={dashboardKpis}
                 podeEditar={canEditarComercial}
                 salvandoPronto={definirQuantidadePronta.isPending}
+                canalFiltroAtivo={dashboardCanalFiltro}
+                onFiltrarCanal={setDashboardCanalFiltro}
                 onDefinirPronto={(itemIds, quantidade) =>
                   definirQuantidadePronta.mutate({ itemIds, quantidade })
                 }
               />
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/20 p-3">
-                <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1 sm:max-w-md">
-                  <SearchMultiSelect
-                    values={dashboardClienteFiltro}
-                    onValuesChange={setDashboardClienteFiltro}
-                    options={clientesDashboardFiltro}
-                    placeholder="Filtrar clientes com pedido no dia..."
-                    searchPlaceholder="Buscar cliente..."
-                    emptyText="Nenhum cliente com pedido neste período."
-                    clearLabel="Limpar filtro de clientes"
-                  />
-                </div>
-                {dashboardClienteFiltro.length > 0 ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs"
-                    onClick={() => setDashboardClienteFiltro([])}
-                  >
-                    Limpar ({dashboardClienteFiltro.length})
-                  </Button>
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    {clientesDashboardFiltro.length} cliente(s) com pedido
-                    {escopoDashboard === "semana" ? " na semana" : " no dia"}
+              <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Canal
                   </span>
-                )}
+                  {(
+                    [
+                      ["todos", "Todos"],
+                      ["supermercado", "Supermercado"],
+                      ["restaurante", "Restaurante"],
+                      ["outros", "Outros / sem tipo"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      size="sm"
+                      variant={
+                        dashboardCanalFiltro === value ? "default" : "outline"
+                      }
+                      className="h-8 rounded-full px-3 text-xs"
+                      onClick={() => setDashboardCanalFiltro(value)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1 sm:max-w-md">
+                    <SearchMultiSelect
+                      values={dashboardClienteFiltro}
+                      onValuesChange={setDashboardClienteFiltro}
+                      options={clientesDashboardFiltro}
+                      placeholder="Filtrar clientes com pedido no dia..."
+                      searchPlaceholder="Buscar cliente..."
+                      emptyText="Nenhum cliente com pedido neste período."
+                      clearLabel="Limpar filtro de clientes"
+                    />
+                  </div>
+                  {dashboardClienteFiltro.length > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-xs"
+                      onClick={() => setDashboardClienteFiltro([])}
+                    >
+                      Limpar ({dashboardClienteFiltro.length})
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {clientesDashboardFiltro.length} cliente(s) com pedido
+                      {escopoDashboard === "semana" ? " na semana" : " no dia"}
+                    </span>
+                  )}
+                </div>
               </div>
-              {dashboardClienteFiltro.length > 0 ? (
+              {dashboardClienteFiltro.length > 0 ||
+              dashboardCanalFiltro !== "todos" ? (
                 <p className="text-xs font-medium text-cyan-800 dark:text-cyan-200">
-                  Filtro ativo: indicadores e lista abaixo refletem só{" "}
-                  {dashboardClienteFiltro.length === 1
-                    ? "o cliente selecionado"
-                    : `os ${dashboardClienteFiltro.length} clientes selecionados`}
+                  Filtro ativo: indicadores e lista abaixo refletem{" "}
+                  {dashboardCanalFiltro !== "todos"
+                    ? `só ${labelCanalPedido(dashboardCanalFiltro).toLowerCase()}`
+                    : null}
+                  {dashboardCanalFiltro !== "todos" &&
+                  dashboardClienteFiltro.length > 0
+                    ? " · "
+                    : null}
+                  {dashboardClienteFiltro.length > 0
+                    ? dashboardClienteFiltro.length === 1
+                      ? "o cliente selecionado"
+                      : `os ${dashboardClienteFiltro.length} clientes selecionados`
+                    : null}
                   .
                 </p>
               ) : null}
@@ -3535,15 +3602,58 @@ function labelCanalPedido(canal: CanalPedidoCliente): string {
   return "Outros";
 }
 
+/** Resumo compacto Super / Rest / Outros para item ou categoria. */
+function CanalQtdLinha({
+  supermercado = 0,
+  restaurante = 0,
+  outros = 0,
+  className = "",
+}: {
+  supermercado?: number;
+  restaurante?: number;
+  outros?: number;
+  className?: string;
+}) {
+  const s = Number(supermercado) || 0;
+  const r = Number(restaurante) || 0;
+  const o = Number(outros) || 0;
+  if (s <= 0 && r <= 0 && o <= 0) return null;
+  return (
+    <p
+      className={`flex flex-wrap gap-x-1.5 gap-y-0.5 text-[10px] tabular-nums leading-tight ${className}`}
+    >
+      {s > 0 ? (
+        <span className="text-violet-700 dark:text-violet-300">
+          Super {formatQuantidade(s)}
+        </span>
+      ) : null}
+      {r > 0 ? (
+        <span className="text-orange-700 dark:text-orange-300">
+          Rest {formatQuantidade(r)}
+        </span>
+      ) : null}
+      {o > 0 ? (
+        <span className="text-muted-foreground">
+          Outros {formatQuantidade(o)}
+        </span>
+      ) : null}
+    </p>
+  );
+}
+
 function PedidosKpiDashboard({
   kpis,
   podeEditar,
   salvandoPronto,
+  canalFiltroAtivo = "todos",
+  onFiltrarCanal,
   onDefinirPronto,
 }: {
   kpis: any;
   podeEditar: boolean;
   salvandoPronto: boolean;
+  canalFiltroAtivo?: "todos" | CanalPedidoCliente;
+  onFiltrarCanal?: (canal: "todos" | CanalPedidoCliente) => void;
   onDefinirPronto: (itemIds: string[], quantidade: number) => void;
 }) {
   type ProdutoPainel = {
@@ -3684,45 +3794,87 @@ function PedidosKpiDashboard({
             className="bg-lime-500/[0.08] dark:bg-lime-500/15"
           />
         </div>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <div className="rounded-xl border border-violet-200/80 bg-violet-500/[0.07] p-2.5 dark:border-violet-900/50 dark:bg-violet-500/15">
-            <p className="text-[9px] font-bold uppercase tracking-wide text-violet-800 dark:text-violet-200">
-              Supermercado
+        {kpis.filtradoPorCanal ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-dashed bg-muted/20 px-3 py-2.5">
+            <p className="text-[11px] text-muted-foreground">
+              Totais e lista filtrados por{" "}
+              <span className="font-medium text-foreground">
+                {labelCanalPedido(
+                  (kpis.canalFiltro ?? "outros") as CanalPedidoCliente,
+                )}
+              </span>
+              .
             </p>
-            <p className="mt-0.5 text-lg font-extrabold tabular-nums leading-none">
-              {formatQuantidade(kpis.canalTotais?.supermercado ?? 0)}
-            </p>
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Falta{" "}
-              {formatQuantidade(kpis.canalFalta?.supermercado ?? 0)} un
-            </p>
+            {onFiltrarCanal ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={() => onFiltrarCanal("todos")}
+              >
+                Limpar filtro de canal
+              </Button>
+            ) : null}
           </div>
-          <div className="rounded-xl border border-orange-200/80 bg-orange-500/[0.07] p-2.5 dark:border-orange-900/50 dark:bg-orange-500/15">
-            <p className="text-[9px] font-bold uppercase tracking-wide text-orange-800 dark:text-orange-200">
-              Restaurante
-            </p>
-            <p className="mt-0.5 text-lg font-extrabold tabular-nums leading-none">
-              {formatQuantidade(kpis.canalTotais?.restaurante ?? 0)}
-            </p>
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Falta {formatQuantidade(kpis.canalFalta?.restaurante ?? 0)} un
-            </p>
+        ) : (
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {(
+              [
+                {
+                  canal: "supermercado" as const,
+                  label: "Supermercado",
+                  className:
+                    "border-violet-200/80 bg-violet-500/[0.07] text-violet-800 dark:border-violet-900/50 dark:bg-violet-500/15 dark:text-violet-200",
+                  hintExtra: "",
+                },
+                {
+                  canal: "restaurante" as const,
+                  label: "Restaurante",
+                  className:
+                    "border-orange-200/80 bg-orange-500/[0.07] text-orange-800 dark:border-orange-900/50 dark:bg-orange-500/15 dark:text-orange-200",
+                  hintExtra: "",
+                },
+                {
+                  canal: "outros" as const,
+                  label: "Outros / sem tipo",
+                  className: "bg-muted/30 text-muted-foreground",
+                  hintExtra: kpis.clientesSemTipo
+                    ? " · cadastre o tipo em Clientes"
+                    : "",
+                },
+              ] as const
+            ).map(card => {
+              const ativo = canalFiltroAtivo === card.canal;
+              return (
+                <button
+                  key={card.canal}
+                  type="button"
+                  className={`rounded-xl border p-2.5 text-left transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${card.className} ${
+                    ativo ? "ring-2 ring-primary" : ""
+                  }`}
+                  title={`Filtrar totais e lista por ${card.label}`}
+                  onClick={() => onFiltrarCanal?.(card.canal)}
+                >
+                  <p className="text-[9px] font-bold uppercase tracking-wide">
+                    {card.label}
+                  </p>
+                  <p className="mt-0.5 text-lg font-extrabold tabular-nums leading-none text-foreground">
+                    {formatQuantidade(kpis.canalTotais?.[card.canal] ?? 0)}
+                  </p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Falta{" "}
+                    {formatQuantidade(kpis.canalFalta?.[card.canal] ?? 0)} un
+                    {card.hintExtra}
+                  </p>
+                  <p className="mt-1 text-[9px] font-medium text-muted-foreground">
+                    Toque para filtrar
+                  </p>
+                </button>
+              );
+            })}
           </div>
-          <div className="rounded-xl border bg-muted/30 p-2.5">
-            <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-              Outros / sem tipo
-            </p>
-            <p className="mt-0.5 text-lg font-extrabold tabular-nums leading-none">
-              {formatQuantidade(kpis.canalTotais?.outros ?? 0)}
-            </p>
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Falta {formatQuantidade(kpis.canalFalta?.outros ?? 0)} un
-              {kpis.clientesSemTipo
-                ? ` · cadastre o tipo em Clientes`
-                : ""}
-            </p>
-          </div>
-        </div>
+        )}
       </section>
 
       <Card className="border bg-card/80">
@@ -3746,9 +3898,14 @@ function PedidosKpiDashboard({
               {CATEGORIAS_OPERACAO.filter(cat =>
                 categoriasComProduto.includes(cat),
               ).map(cat => {
-                const qtd = comCategoria.filter(
-                  p => p.categoriaOperacao === cat && Number(p.falta ?? 0) > 0,
-                ).length;
+                const daCat = comCategoria.filter(
+                  p => p.categoriaOperacao === cat,
+                );
+                const qtd = daCat.filter(p => Number(p.falta ?? 0) > 0).length;
+                const unCat = daCat.reduce(
+                  (s, p) => s + (Number(p.quantidade) || 0),
+                  0,
+                );
                 return (
                   <Button
                     key={cat}
@@ -3757,6 +3914,7 @@ function PedidosKpiDashboard({
                     variant={filtroCategoria === cat ? "default" : "outline"}
                     className="h-7 rounded-full px-2.5 text-[11px]"
                     onClick={() => setFiltroCategoria(cat)}
+                    title={`${cat}: ${formatQuantidade(unCat)} un`}
                   >
                     {cat}
                     {qtd > 0 ? (
@@ -3800,26 +3958,60 @@ function PedidosKpiDashboard({
                   ESTILO_COLUNA_CATEGORIA[categoria] ??
                   ESTILO_COLUNA_CATEGORIA[CATEGORIA_OPERACAO_OUTROS];
                 let indice = 1;
+                const catSuper = itens.reduce(
+                  (s, p) => s + (Number(p.supermercado) || 0),
+                  0,
+                );
+                const catRest = itens.reduce(
+                  (s, p) => s + (Number(p.restaurante) || 0),
+                  0,
+                );
+                const catOutros = itens.reduce(
+                  (s, p) => s + (Number(p.outrosCanal) || 0),
+                  0,
+                );
+                const catTotal = itens.reduce(
+                  (s, p) => s + (Number(p.quantidade) || 0),
+                  0,
+                );
+                const catFalta = itens.reduce(
+                  (s, p) => s + (Number(p.falta) || 0),
+                  0,
+                );
                 return (
                   <section
                     key={categoria}
                     className={`min-w-0 overflow-hidden rounded-lg border ${estilo.shell}`}
                   >
                     <div
-                      className={`grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-end gap-1.5 border-b border-black/5 px-2 py-1.5 dark:border-white/10 ${estilo.head}`}
+                      className={`space-y-1 border-b border-black/5 px-2 py-1.5 dark:border-white/10 ${estilo.head}`}
                     >
-                      <h4 className="text-[10px] font-bold uppercase leading-tight tracking-wide">
-                        {categoria}
-                        <span className="ml-1 font-normal tabular-nums opacity-60">
-                          {itens.length}
+                      <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-end gap-1.5">
+                        <h4 className="text-[10px] font-bold uppercase leading-tight tracking-wide">
+                          {categoria}
+                          <span className="ml-1 font-normal tabular-nums opacity-60">
+                            {itens.length} · {formatQuantidade(catTotal)} un
+                          </span>
+                        </h4>
+                        <span className="text-center text-[9px] font-semibold uppercase tracking-wide opacity-60">
+                          Falta
                         </span>
-                      </h4>
-                      <span className="text-center text-[9px] font-semibold uppercase tracking-wide opacity-60">
-                        Falta
-                      </span>
-                      <span className="text-center text-[9px] font-semibold uppercase tracking-wide opacity-60">
-                        Pronto
-                      </span>
+                        <span className="text-center text-[9px] font-semibold uppercase tracking-wide opacity-60">
+                          Pronto
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_5.5rem] items-start gap-1.5">
+                        <CanalQtdLinha
+                          supermercado={catSuper}
+                          restaurante={catRest}
+                          outros={catOutros}
+                          className="opacity-90"
+                        />
+                        <span className="text-center text-[11px] font-bold tabular-nums opacity-80">
+                          {formatQuantidade(catFalta)}
+                        </span>
+                        <span />
+                      </div>
                     </div>
                     <ul className="divide-y divide-black/5 dark:divide-white/10">
                       {itens.map((produto, rowIdx) => {
@@ -3844,11 +4036,21 @@ function PedidosKpiDashboard({
                                   <span className="mt-0.5 w-3.5 shrink-0 text-[10px] tabular-nums text-muted-foreground">
                                     {index}
                                   </span>
-                                  <NomeProdutoComPeso
-                                    wrap
-                                    nome={produto.nome}
-                                    className="min-w-0 text-[12px] [&_span:first-child]:font-semibold"
-                                  />
+                                  <div className="min-w-0 space-y-0.5">
+                                    <NomeProdutoComPeso
+                                      wrap
+                                      nome={produto.nome}
+                                      className="min-w-0 text-[12px] [&_span:first-child]:font-semibold"
+                                    />
+                                    <CanalQtdLinha
+                                      supermercado={produto.supermercado}
+                                      restaurante={produto.restaurante}
+                                      outros={produto.outrosCanal}
+                                    />
+                                    <p className="text-[10px] tabular-nums text-muted-foreground">
+                                      Total {formatQuantidade(total)}
+                                    </p>
+                                  </div>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent
@@ -3858,6 +4060,12 @@ function PedidosKpiDashboard({
                                 <div className="mb-1">
                                   <NomeProdutoComPeso nome={produto.nome} />
                                 </div>
+                                <CanalQtdLinha
+                                  supermercado={produto.supermercado}
+                                  restaurante={produto.restaurante}
+                                  outros={produto.outrosCanal}
+                                  className="mb-1.5 text-[11px]"
+                                />
                                 {destinos.length === 0 ? (
                                   <p>Nenhum cliente neste produto.</p>
                                 ) : (
@@ -3873,38 +4081,15 @@ function PedidosKpiDashboard({
                                     ))}
                                   </ul>
                                 )}
-                                {(Number(produto.supermercado ?? 0) > 0 ||
-                                  Number(produto.restaurante ?? 0) > 0) && (
-                                  <p className="mt-1.5 text-[11px] text-muted-foreground">
-                                    Super{" "}
-                                    {formatQuantidade(produto.supermercado ?? 0)}{" "}
-                                    · Rest{" "}
-                                    {formatQuantidade(produto.restaurante ?? 0)}
-                                    {Number(produto.outrosCanal ?? 0) > 0
-                                      ? ` · Outros ${formatQuantidade(produto.outrosCanal ?? 0)}`
-                                      : ""}
-                                  </p>
-                                )}
                               </TooltipContent>
                             </Tooltip>
 
-                            <div className="pt-0.5 text-center">
-                              <span
-                                className="block text-[15px] font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
-                                title="Falta"
-                              >
-                                {formatQuantidade(falta)}
-                              </span>
-                              {(Number(produto.supermercado ?? 0) > 0 ||
-                                Number(produto.restaurante ?? 0) > 0) &&
-                              Number(produto.supermercado ?? 0) > 0 &&
-                              Number(produto.restaurante ?? 0) > 0 ? (
-                                <span className="mt-0.5 block text-[9px] leading-tight text-muted-foreground tabular-nums">
-                                  S {formatQuantidade(produto.supermercado)} · R{" "}
-                                  {formatQuantidade(produto.restaurante)}
-                                </span>
-                              ) : null}
-                            </div>
+                            <span
+                              className="pt-0.5 text-center text-[15px] font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
+                              title="Falta"
+                            >
+                              {formatQuantidade(falta)}
+                            </span>
                             <div className="flex justify-end pt-0.5">
                               {podeEditar && linhasAbertas.length > 0 ? (
                                 <CampoProntoVariedade
