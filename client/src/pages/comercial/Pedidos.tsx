@@ -853,7 +853,13 @@ export function Pedidos({
         pronto: number;
         entregue: number;
         linhas: number;
-        clientes: Map<string, { nome: string; quantidade: number }>;
+        supermercado: number;
+        restaurante: number;
+        outrosCanal: number;
+        clientes: Map<
+          string,
+          { nome: string; quantidade: number; canal: CanalPedidoCliente }
+        >;
         linhasAbertas: Array<{ id: string; quantidade: number }>;
       }
     >();
@@ -866,16 +872,35 @@ export function Pedidos({
     let unidadesPendente = 0;
     let unidadesPronto = 0;
     let unidadesEntregue = 0;
+    const canalTotais: Record<CanalPedidoCliente, number> = {
+      supermercado: 0,
+      restaurante: 0,
+      outros: 0,
+    };
+    const canalFalta: Record<CanalPedidoCliente, number> = {
+      supermercado: 0,
+      restaurante: 0,
+      outros: 0,
+    };
+    let clientesSemTipo = 0;
     let linhas = 0;
     let observacoes = 0;
     let clientesSemRegras = 0;
     let clientesComTaxa = 0;
     const pedidosComObs = new Set<string>();
+    const clientesTipoVistos = new Set<string>();
 
     for (const grupo of grupos as any[]) {
       const cancelado = grupo.status === "CANCELADO";
       status[grupo.status] = (status[grupo.status] ?? 0) + 1;
       if (cancelado) continue;
+
+      const canal = canalPedidoDoTipoCliente(grupo.cliente?.tipo);
+      const clienteId = String(grupo.contaAzulCustomerId ?? "");
+      if (clienteId && !clientesTipoVistos.has(clienteId)) {
+        clientesTipoVistos.add(clienteId);
+        if (!grupo.cliente?.tipo) clientesSemTipo += 1;
+      }
 
       pedidos += grupo.pedidos?.length ?? 0;
       if (!grupo.regras) clientesSemRegras++;
@@ -895,6 +920,10 @@ export function Pedidos({
           grupo.status,
           quantidade,
         );
+        const faltaLinha =
+          grupo.status === "ENTREGUE"
+            ? 0
+            : Math.max(0, quantidade - prontaLinha);
         const atual = produtosMap.get(nome) ?? {
           nome,
           categoria,
@@ -903,23 +932,32 @@ export function Pedidos({
           pronto: 0,
           entregue: 0,
           linhas: 0,
-          clientes: new Map<string, { nome: string; quantidade: number }>(),
+          supermercado: 0,
+          restaurante: 0,
+          outrosCanal: 0,
+          clientes: new Map<
+            string,
+            { nome: string; quantidade: number; canal: CanalPedidoCliente }
+          >(),
           linhasAbertas: [] as Array<{ id: string; quantidade: number }>,
         };
         atual.quantidade += quantidade;
+        if (canal === "supermercado") atual.supermercado += quantidade;
+        else if (canal === "restaurante") atual.restaurante += quantidade;
+        else atual.outrosCanal += quantidade;
         if (grupo.status === "ENTREGUE") atual.entregue += quantidade;
         else {
           atual.pronto += prontaLinha;
-          atual.pendente += Math.max(0, quantidade - prontaLinha);
+          atual.pendente += faltaLinha;
           if (item.id) {
             atual.linhasAbertas.push({ id: String(item.id), quantidade });
           }
         }
         atual.linhas += 1;
-        const clienteId = String(grupo.contaAzulCustomerId ?? "");
         const destino = atual.clientes.get(clienteId) ?? {
           nome: grupo.cliente?.nome ?? clienteId,
           quantidade: 0,
+          canal,
         };
         destino.quantidade += quantidade;
         atual.clientes.set(clienteId, destino);
@@ -934,14 +972,16 @@ export function Pedidos({
         if (grupo.status === "ENTREGUE") cat.entregue += quantidade;
         else {
           cat.pronto += prontaLinha;
-          cat.pendente += Math.max(0, quantidade - prontaLinha);
+          cat.pendente += faltaLinha;
         }
         categoriasMap.set(categoria, cat);
         unidades += quantidade;
+        canalTotais[canal] += quantidade;
+        canalFalta[canal] += faltaLinha;
         if (grupo.status === "ENTREGUE") unidadesEntregue += quantidade;
         else {
           unidadesPronto += prontaLinha;
-          unidadesPendente += Math.max(0, quantidade - prontaLinha);
+          unidadesPendente += faltaLinha;
         }
         linhas += 1;
       }
@@ -954,7 +994,12 @@ export function Pedidos({
         clientes: p.clientes.size,
         linhasAbertas: p.linhasAbertas,
         destinos: Array.from(p.clientes.entries())
-          .map(([id, c]) => ({ id, nome: c.nome, quantidade: c.quantidade }))
+          .map(([id, c]) => ({
+            id,
+            nome: c.nome,
+            quantidade: c.quantidade,
+            canal: c.canal,
+          }))
           .sort(
             (a, b) =>
               b.quantidade - a.quantidade ||
@@ -988,6 +1033,9 @@ export function Pedidos({
       unidadesPronto,
       unidadesEntregue,
       unidadesFalta: Math.max(0, unidades - unidadesPronto - unidadesEntregue),
+      canalTotais,
+      canalFalta,
+      clientesSemTipo,
       clientes: (grupos as any[]).filter(grupo => grupo.status !== "CANCELADO")
         .length,
       cancelados: (grupos as any[])
@@ -3470,6 +3518,23 @@ const ESTILO_COLUNA_CATEGORIA: Record<
   },
 };
 
+type CanalPedidoCliente = "supermercado" | "restaurante" | "outros";
+
+function canalPedidoDoTipoCliente(tipo: unknown): CanalPedidoCliente {
+  const t = String(tipo ?? "")
+    .trim()
+    .toUpperCase();
+  if (t === "SUPERMERCADO") return "supermercado";
+  if (t === "RESTAURANTE") return "restaurante";
+  return "outros";
+}
+
+function labelCanalPedido(canal: CanalPedidoCliente): string {
+  if (canal === "supermercado") return "Supermercado";
+  if (canal === "restaurante") return "Restaurante";
+  return "Outros";
+}
+
 function PedidosKpiDashboard({
   kpis,
   podeEditar,
@@ -3489,7 +3554,15 @@ function PedidosKpiDashboard({
     pronto: number;
     entregue: number;
     falta: number;
-    destinos?: Array<{ id: string; nome: string; quantidade: number }>;
+    supermercado?: number;
+    restaurante?: number;
+    outrosCanal?: number;
+    destinos?: Array<{
+      id: string;
+      nome: string;
+      quantidade: number;
+      canal?: CanalPedidoCliente;
+    }>;
     linhasAbertas?: Array<{ id: string; quantidade: number }>;
   };
   const produtosPorVariedade = (kpis.produtos ?? []) as ProdutoPainel[];
@@ -3594,7 +3667,11 @@ function PedidosKpiDashboard({
             }
             label="Clientes do dia"
             value={kpis.clientes}
-            hint={`${kpis.clientesComTaxa} com taxa entrega`}
+            hint={`${kpis.clientesComTaxa} com taxa entrega${
+              kpis.clientesSemTipo
+                ? ` · ${kpis.clientesSemTipo} sem tipo no cadastro`
+                : ""
+            }`}
             className="bg-blue-500/[0.07] dark:bg-blue-500/15"
           />
           <KpiResumoCard
@@ -3606,6 +3683,45 @@ function PedidosKpiDashboard({
             hint="Variedades distintas"
             className="bg-lime-500/[0.08] dark:bg-lime-500/15"
           />
+        </div>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="rounded-xl border border-violet-200/80 bg-violet-500/[0.07] p-2.5 dark:border-violet-900/50 dark:bg-violet-500/15">
+            <p className="text-[9px] font-bold uppercase tracking-wide text-violet-800 dark:text-violet-200">
+              Supermercado
+            </p>
+            <p className="mt-0.5 text-lg font-extrabold tabular-nums leading-none">
+              {formatQuantidade(kpis.canalTotais?.supermercado ?? 0)}
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Falta{" "}
+              {formatQuantidade(kpis.canalFalta?.supermercado ?? 0)} un
+            </p>
+          </div>
+          <div className="rounded-xl border border-orange-200/80 bg-orange-500/[0.07] p-2.5 dark:border-orange-900/50 dark:bg-orange-500/15">
+            <p className="text-[9px] font-bold uppercase tracking-wide text-orange-800 dark:text-orange-200">
+              Restaurante
+            </p>
+            <p className="mt-0.5 text-lg font-extrabold tabular-nums leading-none">
+              {formatQuantidade(kpis.canalTotais?.restaurante ?? 0)}
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Falta {formatQuantidade(kpis.canalFalta?.restaurante ?? 0)} un
+            </p>
+          </div>
+          <div className="rounded-xl border bg-muted/30 p-2.5">
+            <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+              Outros / sem tipo
+            </p>
+            <p className="mt-0.5 text-lg font-extrabold tabular-nums leading-none">
+              {formatQuantidade(kpis.canalTotais?.outros ?? 0)}
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Falta {formatQuantidade(kpis.canalFalta?.outros ?? 0)} un
+              {kpis.clientesSemTipo
+                ? ` · cadastre o tipo em Clientes`
+                : ""}
+            </p>
+          </div>
         </div>
       </section>
 
@@ -3748,21 +3864,47 @@ function PedidosKpiDashboard({
                                   <ul className="space-y-0.5">
                                     {destinos.map(destino => (
                                       <li key={destino.id}>
-                                        {destino.nome} ·{" "}
-                                        {formatQuantidade(destino.quantidade)}
+                                        {destino.nome}
+                                        {destino.canal
+                                          ? ` · ${labelCanalPedido(destino.canal)}`
+                                          : ""}{" "}
+                                        · {formatQuantidade(destino.quantidade)}
                                       </li>
                                     ))}
                                   </ul>
                                 )}
+                                {(Number(produto.supermercado ?? 0) > 0 ||
+                                  Number(produto.restaurante ?? 0) > 0) && (
+                                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                    Super{" "}
+                                    {formatQuantidade(produto.supermercado ?? 0)}{" "}
+                                    · Rest{" "}
+                                    {formatQuantidade(produto.restaurante ?? 0)}
+                                    {Number(produto.outrosCanal ?? 0) > 0
+                                      ? ` · Outros ${formatQuantidade(produto.outrosCanal ?? 0)}`
+                                      : ""}
+                                  </p>
+                                )}
                               </TooltipContent>
                             </Tooltip>
 
-                            <span
-                              className="pt-0.5 text-center text-[15px] font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
-                              title="Falta"
-                            >
-                              {formatQuantidade(falta)}
-                            </span>
+                            <div className="pt-0.5 text-center">
+                              <span
+                                className="block text-[15px] font-extrabold tabular-nums leading-none text-amber-800 dark:text-amber-200"
+                                title="Falta"
+                              >
+                                {formatQuantidade(falta)}
+                              </span>
+                              {(Number(produto.supermercado ?? 0) > 0 ||
+                                Number(produto.restaurante ?? 0) > 0) &&
+                              Number(produto.supermercado ?? 0) > 0 &&
+                              Number(produto.restaurante ?? 0) > 0 ? (
+                                <span className="mt-0.5 block text-[9px] leading-tight text-muted-foreground tabular-nums">
+                                  S {formatQuantidade(produto.supermercado)} · R{" "}
+                                  {formatQuantidade(produto.restaurante)}
+                                </span>
+                              ) : null}
+                            </div>
                             <div className="flex justify-end pt-0.5">
                               {podeEditar && linhasAbertas.length > 0 ? (
                                 <CampoProntoVariedade
