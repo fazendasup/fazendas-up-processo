@@ -68,6 +68,7 @@ export const CHLORELLA_PROTOCOLO_RESUMO = [
   "Lembrete operacional a cada 2 dias (literatura costuma sugerir 1×/semana — ajustar se OD/biofilme subir).",
   "Microverdes: 1ª rega com extrato antes do escuro em 5 L ou 10 L; caixa SN comum (310 L ou 500 L) para as demais dosagens.",
   "Alface: mudas em galão 50 L; vegetativa 310/500 L; maturação 500 L.",
-  "Não aplicar no mesmo dia que Thyper (H₂O₂). Filtrar o extrato antes de entrar no tanque.",
+  "Sempre diluir o extrato primeiro em 2 L de água, depois filtrar e só então aplicar no tanque/rega.",
+  "Não aplicar no mesmo dia que Thyper (H₂O₂).",
   "EC microverdes permanece 0,6 — o extrato quase não altera EC nesta dose.",
 ].join(" ");

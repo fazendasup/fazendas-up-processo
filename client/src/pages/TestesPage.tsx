@@ -412,6 +412,10 @@ function TesteDetalhe({ slug }: { slug: string }) {
           <Beaker className="h-4 w-4" />
           Registrar dosagem (vale para todas as variedades)
         </h2>
+        <p className="rounded-lg border border-amber-200/80 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-950 dark:border-amber-900/50 dark:text-amber-100">
+          Indicação: diluir o extrato antes em <strong>2 L de água</strong>,
+          filtrar e só depois aplicar no tanque ou na rega.
+        </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1">
             <Label>Cultura</Label>
