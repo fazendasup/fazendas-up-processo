@@ -137,6 +137,12 @@ async function ensureChlorellaSeed(): Promise<void> {
       .where(eq(testesExperimentos.id, id))
       .limit(1);
     teste = reloaded[0];
+  } else if (teste.protocoloResumo !== CHLORELLA_PROTOCOLO_RESUMO) {
+    await db
+      .update(testesExperimentos)
+      .set({ protocoloResumo: CHLORELLA_PROTOCOLO_RESUMO })
+      .where(eq(testesExperimentos.id, teste.id));
+    teste = { ...teste, protocoloResumo: CHLORELLA_PROTOCOLO_RESUMO };
   }
   if (!teste) return;
 

@@ -3,6 +3,8 @@ import {
   CHLORELLA_DOSE_ML_POR_L,
   doseTotalMl,
   volumePadraoFaseAlface,
+  volumePadraoPrimeiraRega,
+  VOLUMES_PRIMEIRA_REGA_PRE_ESCURO,
 } from "./testesChlorellaSeed";
 
 describe("testesChlorellaSeed", () => {
@@ -16,5 +18,12 @@ describe("testesChlorellaSeed", () => {
     expect(volumePadraoFaseAlface("mudas")).toBe(50);
     expect(volumePadraoFaseAlface("vegetativa")).toBe(310);
     expect(volumePadraoFaseAlface("maturacao")).toBe(500);
+  });
+
+  it("usa 5 L ou 10 L na 1ª rega pré-escuro", () => {
+    expect(VOLUMES_PRIMEIRA_REGA_PRE_ESCURO).toEqual([5, 10]);
+    expect(volumePadraoPrimeiraRega()).toBe(5);
+    expect(doseTotalMl(CHLORELLA_DOSE_ML_POR_L, 5)).toBe(1);
+    expect(doseTotalMl(CHLORELLA_DOSE_ML_POR_L, 10)).toBe(2);
   });
 });

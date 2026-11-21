@@ -94,6 +94,8 @@ export const testesRouter = router({
         tipoAplicacao: tipoAplicacaoSchema,
         doseMlPorL: z.number().positive(),
         volumeTanqueLitros: z.union([
+          z.literal(5),
+          z.literal(10),
           z.literal(50),
           z.literal(310),
           z.literal(500),
@@ -114,6 +116,19 @@ export const testesRouter = router({
         input.cultura !== "microverdes"
       ) {
         throw new Error("A 1ª rega pré-escuro é só para microverdes.");
+      }
+      if (
+        input.tipoAplicacao === "primeira_rega_pre_escuro" &&
+        input.volumeTanqueLitros !== 5 &&
+        input.volumeTanqueLitros !== 10
+      ) {
+        throw new Error("Na 1ª rega pré-escuro use 5 L ou 10 L.");
+      }
+      if (
+        input.tipoAplicacao === "tanque" &&
+        (input.volumeTanqueLitros === 5 || input.volumeTanqueLitros === 10)
+      ) {
+        throw new Error("5 L e 10 L são só para a 1ª rega pré-escuro.");
       }
       return testesDb.createDosagem({
         ...input,

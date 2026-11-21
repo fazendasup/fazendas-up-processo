@@ -18,10 +18,19 @@ export function doseTotalMl(doseMlPorL: number, volumeLitros: number): number {
   return Math.round(d * v * 100) / 100;
 }
 
+export type VolumeDosagemChlorella = 5 | 10 | 50 | 310 | 500;
+
 export function volumePadraoFaseAlface(fase: FaseAlfaceTeste): 50 | 310 | 500 {
   if (fase === "mudas") return 50;
   if (fase === "maturacao") return 500;
   return 310;
+}
+
+/** 1ª rega pré-escuro: volume do regador/balde (não a caixa SN). */
+export const VOLUMES_PRIMEIRA_REGA_PRE_ESCURO = [5, 10] as const;
+
+export function volumePadraoPrimeiraRega(): 5 | 10 {
+  return 5;
 }
 
 /** Variedades de microverdes da linha FUP (comercial) — ciclos editáveis na página. */
@@ -57,7 +66,7 @@ export const CHLORELLA_PROTOCOLO_RESUMO = [
   "Extrato líquido de Chlorella (não células vivas) na solução nutritiva.",
   "Dose inicial: 0,2 ml/L (100 ml em 500 L; 62 ml em 310 L; 10 ml em 50 L).",
   "Lembrete operacional a cada 2 dias (literatura costuma sugerir 1×/semana — ajustar se OD/biofilme subir).",
-  "Microverdes: 1ª rega com extrato antes do escuro; caixa SN comum (310 L ou 500 L) para todas as variedades.",
+  "Microverdes: 1ª rega com extrato antes do escuro em 5 L ou 10 L; caixa SN comum (310 L ou 500 L) para as demais dosagens.",
   "Alface: mudas em galão 50 L; vegetativa 310/500 L; maturação 500 L.",
   "Não aplicar no mesmo dia que Thyper (H₂O₂). Filtrar o extrato antes de entrar no tanque.",
   "EC microverdes permanece 0,6 — o extrato quase não altera EC nesta dose.",

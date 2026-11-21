@@ -15,9 +15,11 @@ import {
   CHLORELLA_DOSE_ML_POR_L,
   doseTotalMl,
   volumePadraoFaseAlface,
+  volumePadraoPrimeiraRega,
   type CulturaTeste,
   type FaseAlfaceTeste,
   type TipoAplicacaoChlorella,
+  type VolumeDosagemChlorella,
 } from "@shared/testesChlorellaSeed";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -163,7 +165,7 @@ function TesteDetalhe({ slug }: { slug: string }) {
   const [faseDose, setFaseDose] = useState<FaseAlfaceTeste>("mudas");
   const [tipoAplicacao, setTipoAplicacao] =
     useState<TipoAplicacaoChlorella>("tanque");
-  const [volume, setVolume] = useState<50 | 310 | 500>(500);
+  const [volume, setVolume] = useState<VolumeDosagemChlorella>(500);
   const [doseMlL, setDoseMlL] = useState(String(CHLORELLA_DOSE_ML_POR_L));
   const [dataAplicacao, setDataAplicacao] = useState(hojeIso());
   const [obs, setObs] = useState("");
@@ -184,6 +186,9 @@ function TesteDetalhe({ slug }: { slug: string }) {
 
   const doseNum = Number(String(doseMlL).replace(",", ".")) || 0;
   const totalMl = doseTotalMl(doseNum, volume);
+  const isPrimeiraRega =
+    culturaDose === "microverdes" &&
+    tipoAplicacao === "primeira_rega_pre_escuro";
 
   const onCulturaChange = (c: CulturaTeste) => {
     setCulturaDose(c);
@@ -193,6 +198,15 @@ function TesteDetalhe({ slug }: { slug: string }) {
     } else {
       setTipoAplicacao("tanque");
       setVolume(volumePadraoFaseAlface(faseDose));
+    }
+  };
+
+  const onTipoAplicacaoChange = (t: TipoAplicacaoChlorella) => {
+    setTipoAplicacao(t);
+    if (t === "primeira_rega_pre_escuro") {
+      setVolume(volumePadraoPrimeiraRega());
+    } else {
+      setVolume(500);
     }
   };
 
@@ -345,7 +359,7 @@ function TesteDetalhe({ slug }: { slug: string }) {
               <Select
                 value={tipoAplicacao}
                 onValueChange={v =>
-                  setTipoAplicacao(v as TipoAplicacaoChlorella)
+                  onTipoAplicacaoChange(v as TipoAplicacaoChlorella)
                 }
               >
                 <SelectTrigger>
@@ -361,32 +375,35 @@ function TesteDetalhe({ slug }: { slug: string }) {
             </div>
           )}
           <div className="space-y-1">
-            <Label>Volume do tanque</Label>
+            <Label>{isPrimeiraRega ? "Volume da rega" : "Volume do tanque"}</Label>
             <Select
               value={String(volume)}
-              onValueChange={v => setVolume(Number(v) as 50 | 310 | 500)}
+              onValueChange={v =>
+                setVolume(Number(v) as VolumeDosagemChlorella)
+              }
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {culturaDose === "alface" && faseDose === "mudas" ? (
+                {isPrimeiraRega ? (
+                  <>
+                    <SelectItem value="5">5 L</SelectItem>
+                    <SelectItem value="10">10 L</SelectItem>
+                  </>
+                ) : culturaDose === "alface" && faseDose === "mudas" ? (
                   <SelectItem value="50">50 L (galão mudas)</SelectItem>
+                ) : culturaDose === "alface" && faseDose === "vegetativa" ? (
+                  <>
+                    <SelectItem value="310">310 L</SelectItem>
+                    <SelectItem value="500">500 L</SelectItem>
+                  </>
+                ) : culturaDose === "alface" && faseDose === "maturacao" ? (
+                  <SelectItem value="500">500 L</SelectItem>
                 ) : (
                   <>
-                    {culturaDose === "alface" && faseDose === "vegetativa" ? (
-                      <>
-                        <SelectItem value="310">310 L</SelectItem>
-                        <SelectItem value="500">500 L</SelectItem>
-                      </>
-                    ) : culturaDose === "alface" && faseDose === "maturacao" ? (
-                      <SelectItem value="500">500 L</SelectItem>
-                    ) : (
-                      <>
-                        <SelectItem value="310">310 L</SelectItem>
-                        <SelectItem value="500">500 L</SelectItem>
-                      </>
-                    )}
+                    <SelectItem value="310">310 L</SelectItem>
+                    <SelectItem value="500">500 L</SelectItem>
                   </>
                 )}
               </SelectContent>
