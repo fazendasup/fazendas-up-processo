@@ -192,13 +192,17 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/testes/:slug">
-            <ProtectedRoute requiredRole="processo">
-              <TestesPage />
+            <ProtectedRoute requiredRole="operacao">
+              <ComercialPerfilRouteGuard path="/testes">
+                <TestesPage />
+              </ComercialPerfilRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/testes">
-            <ProtectedRoute requiredRole="processo">
-              <TestesPage />
+            <ProtectedRoute requiredRole="operacao">
+              <ComercialPerfilRouteGuard path="/testes">
+                <TestesPage />
+              </ComercialPerfilRouteGuard>
             </ProtectedRoute>
           </Route>
           <Route path="/estoque">

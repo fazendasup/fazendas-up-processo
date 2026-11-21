@@ -226,6 +226,12 @@ const SISTEMA_PROCESSO_ITEMS: NavItem[] = [
     icon: CalendarClock,
     comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
+  {
+    href: "/testes",
+    label: "Testes",
+    icon: FlaskConical,
+    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
+  },
 ];
 
 const PROJETOS_ITEM: NavItem = {

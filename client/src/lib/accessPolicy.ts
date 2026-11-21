@@ -95,6 +95,7 @@ export function canAccessCommercialPath(path: string, perfil: string | null | un
       "/receitas",
       "/cadastros",
       "/ciclos",
+      "/testes",
     ];
     return path === "/comercial" || allowed.some((allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`));
   }

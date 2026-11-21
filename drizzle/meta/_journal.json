@@ -288,6 +288,13 @@
                         "when":  1794300000000,
                         "tag":  "0064_testes_acompanhamento",
                         "breakpoints":  true
+                    },
+                    {
+                        "idx":  52,
+                        "version":  "5",
+                        "when":  1794310000000,
+                        "tag":  "0065_teste_parcelas_ativo",
+                        "breakpoints":  true
                     }
                 ]
 }

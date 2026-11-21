@@ -60,6 +60,7 @@ export async function ensureTestesTables(): Promise<void> {
   \`cultura\` varchar(32) NOT NULL,
   \`variedadeNome\` varchar(128) NOT NULL,
   \`variedadeId\` int NULL,
+  \`ativo\` boolean NOT NULL DEFAULT true,
   \`diasEscuro\` int NULL,
   \`diasFotoperiodo\` int NULL,
   \`horasLuz\` int NULL,
@@ -106,6 +107,15 @@ export async function ensureTestesTables(): Promise<void> {
         console.error("[Database] ensureTestesTables:", err);
       }
     }
+  }
+  try {
+    await db.execute(
+      sql.raw(
+        `ALTER TABLE \`teste_parcelas\` ADD COLUMN \`ativo\` boolean NOT NULL DEFAULT true`,
+      ),
+    );
+  } catch {
+    // coluna já existe
   }
   await ensureChlorellaSeed();
 }
@@ -156,6 +166,7 @@ async function ensureChlorellaSeed(): Promise<void> {
         testeId: teste!.id,
         cultura: "microverdes" as const,
         variedadeNome: v.variedadeNome,
+        ativo: true,
         diasEscuro: v.diasEscuro,
         diasFotoperiodo: v.diasFotoperiodo,
         horasLuz: v.horasLuz,
@@ -165,6 +176,7 @@ async function ensureChlorellaSeed(): Promise<void> {
         testeId: teste!.id,
         cultura: "alface" as const,
         variedadeNome: v.variedadeNome,
+        ativo: true,
         diasMudas: v.diasMudas,
         diasVegetativa: v.diasVegetativa,
         diasMaturacao: v.diasMaturacao,

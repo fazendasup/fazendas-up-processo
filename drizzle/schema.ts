@@ -1618,6 +1618,8 @@ export const testeParcelas = mysqlTable("teste_parcelas", {
   cultura: varchar("cultura", { length: 32 }).notNull(),
   variedadeNome: varchar("variedadeNome", { length: 128 }).notNull(),
   variedadeId: int("variedadeId"),
+  /** false = fora do ensaio (mantém histórico) */
+  ativo: boolean("ativo").notNull().default(true),
   /** Microverdes: dias no escuro */
   diasEscuro: int("diasEscuro"),
   /** Microverdes: dias sob fotoperíodo / iluminação */

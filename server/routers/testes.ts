@@ -40,6 +40,7 @@ export const testesRouter = router({
       z.object({
         id: z.number(),
         variedadeNome: z.string().min(1).optional(),
+        ativo: z.boolean().optional(),
         diasEscuro: z.number().int().min(0).nullable().optional(),
         diasFotoperiodo: z.number().int().min(0).nullable().optional(),
         horasLuz: z.number().int().min(0).max(24).nullable().optional(),
@@ -65,6 +66,7 @@ export const testesRouter = router({
         testeId: z.number(),
         cultura: culturaSchema,
         variedadeNome: z.string().min(1),
+        ativo: z.boolean().optional(),
         diasEscuro: z.number().int().min(0).optional(),
         diasFotoperiodo: z.number().int().min(0).optional(),
         horasLuz: z.number().int().min(0).max(24).optional(),
@@ -75,7 +77,10 @@ export const testesRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      return testesDb.addParcela(input);
+      return testesDb.addParcela({
+        ...input,
+        ativo: input.ativo ?? true,
+      });
     }),
 
   deleteParcela: protectedProcedure

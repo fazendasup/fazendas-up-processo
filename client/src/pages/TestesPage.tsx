@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -103,10 +104,12 @@ function CampoNum({
   value,
   onSave,
   step = "1",
+  disabled = false,
 }: {
   value: number | null | undefined;
   onSave: (n: number | null) => void;
   step?: string;
+  disabled?: boolean;
 }) {
   const initial =
     value == null || Number.isNaN(Number(value)) ? "" : String(value);
@@ -116,6 +119,7 @@ function CampoNum({
       className="h-8 w-20 text-sm tabular-nums"
       inputMode="decimal"
       step={step}
+      disabled={disabled}
       value={local}
       onChange={e => setLocal(e.target.value)}
       onBlur={() => {
@@ -133,6 +137,78 @@ function CampoNum({
         if (n !== Number(value)) onSave(n);
       }}
     />
+  );
+}
+
+function CampoNome({
+  value,
+  onSave,
+  disabled = false,
+}: {
+  value: string;
+  onSave: (nome: string) => void;
+  disabled?: boolean;
+}) {
+  const [local, setLocal] = useState(value);
+  return (
+    <Input
+      className="h-8 min-w-[9rem] text-sm font-medium"
+      disabled={disabled}
+      value={local}
+      onChange={e => setLocal(e.target.value)}
+      onBlur={() => {
+        const nome = local.trim();
+        if (!nome) {
+          setLocal(value);
+          toast.error("Informe o nome da variedade");
+          return;
+        }
+        if (nome !== value) onSave(nome);
+      }}
+    />
+  );
+}
+
+function FormNovaVariedade({
+  cultura,
+  onAdd,
+  pending,
+}: {
+  cultura: CulturaTeste;
+  onAdd: (nome: string) => void;
+  pending: boolean;
+}) {
+  const [nome, setNome] = useState("");
+  return (
+    <form
+      className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed bg-muted/20 p-3"
+      onSubmit={e => {
+        e.preventDefault();
+        const n = nome.trim();
+        if (!n) {
+          toast.error("Informe o nome da variedade");
+          return;
+        }
+        onAdd(n);
+        setNome("");
+      }}
+    >
+      <div className="min-w-[12rem] flex-1 space-y-1">
+        <Label className="text-xs">
+          Acrescentar variedade ({cultura === "microverdes" ? "microverde" : "alface"})
+        </Label>
+        <Input
+          value={nome}
+          onChange={e => setNome(e.target.value)}
+          placeholder="Nome da variedade"
+          className="h-9"
+        />
+      </div>
+      <Button type="submit" size="sm" disabled={pending} className="h-9">
+        <Plus className="mr-1 h-4 w-4" />
+        Acrescentar
+      </Button>
+    </form>
   );
 }
 
@@ -160,6 +236,13 @@ function TesteDetalhe({ slug }: { slug: string }) {
     },
     onError: e => toast.error(e.message),
   });
+  const addParcela = trpc.testes.addParcela.useMutation({
+    onSuccess: () => {
+      void utils.testes.bySlug.invalidate({ slug });
+      toast.success("Variedade acrescentada");
+    },
+    onError: e => toast.error(e.message),
+  });
 
   const [culturaDose, setCulturaDose] = useState<CulturaTeste>("microverdes");
   const [faseDose, setFaseDose] = useState<FaseAlfaceTeste>("mudas");
@@ -169,6 +252,7 @@ function TesteDetalhe({ slug }: { slug: string }) {
   const [doseMlL, setDoseMlL] = useState(String(CHLORELLA_DOSE_ML_POR_L));
   const [dataAplicacao, setDataAplicacao] = useState(hojeIso());
   const [obs, setObs] = useState("");
+  const [mostrarInativas, setMostrarInativas] = useState(true);
 
   const teste = q.data?.teste;
   const parcelas = q.data?.parcelas ?? [];
@@ -176,12 +260,20 @@ function TesteDetalhe({ slug }: { slug: string }) {
   const lembretes = q.data?.lembretes ?? [];
 
   const micro = useMemo(
-    () => parcelas.filter(p => p.cultura === "microverdes"),
-    [parcelas],
+    () =>
+      parcelas.filter(
+        p =>
+          p.cultura === "microverdes" &&
+          (mostrarInativas || p.ativo !== false),
+      ),
+    [parcelas, mostrarInativas],
   );
   const alf = useMemo(
-    () => parcelas.filter(p => p.cultura === "alface"),
-    [parcelas],
+    () =>
+      parcelas.filter(
+        p => p.cultura === "alface" && (mostrarInativas || p.ativo !== false),
+      ),
+    [parcelas, mostrarInativas],
   );
 
   const doseNum = Number(String(doseMlL).replace(",", ".")) || 0;
@@ -467,19 +559,58 @@ function TesteDetalhe({ slug }: { slug: string }) {
         </Button>
       </section>
 
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+        <p>
+          Cadastro geral de variedades do projeto:{" "}
+          <Link href="/receitas">
+            <a className="font-medium text-primary underline">
+              Receitas e cadastros
+            </a>
+          </Link>
+          {" "}
+          (projeto Microverdes ou Fazenda Vertical). Nesta página você gerencia
+          só as variedades do ensaio Chlorella.
+        </p>
+        <label className="flex items-center gap-2 text-foreground">
+          <Switch
+            checked={mostrarInativas}
+            onCheckedChange={setMostrarInativas}
+          />
+          Mostrar desabilitadas
+        </label>
+      </div>
+
       <section className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-bold">
           <Sprout className="h-4 w-4" />
           Microverdes — variedades, escuro, fotoperíodo e biomassa
         </h2>
         <p className="text-xs text-muted-foreground">
-          Caixa de SN comum a todas. A dosagem acima atualiza o lote inteiro de
-          uma vez.
+          Caixa de SN comum às variedades ativas. A dosagem acima atualiza o
+          lote inteiro de uma vez. Desabilite a variedade para tirá-la do
+          ensaio sem apagar o histórico.
         </p>
+        <FormNovaVariedade
+          cultura="microverdes"
+          pending={addParcela.isPending}
+          onAdd={nome =>
+            addParcela.mutate({
+              testeId: teste.id,
+              cultura: "microverdes",
+              variedadeNome: nome,
+              diasEscuro: 2,
+              diasFotoperiodo: 8,
+              horasLuz: 16,
+              biomassaEsperadaGramas: 30,
+              ativo: true,
+            })
+          }
+        />
         <div className="overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="border-b bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="px-3 py-2 font-semibold">Ativa</th>
                 <th className="px-3 py-2 font-semibold">Variedade</th>
                 <th className="px-2 py-2 font-semibold">Escuro (d)</th>
                 <th className="px-2 py-2 font-semibold">Fotoperíodo (d)</th>
@@ -489,47 +620,69 @@ function TesteDetalhe({ slug }: { slug: string }) {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {micro.map(p => (
-                <tr key={p.id} className="align-top">
-                  <td className="px-3 py-2 font-medium">{p.variedadeNome}</td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.diasEscuro}
-                      onSave={n => saveParcela(p.id, { diasEscuro: n })}
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.diasFotoperiodo}
-                      onSave={n => saveParcela(p.id, { diasFotoperiodo: n })}
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.horasLuz}
-                      onSave={n => saveParcela(p.id, { horasLuz: n })}
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.biomassaEsperadaGramas}
-                      step="0.1"
-                      onSave={n =>
-                        saveParcela(p.id, { biomassaEsperadaGramas: n })
-                      }
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.biomassaObservadaGramas}
-                      step="0.1"
-                      onSave={n =>
-                        saveParcela(p.id, { biomassaObservadaGramas: n })
-                      }
-                    />
-                  </td>
-                </tr>
-              ))}
+              {micro.map(p => {
+                const ativa = p.ativo !== false;
+                return (
+                  <tr
+                    key={p.id}
+                    className={`align-top ${ativa ? "" : "bg-muted/30 opacity-70"}`}
+                  >
+                    <td className="px-3 py-2">
+                      <Switch
+                        checked={ativa}
+                        onCheckedChange={checked =>
+                          saveParcela(p.id, { ativo: checked })
+                        }
+                        aria-label={`Habilitar ${p.variedadeNome}`}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <CampoNome
+                        value={p.variedadeNome}
+                        onSave={nome =>
+                          saveParcela(p.id, { variedadeNome: nome })
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.diasEscuro}
+                        onSave={n => saveParcela(p.id, { diasEscuro: n })}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.diasFotoperiodo}
+                        onSave={n => saveParcela(p.id, { diasFotoperiodo: n })}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.horasLuz}
+                        onSave={n => saveParcela(p.id, { horasLuz: n })}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.biomassaEsperadaGramas}
+                        step="0.1"
+                        onSave={n =>
+                          saveParcela(p.id, { biomassaEsperadaGramas: n })
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.biomassaObservadaGramas}
+                        step="0.1"
+                        onSave={n =>
+                          saveParcela(p.id, { biomassaObservadaGramas: n })
+                        }
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -540,10 +693,27 @@ function TesteDetalhe({ slug }: { slug: string }) {
           <Leaf className="h-4 w-4" />
           Alface — mudas (50 L), vegetativa (310/500 L), maturação (500 L)
         </h2>
+        <FormNovaVariedade
+          cultura="alface"
+          pending={addParcela.isPending}
+          onAdd={nome =>
+            addParcela.mutate({
+              testeId: teste.id,
+              cultura: "alface",
+              variedadeNome: nome,
+              diasMudas: 14,
+              diasVegetativa: 14,
+              diasMaturacao: 14,
+              biomassaEsperadaGramas: 180,
+              ativo: true,
+            })
+          }
+        />
         <div className="overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[800px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="border-b bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="px-3 py-2 font-semibold">Ativa</th>
                 <th className="px-3 py-2 font-semibold">Variedade</th>
                 <th className="px-2 py-2 font-semibold">Mudas (d)</th>
                 <th className="px-2 py-2 font-semibold">Vegetativa (d)</th>
@@ -553,47 +723,69 @@ function TesteDetalhe({ slug }: { slug: string }) {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {alf.map(p => (
-                <tr key={p.id} className="align-top">
-                  <td className="px-3 py-2 font-medium">{p.variedadeNome}</td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.diasMudas}
-                      onSave={n => saveParcela(p.id, { diasMudas: n })}
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.diasVegetativa}
-                      onSave={n => saveParcela(p.id, { diasVegetativa: n })}
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.diasMaturacao}
-                      onSave={n => saveParcela(p.id, { diasMaturacao: n })}
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.biomassaEsperadaGramas}
-                      step="0.1"
-                      onSave={n =>
-                        saveParcela(p.id, { biomassaEsperadaGramas: n })
-                      }
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <CampoNum
-                      value={p.biomassaObservadaGramas}
-                      step="0.1"
-                      onSave={n =>
-                        saveParcela(p.id, { biomassaObservadaGramas: n })
-                      }
-                    />
-                  </td>
-                </tr>
-              ))}
+              {alf.map(p => {
+                const ativa = p.ativo !== false;
+                return (
+                  <tr
+                    key={p.id}
+                    className={`align-top ${ativa ? "" : "bg-muted/30 opacity-70"}`}
+                  >
+                    <td className="px-3 py-2">
+                      <Switch
+                        checked={ativa}
+                        onCheckedChange={checked =>
+                          saveParcela(p.id, { ativo: checked })
+                        }
+                        aria-label={`Habilitar ${p.variedadeNome}`}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <CampoNome
+                        value={p.variedadeNome}
+                        onSave={nome =>
+                          saveParcela(p.id, { variedadeNome: nome })
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.diasMudas}
+                        onSave={n => saveParcela(p.id, { diasMudas: n })}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.diasVegetativa}
+                        onSave={n => saveParcela(p.id, { diasVegetativa: n })}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.diasMaturacao}
+                        onSave={n => saveParcela(p.id, { diasMaturacao: n })}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.biomassaEsperadaGramas}
+                        step="0.1"
+                        onSave={n =>
+                          saveParcela(p.id, { biomassaEsperadaGramas: n })
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <CampoNum
+                        value={p.biomassaObservadaGramas}
+                        step="0.1"
+                        onSave={n =>
+                          saveParcela(p.id, { biomassaObservadaGramas: n })
+                        }
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

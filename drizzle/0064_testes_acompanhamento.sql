@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `teste_parcelas` (
   `cultura` varchar(32) NOT NULL,
   `variedadeNome` varchar(128) NOT NULL,
   `variedadeId` int NULL,
+  `ativo` boolean NOT NULL DEFAULT true,
   `diasEscuro` int NULL,
   `diasFotoperiodo` int NULL,
   `horasLuz` int NULL,
