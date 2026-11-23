@@ -4980,20 +4980,8 @@ WHERE t.\`numeroTorre\` IS NULL`));
     "CREATE UNIQUE INDEX `torres_projeto_numero` ON `torres` (`projetoId`, `numeroTorre`)",
   );
 
-  const ovJson =
-    '{"vegetativa":{"perfis":12,"furosPorPerfil":6},"maturacao":{"perfis":12,"furosPorPerfil":6}}';
-  try {
-    await dbConn.execute(
-      sql.raw(
-        `UPDATE \`torres\` SET \`estruturaOverrideJson\` = '${ovJson.replace(/'/g, "''")}' WHERE \`numeroTorre\` IN (13, 14) AND (\`estruturaOverrideJson\` IS NULL OR \`estruturaOverrideJson\` = '')`,
-      ),
-    );
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!/doesn't exist/i.test(msg) && !/ER_NO_SUCH_TABLE/i.test(msg)) {
-      console.warn("[Database] ensureTorresNumeroEstruturaColumns override 12x6:", msg.slice(0, 120));
-    }
-  }
+  // Override 12×6: não backfill por numeroTorre — após inversão Maturação 1–14
+  // as baby leaf ficam nos labels 1–2; estrutura fica no seed/config por torre.
 }
 
 /**
@@ -5245,14 +5233,15 @@ export async function ensureFvDefaultInfrastructure(projetoId: number): Promise<
       fase: "maturacao",
       numAndares: 9,
       numeroTorre: 4 + t,
-      estruturaOverrideJson: t >= 9 ? JSON.stringify(ESTRUTURA_OVERRIDE_FV_12x6) : null,
+      // Baby leaf / 12×6 nas primeiras maturação (labels 1–2 após numeração invertida na fazenda).
+      estruturaOverrideJson: t <= 2 ? JSON.stringify(ESTRUTURA_OVERRIDE_FV_12x6) : null,
     });
   }
 
   return {
     created: true,
     message:
-      "Estrutura padrão recriada: 1 torre mudas (caixa compartilhada), 3 vegetativas, 10 maturação (últimas duas 12×6). Cadastre nomes/slugs em Configuração se precisar alinhar ao anterior.",
+      "Estrutura padrão recriada: 1 torre mudas (caixa compartilhada), 3 vegetativas, 10 maturação (primeiras duas 12×6). Cadastre nomes/slugs em Configuração se precisar alinhar ao anterior.",
   };
 }
 

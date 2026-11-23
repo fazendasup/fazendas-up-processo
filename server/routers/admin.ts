@@ -162,7 +162,7 @@ export const adminRouter = router({
           fase: "maturacao",
           numAndares: 9,
           numeroTorre: 4 + t,
-          estruturaOverrideJson: t >= 9 ? JSON.stringify(ESTRUTURA_OVERRIDE_FV_12x6) : null,
+          estruturaOverrideJson: t <= 2 ? JSON.stringify(ESTRUTURA_OVERRIDE_FV_12x6) : null,
         });
       }
     }

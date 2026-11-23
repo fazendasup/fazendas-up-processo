@@ -677,7 +677,7 @@ export default function ConfigPage() {
                         <option value="fv_12x6">12 perfis × 6 furos (veg e mat — torres alteradas)</option>
                       </select>
                       <p className="text-[10px] text-muted-foreground mt-1">
-                        Use 12×6 para torres com estrutura reformada (ex.: n.º 13 e 14). Ajuste os andares no solo se a contagem de furos no BD não coincidir.
+                        Use 12×6 para torres com estrutura reformada (ex.: Maturação 1 e 2 — baby leaf). Ajuste os andares no solo se a contagem de furos no BD não coincidir.
                       </p>
                     </div>
                   )}

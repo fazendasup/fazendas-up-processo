@@ -187,7 +187,7 @@ export const ESTRUTURA_FASE: Record<Fase, { perfis: number; furosPorPerfil: numb
 /** Patch por fase para torres com grelha física diferente do padrão FV. */
 export type TorreEstruturaFasePatch = { perfis: number; furosPorPerfil: number };
 
-/** Ex.: torres 13 e 14 com 12 perfis × 6 furos em vegetativa e maturação. */
+/** Ex.: Maturação 1 e 2 (baby leaf) com 12 perfis × 6 furos em vegetativa e maturação. */
 export type TorreEstruturaOverride = Partial<Record<Fase, TorreEstruturaFasePatch>>;
 
 /** Preset: 12 perfis × 6 furos nas fases com grelha (veg + mat). */

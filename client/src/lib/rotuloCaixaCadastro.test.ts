@@ -22,10 +22,10 @@ describe("rotuloCaixaComoCadastro", () => {
 
   it("preserva Baby Leaf no nome da torre", () => {
     expect(
-      rotuloCaixaComoCadastro("Caixa Torre Maturação 13 - Baby Leaf", [
-        { nome: "Torre Maturação 14 - Baby Leaf" },
-        { nome: "Torre Maturação 13 - Baby Leaf" },
+      rotuloCaixaComoCadastro("Caixa Torre Maturação 1 - Baby Leaf", [
+        { nome: "Torre Maturação 2 - Baby Leaf" },
+        { nome: "Torre Maturação 1 - Baby Leaf" },
       ]).detalhe,
-    ).toBe("Torre Maturação 13 - Baby Leaf · Torre Maturação 14 - Baby Leaf");
+    ).toBe("Torre Maturação 1 - Baby Leaf · Torre Maturação 2 - Baby Leaf");
   });
 });

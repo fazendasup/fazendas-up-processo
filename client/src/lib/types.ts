@@ -495,7 +495,7 @@ export function gerarDadosIniciais(): FazendaData {
       fase: 'maturacao',
       andares: 9,
       numeroTorre: 4 + t,
-      ...(t >= 9 ? { estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 } : {}),
+      ...(t <= 2 ? { estruturaOverride: ESTRUTURA_OVERRIDE_FV_12x6 } : {}),
       caixaAguaId: caixaId,
     });
 
