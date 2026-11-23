@@ -90,13 +90,18 @@ type NavItem = {
   projetoTipo?: "fazenda_vertical" | "hidroponia";
 };
 
-const OPERACAO_ITEMS: NavItem[] = [
+/** Atalhos diários no topo (1 clique). */
+const OPERACAO_TOP_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/planejamento", label: "Plantio", icon: CalendarIcon },
   { href: "/ciclos", label: "Ciclos", icon: CalendarClock },
   { href: "/testes", label: "Testes", icon: FlaskConical },
-  { href: "/automacao", label: "Automação", icon: Cpu },
   { href: "/correcao-ec", label: "Correção EC/pH", icon: Beaker },
+];
+
+/** Demais ferramentas de campo — submenu Operação (mesmo padrão do Comercial). */
+const OPERACAO_MENU_ITEMS: NavItem[] = [
+  { href: "/planejamento", label: "Plantio", icon: CalendarIcon },
+  { href: "/automacao", label: "Automação", icon: Cpu },
   { href: "/manutencao", label: "Manutenção", icon: Wrench },
   { href: "/bpf", label: "POP e FIT", icon: ScrollText },
   {
@@ -228,12 +233,6 @@ const SISTEMA_PROCESSO_ITEMS: NavItem[] = [
     icon: BookOpen,
     comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
   },
-  {
-    href: "/ciclos",
-    label: "Ciclos",
-    icon: CalendarClock,
-    comercialPerfis: ["OPERACOES", "COMERCIAL", "GERENTE_COMERCIAL", "ADMIN"],
-  },
 ];
 
 const PROJETOS_ITEM: NavItem = {
@@ -323,10 +322,8 @@ export default function Header() {
     : (comercialMe.data?.perfil ?? comercialPerfilFromAuth);
   const isPerfilFinanceiro = isFinanceiroPerfil(comercialPerfil);
 
-  const operacaoItems = useMemo(() => {
-    if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
-    if (isPerfilFinanceiro) return [] as NavItem[];
-    return OPERACAO_ITEMS.filter(item => {
+  const filterOperacaoNav = (items: NavItem[]) =>
+    items.filter(item => {
       if (item.requiredRole === "admin" && !isAdmin) return false;
       if (item.requiredRole === "comercial" && !canAccessComercial)
         return false;
@@ -346,6 +343,27 @@ export default function Header() {
       if (!navPermitidoPorModulo(item.href, modulosAtivos)) return false;
       return true;
     });
+
+  const operacaoTopItems = useMemo(() => {
+    if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
+    if (isPerfilFinanceiro) return [] as NavItem[];
+    return filterOperacaoNav(OPERACAO_TOP_ITEMS);
+  }, [
+    canAccessComercial,
+    canAccessProcesso,
+    comercialPerfil,
+    isAdmin,
+    isLoggedIn,
+    isPerfilFinanceiro,
+    activeProjeto?.tipo,
+    activeProjetoId,
+    modulosAtivos,
+  ]);
+
+  const operacaoMenuItems = useMemo(() => {
+    if (!isLoggedIn || activeProjetoId == null || (!canAccessProcesso && !canAccessComercial)) return [] as NavItem[];
+    if (isPerfilFinanceiro) return [] as NavItem[];
+    return filterOperacaoNav(OPERACAO_MENU_ITEMS);
   }, [
     canAccessComercial,
     canAccessProcesso,
@@ -428,6 +446,10 @@ export default function Header() {
     });
   }, [canAccessComercial, canAccessProcesso, comercialPerfil, isAdmin, isComercial, isLoggedIn, activeProjeto?.tipo, activeProjetoId]);
 
+  const operacaoGroupActive = useMemo(
+    () => operacaoMenuItems.some(item => pathMatchesNav(location, item.href)),
+    [location, operacaoMenuItems]
+  );
   const analiseGroupActive = useMemo(
     () => analiseItems.some(item => pathMatchesNav(location, item.href)),
     [location, analiseItems]
@@ -530,7 +552,7 @@ export default function Header() {
 
         {/* Nav em linha só a partir de 2xl: iPad Pro paisagem (~1366px) fica abaixo de 1536px e esmagava a barra; menu ☰ até lá. */}
         <nav className="hidden 2xl:flex max-w-full min-w-0 flex-1 items-center justify-end gap-0.5 overflow-x-auto overflow-y-visible py-0.5 [scrollbar-width:thin]">
-          {operacaoItems.map(item => {
+          {operacaoTopItems.map(item => {
             const isActive = pathMatchesNav(location, item.href);
             return (
               <Link
@@ -548,6 +570,46 @@ export default function Header() {
               </Link>
             );
           })}
+
+          {operacaoMenuItems.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "app-nav-pill",
+                    operacaoGroupActive
+                      ? "app-nav-pill-active"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                  )}
+                  aria-haspopup="menu"
+                >
+                  <Sprout className="w-3 h-3" />
+                  <span className="hidden 2xl:inline">Operação</span>
+                  <ChevronDown className="w-2.5 h-2.5 hidden 2xl:inline opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {operacaoMenuItems.map(item => {
+                  const sub = pathMatchesNav(location, item.href);
+                  return (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex w-full items-center gap-2 cursor-pointer",
+                          sub && "bg-accent/40"
+                        )}
+                      >
+                        <item.icon className="w-4 h-4 shrink-0" />
+                        <span className="flex-1">{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {comercialItems.length > 0 && (
             <DropdownMenu>
@@ -860,7 +922,7 @@ export default function Header() {
                         Assistente IA
                       </DropdownMenuItem>
                     )}
-                    {operacaoItems.map(item => {
+                    {operacaoTopItems.map(item => {
                       const PIcon = item.icon;
                       return (
                         <DropdownMenuItem
@@ -878,6 +940,30 @@ export default function Header() {
                         </DropdownMenuItem>
                       );
                     })}
+                    {operacaoMenuItems.length > 0 && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="py-2.5">
+                          <Sprout className="w-4 h-4" />
+                          <span>Operação</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {operacaoMenuItems.map(item => {
+                            const OIcon = item.icon;
+                            return (
+                              <DropdownMenuItem key={item.href} asChild>
+                                <Link
+                                  href={item.href}
+                                  className="flex w-full items-center gap-2 text-sm"
+                                >
+                                  <OIcon className="w-4 h-4 shrink-0" />
+                                  <span className="flex-1">{item.label}</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    )}
                     {comercialItems.length > 0 && (
                       <DropdownMenuSub>
                         <DropdownMenuSubTrigger className="py-2.5">
