@@ -2188,20 +2188,74 @@ export default function TorreDetail() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {historicoPerfil.data?.map(({ lote, eventos }) => (
-                      <div key={lote.id} className="rounded-xl border bg-card p-4">
+                    {historicoPerfil.data?.map((entry, idx) => {
+                      const { lote, eventos, timeline } = entry as {
+                        lote: { id: number; codigo: string; variedadeNome: string; status: string; quantidadeAtual: number; quantidadeInicial: number } | null;
+                        eventos: Array<{
+                          id: number;
+                          tipo: string;
+                          dataHora: string | Date;
+                          quantidade: number;
+                          faseOrigem?: string | null;
+                          faseDestino?: string | null;
+                          origem?: string | null;
+                          destino?: string | null;
+                          observacoes?: string | null;
+                        }>;
+                        timeline?: Array<{
+                          fase: string;
+                          label: string;
+                          dataHora: string | null;
+                          detalhe?: string | null;
+                          fonte: string;
+                        }>;
+                      };
+                      return (
+                      <div key={lote?.id ?? `timeline-${idx}`} className="rounded-xl border bg-card p-4">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
-                            <p className="text-sm font-bold">{lote.codigo}</p>
+                            <p className="text-sm font-bold">{lote?.codigo ?? 'Sem lote vinculado'}</p>
                             <p className="text-xs text-muted-foreground">
-                              {lote.variedadeNome} · {lote.status} · saldo {lote.quantidadeAtual}/{lote.quantidadeInicial}
+                              {lote
+                                ? `${lote.variedadeNome} · ${lote.status} · saldo ${lote.quantidadeAtual}/${lote.quantidadeInicial}`
+                                : 'Datas reconstruídas a partir de transplantios e entrada no perfil'}
                             </p>
                           </div>
                           <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
-                            Lote de produção
+                            {lote ? 'Lote de produção' : 'Linha do tempo'}
                           </span>
                         </div>
+
+                        {timeline && timeline.length > 0 && (
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            {timeline.map((fase) => (
+                              <div
+                                key={fase.fase}
+                                className={`rounded-lg border p-2.5 ${
+                                  fase.dataHora ? 'bg-emerald-50/60 border-emerald-200' : 'bg-muted/30 border-dashed'
+                                }`}
+                              >
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  {fase.label}
+                                </p>
+                                <p className="text-sm font-bold tabular-nums">
+                                  {fase.dataHora
+                                    ? new Date(fase.dataHora).toLocaleString('pt-BR')
+                                    : '— sem registro'}
+                                </p>
+                                {fase.detalhe && (
+                                  <p className="mt-0.5 text-[10px] text-muted-foreground line-clamp-2">{fase.detalhe}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {eventos.length > 0 && (
                         <div className="mt-3 space-y-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Eventos do lote
+                          </p>
                           {eventos.map((ev) => {
                             const editando = eventoDataEdicao?.eventoId === ev.id;
                             return (
@@ -2280,8 +2334,10 @@ export default function TorreDetail() {
                             );
                           })}
                         </div>
+                        )}
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 )}
               </DialogContent>

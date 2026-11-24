@@ -4379,6 +4379,35 @@ function eventoHistoricoJaExiste(
   });
 }
 
+/** Enriquece eventos de um lote recém-criado com transplantios/germinação já existentes. */
+export async function enriquecerHistoricoLotePerfil(params: {
+  projetoId: number;
+  loteId: number;
+  variedadeId: number;
+  andarId: number;
+  perfilIndex: number;
+  dataInicio: Date;
+}): Promise<number> {
+  const [allAndares, allTorres, transplantios, germinacoes] = await Promise.all([
+    getAllAndares(params.projetoId),
+    getAllTorres(params.projetoId),
+    getAllTransplantios(params.projetoId),
+    getAllGerminacao(params.projetoId),
+  ]);
+  const andar = allAndares.find((a) => a.id === params.andarId);
+  const torre = andar ? allTorres.find((t) => t.id === andar.torreId) : null;
+  const andarMap = new Map(allAndares.map((a) => [a.id, a]));
+  const torreMap = new Map(allTorres.map((t) => [t.id, t]));
+  return importarEventosHistoricosParaLote({
+    ...params,
+    faseAtual: torre?.fase ?? null,
+    transplantios,
+    germinacoes,
+    andarMap,
+    torreMap,
+  });
+}
+
 async function importarEventosHistoricosParaLote(params: {
   projetoId: number;
   loteId: number;

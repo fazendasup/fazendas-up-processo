@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { projetoIdFromCtx, projectProcedure, router } from "../_core/trpc";
 import * as db from "../db";
+import { montarTimelineHistoricoPerfil } from "../lotes/timelineHistorico";
 
 export const lotesRouter = router({
   perfilHistorico: projectProcedure
@@ -22,7 +23,27 @@ export const lotesRouter = router({
         const lote = await db.getLoteById(pid, loteId);
         if (!lote) continue;
         const eventos = await db.getEventosByLoteId(pid, loteId);
-        lotes.push({ lote, eventos });
+        const timeline = await montarTimelineHistoricoPerfil({
+          projetoId: pid,
+          andarId: input.andarId,
+          perfilIndex: input.perfilIndex,
+          loteId,
+          lote,
+          eventos,
+        });
+        lotes.push({ lote, eventos, timeline });
+      }
+      // Sem lote rastreável: ainda monta timeline por transplantios/dataEntrada
+      if (lotes.length === 0) {
+        const timeline = await montarTimelineHistoricoPerfil({
+          projetoId: pid,
+          andarId: input.andarId,
+          perfilIndex: input.perfilIndex,
+        });
+        const temData = timeline.some((t) => t.dataHora);
+        if (temData || perfil?.variedadeId) {
+          return [{ lote: null, eventos: [], timeline }];
+        }
       }
       return lotes;
     }),

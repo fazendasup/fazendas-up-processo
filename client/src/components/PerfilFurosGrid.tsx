@@ -243,9 +243,17 @@ export default function PerfilFurosGrid({
                       {labelPosicaoProducao(projetoTipo, i)}
                     </span>
                     {variedade && (
-                      <span className="truncate text-[10px] text-muted-foreground max-w-[5.5rem]">
+                      <button
+                        type="button"
+                        title="Ver histórico (plantio, vegetativa, maturação)"
+                        className="truncate text-[10px] text-muted-foreground max-w-[5.5rem] hover:text-primary hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPerfilInspect?.(i);
+                        }}
+                      >
                         {variedade.nome}
-                      </span>
+                      </button>
                     )}
                     {!isAtivo && isInteractive && (
                       <span className="text-[9px] font-semibold text-emerald-600">Ativar</span>
@@ -635,9 +643,17 @@ export default function PerfilFurosGrid({
                     {plantadosNoPerfil}/{numFuros}
                   </span>
                   {variedade && !mv && (
-                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full truncate">
+                    <button
+                      type="button"
+                      title="Ver histórico (plantio, vegetativa, maturação)"
+                      className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full truncate hover:bg-primary/20 max-w-[7rem]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPerfilInspect?.(pIndex);
+                      }}
+                    >
                       {variedade.nome.length > 10 ? variedade.nome.slice(0, 9) + '…' : variedade.nome}
-                    </span>
+                    </button>
                   )}
                   {/* Badge de status inline */}
                   {ps.rest !== null && (
@@ -659,6 +675,20 @@ export default function PerfilFurosGrid({
                     </span>
                   )}
                 </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {onPerfilInspect && (!!perfil?.ativo || !!variedade || plantadosNoPerfil > 0) && (
+                    <button
+                      type="button"
+                      title="Histórico do perfil"
+                      className="text-[10px] px-1.5 py-0.5 rounded-md border border-border/70 text-muted-foreground hover:bg-muted/60"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPerfilInspect(pIndex);
+                      }}
+                    >
+                      Datas
+                    </button>
+                  )}
                 {isInteractive && (
                   <button
                     type="button"
@@ -680,6 +710,7 @@ export default function PerfilFurosGrid({
                     {modo === 'transplantio' ? (mv ? '🌱' : '🌱 Plantar') : mv ? '✂️' : '✂️ Colher'}
                   </button>
                 )}
+                </div>
               </div>
 
               {/* Data no próprio card — evita o bloco duplicado em cima da página */}

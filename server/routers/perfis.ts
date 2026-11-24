@@ -47,7 +47,7 @@ async function criarLotePerfilSePreciso(opts: {
     projetoId: opts.projetoId,
     loteId: lote.id,
     tipo: "plantio",
-    dataHora: new Date(),
+    dataHora: dataInicio instanceof Date ? dataInicio : new Date(dataInicio),
     quantidade,
     faseDestino: "mudas",
     destino: `Andar ${opts.andarId} · Perfil ${opts.perfilIndex + 1}`,
@@ -55,6 +55,19 @@ async function criarLotePerfilSePreciso(opts: {
     executadoPorId: opts.userId,
     executadoPorNome: opts.userName,
   });
+  // Completa vegetativa/maturação a partir de transplantios já lançados neste andar.
+  try {
+    await db.enriquecerHistoricoLotePerfil({
+      projetoId: opts.projetoId,
+      loteId: lote.id,
+      variedadeId: opts.variedadeId,
+      andarId: opts.andarId,
+      perfilIndex: opts.perfilIndex,
+      dataInicio: dataInicio instanceof Date ? dataInicio : new Date(dataInicio),
+    });
+  } catch (err) {
+    console.warn("[lotes] enriquecerHistoricoLotePerfil:", err);
+  }
   return lote.id;
 }
 
