@@ -285,10 +285,10 @@ export default function TorreDetail() {
     const resto = qtd % count;
     return Array.from({ length: count }, (_, i) => base + (i < resto ? 1 : 0));
   };
-  /** Microverdes: colheita nas torres de iluminação (`vegetativa` ou legado `maturacao`). FV: só `maturacao`. */
+  /** Microverdes: colheita na iluminação. FV: maturação e vegetativa (colheita antecipada). */
   const torreComModoColheita = isMicroverdes
     ? faseTorreMicroverdesIluminacao(torre.fase)
-    : isMaturacao;
+    : torre.fase === 'vegetativa' || isMaturacao;
 
   const badgeClass =
     torre.fase === 'mudas'

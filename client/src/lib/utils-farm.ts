@@ -352,10 +352,10 @@ export function labelPrevisao(fase: Fase, projetoTipo?: string | null): string {
   return 'Transplante';
 }
 
-/** FV: colheita só em maturação. Microverdes: colheita nas torres de iluminação (não mudas). */
+/** FV: colheita em vegetativa (antecipada) e maturação. Microverdes: torres de iluminação (não mudas). */
 export function torreUsaMetricasColheita(fase: Fase, projetoTipo?: string | null): boolean {
   if (projetoTipo === 'microverdes') return fase !== 'mudas';
-  return fase === 'maturacao';
+  return fase === 'vegetativa' || fase === 'maturacao';
 }
 
 /** Dias restantes até a previsão (dias civis locais; no dia do vencimento retorna 0). */
@@ -779,7 +779,7 @@ export function calcularKPIs(data: FazendaData): FazendaKPIs {
       occPorFase[f].capacidade += capAndar;
     }
 
-    // FV: colheita na maturação. Microverdes: iluminação (vegetativa / legado maturação).
+    // FV: colheita em vegetativa/maturação. Microverdes: iluminação.
     if (torreUsaMetricasColheita(torre.fase, projetoTipo)) {
       const colhidas = contarColhidasAndar(andar, torre.fase, projetoTipo);
       plantasColhidas += colhidas;

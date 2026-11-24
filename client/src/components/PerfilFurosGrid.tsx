@@ -129,7 +129,7 @@ export default function PerfilFurosGrid({
   const isMudas = fase === 'mudas';
   const isMaturacao = fase === 'maturacao';
   const faseComContagemColhidos =
-    projetoTipo === 'microverdes' ? fase !== 'mudas' : isMaturacao;
+    projetoTipo === 'microverdes' ? fase !== 'mudas' : fase === 'vegetativa' || isMaturacao;
   const isInteractive = !readOnly && modo !== 'visualizacao';
   const effectiveSelectionMode = readOnly ? false : !!selectionMode;
   const estrutura = estruturaFaseParaProjeto(projetoTipo, fase, estruturaOverride ?? null);
