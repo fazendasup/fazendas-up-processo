@@ -33,7 +33,6 @@ import {
   linkGoogleMaps,
   linkGoogleMapsRota,
 } from "@/lib/entregas";
-import { geocodificarEndereco } from "@/lib/geocoding";
 import { cn } from "@/lib/utils";
 
 export function Entregas() {
@@ -584,7 +583,69 @@ type PinoEndereco = {
   ordem: number;
 };
 
-/** Mapa de planejamento: só pinos dos endereços do dia (sem GPS ao vivo / sem gravar no banco). */
+function queriesGeocode(endereco: string): string[] {
+  const base = endereco.trim();
+  if (!base) return [];
+  const out = [base];
+  if (!/manaus/i.test(base)) out.push(`${base}, Manaus, AM, Brasil`);
+  return out;
+}
+
+function geocodeViaGoogleMaps(endereco: string): Promise<google.maps.LatLngLiteral | null> {
+  if (!window.google?.maps?.Geocoder) return Promise.resolve(null);
+
+  const geocoder = new window.google.maps.Geocoder();
+  const queries = queriesGeocode(endereco);
+
+  return new Promise((resolve) => {
+    const tryAt = (index: number, retries: number) => {
+      if (index >= queries.length) {
+        resolve(null);
+        return;
+      }
+      geocoder.geocode(
+        {
+          address: queries[index],
+          region: "BR",
+          componentRestrictions: { country: "BR" },
+        },
+        (results, status) => {
+          if (status === "OK" && results?.[0]?.geometry?.location) {
+            const location = results[0].geometry.location;
+            resolve({ lat: location.lat(), lng: location.lng() });
+            return;
+          }
+          if ((status === "OVER_QUERY_LIMIT" || status === "UNKNOWN_ERROR") && retries < 3) {
+            window.setTimeout(() => tryAt(index, retries + 1), 350 * (retries + 1));
+            return;
+          }
+          tryAt(index + 1, 0);
+        },
+      );
+    };
+    tryAt(0, 0);
+  });
+}
+
+async function geocodeViaApi(endereco: string): Promise<google.maps.LatLngLiteral | null> {
+  try {
+    for (const query of queriesGeocode(endereco)) {
+      const response = await fetch(`/api/geocode?${new URLSearchParams({ address: query })}`, {
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!response.ok) continue;
+      const data = (await response.json()) as { lat?: number; lng?: number };
+      if (typeof data.lat === "number" && typeof data.lng === "number") {
+        return { lat: data.lat, lng: data.lng };
+      }
+    }
+  } catch {
+    // fallback esgotado
+  }
+  return null;
+}
+
+/** Mapa de planejamento: pinos dos endereços do dia (sem GPS ao vivo). */
 function MapaEnderecosDia({
   pinos,
   carregando = false,
@@ -594,10 +655,15 @@ function MapaEnderecosDia({
 }) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
-  const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral>());
+  const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral | null>());
   const [resolvidos, setResolvidos] = useState(0);
   const [falhas, setFalhas] = useState(0);
   const [geocodificando, setGeocodificando] = useState(false);
+
+  const pinosKey = useMemo(
+    () => pinos.map((p) => `${p.id}|${p.ordem}|${p.endereco}`).join("\n"),
+    [pinos],
+  );
 
   useEffect(() => {
     if (!map || !window.google) return;
@@ -610,29 +676,21 @@ function MapaEnderecosDia({
     };
 
     const resolverEndereco = async (endereco: string) => {
-      const cacheKey = endereco.trim();
-      const cached = geocodeCacheRef.current.get(cacheKey);
-      if (cached) return cached;
-
-      const geocoded = await geocodificarEndereco(cacheKey);
-      if (geocoded) {
-        geocodeCacheRef.current.set(cacheKey, geocoded);
-        return geocoded;
+      const cacheKey = endereco.trim().toLowerCase();
+      if (geocodeCacheRef.current.has(cacheKey)) {
+        return geocodeCacheRef.current.get(cacheKey) ?? null;
       }
 
-      return new Promise<google.maps.LatLngLiteral | null>((resolve) => {
-        const geocoder = new window.google!.maps.Geocoder();
-        geocoder.geocode({ address: cacheKey }, (results, status) => {
-          if (status !== "OK" || !results?.[0]?.geometry.location) {
-            resolve(null);
-            return;
-          }
-          const location = results[0].geometry.location;
-          const pos = { lat: location.lat(), lng: location.lng() };
-          geocodeCacheRef.current.set(cacheKey, pos);
-          resolve(pos);
-        });
-      });
+      // Geocoder do Maps primeiro (rápido; evita Photon/Nominatim no browser).
+      const viaMaps = await geocodeViaGoogleMaps(endereco);
+      if (viaMaps) {
+        geocodeCacheRef.current.set(cacheKey, viaMaps);
+        return viaMaps;
+      }
+
+      const viaApi = await geocodeViaApi(endereco);
+      geocodeCacheRef.current.set(cacheKey, viaApi);
+      return viaApi;
     };
 
     const run = async () => {
@@ -649,33 +707,44 @@ function MapaEnderecosDia({
       let hasBounds = false;
       let ok = 0;
       let fail = 0;
-
       const ordenados = [...pinos].sort((a, b) => a.ordem - b.ordem);
-      for (const pino of ordenados) {
-        const pos = await resolverEndereco(pino.endereco);
+      const CONCURRENCY = 4;
+
+      for (let i = 0; i < ordenados.length; i += CONCURRENCY) {
         if (cancelled) return;
-        if (!pos) {
-          fail += 1;
-          continue;
+        const batch = ordenados.slice(i, i + CONCURRENCY);
+        const resultados = await Promise.all(
+          batch.map(async (pino) => ({ pino, pos: await resolverEndereco(pino.endereco) })),
+        );
+        if (cancelled) return;
+
+        for (const { pino, pos } of resultados) {
+          if (!pos) {
+            fail += 1;
+            continue;
+          }
+          ok += 1;
+          const marker = createMapMarker(map, pos, pino.label, "#2563eb");
+          marker.setLabel({
+            text: String(pino.ordem),
+            color: "#ffffff",
+            fontWeight: "700",
+            fontSize: "11px",
+          });
+          markersRef.current.push(marker);
+          bounds.extend(pos);
+          hasBounds = true;
         }
-        ok += 1;
-        const marker = createMapMarker(map, pos, pino.label, "#2563eb");
-        marker.setLabel({
-          text: String(pino.ordem),
-          color: "#ffffff",
-          fontWeight: "700",
-          fontSize: "11px",
-        });
-        markersRef.current.push(marker);
-        bounds.extend(pos);
-        hasBounds = true;
+
+        setResolvidos(ok);
+        setFalhas(fail);
+        if (hasBounds) map.fitBounds(bounds, 64);
       }
 
       if (!cancelled) {
         setResolvidos(ok);
         setFalhas(fail);
         setGeocodificando(false);
-        if (hasBounds) map.fitBounds(bounds, 64);
       }
     };
 
@@ -685,7 +754,9 @@ function MapaEnderecosDia({
       cancelled = true;
       clearMarkers();
     };
-  }, [map, pinos]);
+    // pinosKey evita reexecutar quando só a referência do array muda
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, pinosKey]);
 
   return (
     <Card>
@@ -708,9 +779,10 @@ function MapaEnderecosDia({
           <p className="text-sm text-muted-foreground">
             Sem endereços para exibir. Gere a rota ou selecione o dia com entregas planejadas.
           </p>
-        ) : geocodificando && resolvidos === 0 ? (
+        ) : geocodificando ? (
           <p className="text-sm text-muted-foreground">
-            Localizando {pinos.length} endereço(s) no mapa…
+            Localizando endereços… {resolvidos}/{pinos.length} pino{resolvidos === 1 ? "" : "s"}
+            {falhas > 0 ? ` · ${falhas} sem geolocalização` : ""}.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">

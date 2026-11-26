@@ -90,13 +90,16 @@ export function createMapMarker(
     map,
     position,
     title,
+    optimized: false,
+    zIndex: 1000,
     icon: {
       path: window.google.maps.SymbolPath.CIRCLE,
-      scale: 10,
+      scale: 12,
       fillColor: color,
       fillOpacity: 1,
       strokeColor: "#ffffff",
       strokeWeight: 2,
+      labelOrigin: new window.google.maps.Point(0, 0),
     },
   });
 }
