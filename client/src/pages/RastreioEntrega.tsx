@@ -1,8 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import { useRoute } from "wouter";
-import { MapPin, Package, Truck } from "lucide-react";
-import { MapView } from "@/components/Map";
-import { createMapMarker } from "@/lib/googleMapsLoader";
+import { Package, Truck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
@@ -16,16 +13,10 @@ export default function RastreioEntrega() {
     { token },
     {
       enabled: Boolean(token),
-      refetchInterval: 15000,
+      refetchInterval: 30_000,
       retry: false,
     },
   );
-
-  const mapaUrl = useMemo(() => {
-    const loc = rastreio.data?.localizacao;
-    if (!loc) return null;
-    return `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}&z=15`;
-  }, [rastreio.data?.localizacao]);
 
   if (!token) {
     return <Shell erro="Link de rastreamento inválido." />;
@@ -67,17 +58,17 @@ export default function RastreioEntrega() {
                 Houve um problema na entrega. Nossa equipe foi avisada.
                 {data.observacoesProblema ? ` ${data.observacoesProblema}` : ""}
               </p>
-            ) : data.compartilhando ? (
+            ) : data.statusRota === "EM_ROTA" ? (
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Truck className="h-4 w-4" />
                 Seu pedido está a caminho.
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                A entrega ainda não está em trânsito ou o compartilhamento de localização não está ativo.
+                A entrega ainda não está em trânsito.
               </p>
             )}
-            {data.compartilhando && data.fila?.posicao ? (
+            {data.statusRota === "EM_ROTA" && data.fila?.posicao ? (
               <div className="grid gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-sm text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-50">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Sua posição na fila</span>
@@ -96,80 +87,13 @@ export default function RastreioEntrega() {
                 ) : null}
               </div>
             ) : null}
+            <p className="text-xs text-muted-foreground">
+              O mapa ao vivo foi desativado. O status da entrega continua disponível neste link.
+            </p>
           </CardContent>
         </Card>
-
-        {data.compartilhando && data.localizacao ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MapPin className="h-5 w-5" />
-                Localização
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Atualizado às{" "}
-                {data.localizacao.atualizadaEm
-                  ? new Date(data.localizacao.atualizadaEm).toLocaleTimeString("pt-BR")
-                  : "—"}
-              </p>
-              <EntregadorLiveMap
-                latitude={data.localizacao.latitude}
-                longitude={data.localizacao.longitude}
-                clienteNome={data.clienteNome}
-              />
-              {mapaUrl ? (
-                <a
-                  href={mapaUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground"
-                >
-                  Abrir no Google Maps
-                </a>
-              ) : null}
-            </CardContent>
-          </Card>
-        ) : null}
       </div>
     </div>
-  );
-}
-
-function EntregadorLiveMap({
-  latitude,
-  longitude,
-  clienteNome,
-}: {
-  latitude: number;
-  longitude: number;
-  clienteNome: string;
-}) {
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const position = useMemo(() => ({ lat: latitude, lng: longitude }), [latitude, longitude]);
-
-  useEffect(() => {
-    if (!map || !window.google?.maps) return;
-
-    const marker = createMapMarker(map, position, `Entregador - ${clienteNome}`, "#059669");
-
-    map.setCenter(position);
-    map.setZoom(15);
-
-    return () => {
-      marker.setMap(null);
-    };
-  }, [clienteNome, map, position]);
-
-  return (
-    <MapView
-      className="h-72 overflow-hidden rounded-xl border border-border/70"
-      fallbackUrl={`https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`}
-      initialCenter={position}
-      initialZoom={15}
-      onMapReady={setMap}
-    />
   );
 }
 

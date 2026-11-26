@@ -5,7 +5,6 @@ import {
   ArrowDown,
   ArrowUp,
   CheckCircle2,
-  Copy,
   Edit3,
   MapPin,
   Navigation,
@@ -33,31 +32,9 @@ import {
   labelStatusRota,
   linkGoogleMaps,
   linkGoogleMapsRota,
-  trackingUrlAbsoluto,
 } from "@/lib/entregas";
-import { buscarRotaOsrm, geocodificarEndereco } from "@/lib/geocoding";
+import { geocodificarEndereco } from "@/lib/geocoding";
 import { cn } from "@/lib/utils";
-
-type RoteiroRota = {
-  id: string;
-  status: string;
-  nome: string | null;
-  entregadorId: string | null;
-  entregadorNome: string | null;
-  localizacao: {
-    latitude: number;
-    longitude: number;
-    precisaoMetros: number | null;
-    atualizadaEm: string | Date | null;
-  } | null;
-  paradas: Array<{
-    id: string;
-    ordem: number;
-    status: string;
-    clienteNome: string;
-    endereco: string | null;
-  }>;
-};
 
 export function Entregas() {
   const utils = trpc.useUtils();
@@ -69,7 +46,7 @@ export function Entregas() {
 
   const roteiro = trpc.comercial.entregas.roteiro.useQuery(
     { dia: diaDate, rotaId: rotaSelecionadaId ?? undefined },
-    { refetchInterval: 60_000 },
+    { refetchInterval: false },
   );
   const entregadores = trpc.comercial.entregas.listarEntregadores.useQuery();
   const [entregadorId, setEntregadorId] = useState("");
@@ -184,14 +161,26 @@ export function Entregas() {
     salvarOrdem.mutate({ rotaId: rota.id, paradaIds: ids });
   };
 
-  const copiarLink = async (token: string) => {
-    try {
-      await navigator.clipboard.writeText(trackingUrlAbsoluto(token));
-      toast.success("Link de rastreio copiado.");
-    } catch {
-      toast.error("Não foi possível copiar o link.");
+  const pinosMapa = useMemo(() => {
+    if (paradas.length > 0) {
+      return paradas
+        .filter((p) => p.endereco?.trim())
+        .map((p) => ({
+          id: p.id,
+          label: `${p.ordem}. ${p.clienteNome}`,
+          endereco: p.endereco!.trim(),
+          ordem: p.ordem,
+        }));
     }
-  };
+    return planejadas
+      .filter((p) => p.endereco?.trim())
+      .map((p) => ({
+        id: p.contaAzulCustomerId,
+        label: `${p.ordemSugerida}. ${p.clienteNome}`,
+        endereco: p.endereco!.trim(),
+        ordem: p.ordemSugerida,
+      }));
+  }, [paradas, planejadas]);
 
   return (
     <div className="space-y-6">
@@ -256,7 +245,7 @@ export function Entregas() {
         }
       />
 
-      <LiveRouteMap rotas={rotas} rotaSelecionadaId={rota?.id ?? null} />
+      <MapaEnderecosDia pinos={pinosMapa} />
 
       {rotas.length > 0 ? (
         <Card>
@@ -342,11 +331,6 @@ export function Entregas() {
               <div className="flex flex-wrap items-center gap-2 pb-2">
                 <Badge variant="outline">{labelStatusRota(rota.status)}</Badge>
                 {rota.entregadorNome ? <Badge variant="secondary">{rota.entregadorNome}</Badge> : null}
-                {rota.localizacao ? (
-                  <Badge variant="outline">
-                    GPS {new Date(rota.localizacao.atualizadaEm ?? "").toLocaleTimeString("pt-BR")}
-                  </Badge>
-                ) : null}
                 {rota.status === "CONCLUIDA" ? (
                   <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="h-4 w-4" />
@@ -417,10 +401,6 @@ export function Entregas() {
                       </a>
                     </Button>
                   ) : null}
-                  <Button size="sm" variant="ghost" onClick={() => void copiarLink(parada.tokenPublico)}>
-                    <Copy className="h-4 w-4" />
-                    Copiar rastreio do cliente
-                  </Button>
                   <Button
                     size="sm"
                     variant="destructive"
@@ -589,36 +569,29 @@ export function Entregas() {
   );
 }
 
-const CORES_ENTREGADOR = ["#059669", "#2563eb", "#d97706", "#7c3aed", "#db2777", "#0891b2"];
+type PinoEndereco = {
+  id: string;
+  label: string;
+  endereco: string;
+  ordem: number;
+};
 
-function LiveRouteMap({
-  rotas,
-  rotaSelecionadaId,
-}: {
-  rotas: RoteiroRota[];
-  rotaSelecionadaId: string | null;
-}) {
+/** Mapa de planejamento: só pinos dos endereços do dia (sem GPS ao vivo / sem gravar no banco). */
+function MapaEnderecosDia({ pinos }: { pinos: PinoEndereco[] }) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
-  const polylinesRef = useRef<google.maps.Polyline[]>([]);
   const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral>());
+  const [resolvidos, setResolvidos] = useState(0);
+  const [falhas, setFalhas] = useState(0);
 
   useEffect(() => {
     if (!map || !window.google) return;
 
     let cancelled = false;
 
-    const clearOverlays = () => {
+    const clearMarkers = () => {
       for (const marker of markersRef.current) marker.setMap(null);
       markersRef.current = [];
-      for (const polyline of polylinesRef.current) polyline.setMap(null);
-      polylinesRef.current = [];
-    };
-
-    const addMarker = (position: google.maps.LatLngLiteral, title: string, color: string) => {
-      const marker = createMapMarker(map, position, title, color);
-      markersRef.current.push(marker);
-      return marker;
     };
 
     const resolverEndereco = async (endereco: string) => {
@@ -648,77 +621,41 @@ function LiveRouteMap({
     };
 
     const run = async () => {
-      clearOverlays();
+      clearMarkers();
+      setResolvidos(0);
+      setFalhas(0);
+      if (pinos.length === 0) return;
+
       const bounds = new window.google!.maps.LatLngBounds();
       let hasBounds = false;
+      let ok = 0;
+      let fail = 0;
 
-      for (let rotaIndex = 0; rotaIndex < rotas.length; rotaIndex++) {
-        const rota = rotas[rotaIndex]!;
-        const cor = CORES_ENTREGADOR[rotaIndex % CORES_ENTREGADOR.length]!;
-        const destaque = rota.id === rotaSelecionadaId;
-        const pontosRota: Array<{ lat: number; lng: number }> = [];
-
-        if (rota.localizacao) {
-          const pos = {
-            lat: rota.localizacao.latitude,
-            lng: rota.localizacao.longitude,
-          };
-          pontosRota.push(pos);
-          addMarker(
-            pos,
-            rota.entregadorNome ? `Entregador: ${rota.entregadorNome}` : "Localização do entregador",
-            cor,
-          );
-          bounds.extend(pos);
-          hasBounds = true;
+      const ordenados = [...pinos].sort((a, b) => a.ordem - b.ordem);
+      for (const pino of ordenados) {
+        const pos = await resolverEndereco(pino.endereco);
+        if (cancelled) return;
+        if (!pos) {
+          fail += 1;
+          continue;
         }
-
-        for (const parada of rota.paradas) {
-          if (!parada.endereco?.trim()) continue;
-          const pos = await resolverEndereco(parada.endereco);
-          if (cancelled || !pos) continue;
-
-          pontosRota.push(pos);
-
-          const statusColor =
-            parada.status === "ENTREGUE"
-              ? "#059669"
-              : parada.status === "PROBLEMA"
-                ? "#e11d48"
-                : parada.status === "EM_ROTA"
-                  ? "#2563eb"
-                  : "#334155";
-          addMarker(
-            pos,
-            `${rota.entregadorNome ?? "Rota"} · ${parada.ordem}. ${parada.clienteNome}`,
-            statusColor,
-          );
-          bounds.extend(pos);
-          hasBounds = true;
-        }
-
-        if (pontosRota.length >= 2) {
-          const path = await buscarRotaOsrm(pontosRota);
-          if (cancelled) return;
-
-          const routePath =
-            path.length > 0
-              ? path
-              : pontosRota;
-
-          const polyline = new window.google.maps.Polyline({
-            path: routePath,
-            map,
-            strokeColor: cor,
-            strokeOpacity: destaque ? 0.9 : 0.45,
-            strokeWeight: destaque ? 6 : 4,
-          });
-          polylinesRef.current.push(polyline);
-        }
+        ok += 1;
+        const marker = createMapMarker(map, pos, pino.label, "#2563eb");
+        marker.setLabel({
+          text: String(pino.ordem),
+          color: "#ffffff",
+          fontWeight: "700",
+          fontSize: "11px",
+        });
+        markersRef.current.push(marker);
+        bounds.extend(pos);
+        hasBounds = true;
       }
 
-      if (!cancelled && hasBounds) {
-        map.fitBounds(bounds, 64);
+      if (!cancelled) {
+        setResolvidos(ok);
+        setFalhas(fail);
+        if (hasBounds) map.fitBounds(bounds, 64);
       }
     };
 
@@ -726,40 +663,34 @@ function LiveRouteMap({
 
     return () => {
       cancelled = true;
-      clearOverlays();
+      clearMarkers();
     };
-  }, [map, rotas, rotaSelecionadaId]);
+  }, [map, pinos]);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <MapPin className="h-5 w-5" />
-          Mapa ao vivo
+          Mapa dos endereços
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <MapView
           className="h-[360px] overflow-hidden rounded-xl border border-border/70"
-          initialCenter={{ lat: -15.7939, lng: -47.8828 }}
-          initialZoom={5}
+          initialCenter={{ lat: -3.119, lng: -60.0217 }}
+          initialZoom={12}
           onMapReady={setMap}
         />
-        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span className="rounded-full bg-emerald-600 px-2 py-1 font-semibold text-white">Entregador</span>
-          <span className="rounded-full bg-blue-600 px-2 py-1 font-semibold text-white">Atual</span>
-          <span className="rounded-full bg-slate-700 px-2 py-1 font-semibold text-white">Pendente</span>
-          <span className="rounded-full bg-emerald-600 px-2 py-1 font-semibold text-white">Entregue</span>
-          <span className="rounded-full bg-rose-600 px-2 py-1 font-semibold text-white">Problema</span>
-        </div>
-        {rotas.some((r) => r.localizacao) ? (
+        {pinos.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Acompanhe todas as rotas ativas no mapa. No modo navegação, o GPS do entregador atualiza em poucos
-            segundos com o PWA aberto.
+            Sem endereços para exibir. Gere a rota ou selecione o dia com entregas planejadas.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            O GPS aparece quando o entregador inicia a rota e mantém o PWA aberto durante a entrega.
+            {resolvidos} pino(s) no mapa
+            {falhas > 0 ? ` · ${falhas} endereço(s) sem geolocalização` : ""}.
+            Use para visualizar a distribuição ao montar a rota — sem acompanhamento GPS.
           </p>
         )}
       </CardContent>

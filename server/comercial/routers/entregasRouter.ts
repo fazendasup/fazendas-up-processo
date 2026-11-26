@@ -70,20 +70,15 @@ function prioridadeEntregaAutomatica(regra: RegraOrdenacaoEntrega | null | undef
   return minutosDoHorario(regra?.horarioMaximoEntrega) ?? periodoBase;
 }
 
-function localizacaoRota(rota: {
+/** GPS ao vivo desativado — não devolve localização para não incentivar rastreio. */
+function localizacaoRota(_rota: {
   compartilhamentoAtivo: boolean;
   ultimaLatitude: unknown;
   ultimaLongitude: unknown;
   ultimaPrecisaoMetros: unknown;
   ultimaLocalizacaoEm: Date | null;
 }) {
-  if (!rota.compartilhamentoAtivo || rota.ultimaLatitude == null || rota.ultimaLongitude == null) return null;
-  return {
-    latitude: Number(rota.ultimaLatitude),
-    longitude: Number(rota.ultimaLongitude),
-    precisaoMetros: rota.ultimaPrecisaoMetros == null ? null : Number(rota.ultimaPrecisaoMetros),
-    atualizadaEm: rota.ultimaLocalizacaoEm,
-  };
+  return null;
 }
 
 function decimalString(value: number, scale: number): string {
@@ -765,14 +760,8 @@ export const entregasRouter = router({
 
   iniciarRota: comercialProcedure
     .use(podeUsarModoEntregador)
-    .input(z.object({ rotaId: z.string(), aceitouCompartilhamento: z.boolean() }))
+    .input(z.object({ rotaId: z.string(), aceitouCompartilhamento: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
-      if (!input.aceitouCompartilhamento) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "É necessário aceitar o compartilhamento de localização para iniciar a rota.",
-        });
-      }
       const rota = await ctx.prisma!.rotaEntrega.findUnique({
         where: { id: input.rotaId },
         include: { paradas: { orderBy: { ordem: "asc" } } },
@@ -797,7 +786,7 @@ export const entregasRouter = router({
           where: { id: rota.id },
           data: {
             status: "EM_ROTA",
-            compartilhamentoAtivo: true,
+            compartilhamentoAtivo: false,
             iniciadoEm: rota.iniciadoEm ?? new Date(),
             encerradoEm: null,
             atualizadoPorId: ctx.comercialUsuario?.id ?? null,
@@ -855,36 +844,9 @@ export const entregasRouter = router({
         ...localizacaoEntregaSchema.shape,
       }),
     )
-    .mutation(async ({ ctx, input }) => {
-      const rota = await ctx.prisma!.rotaEntrega.findUnique({ where: { id: input.rotaId } });
-      if (!rota) throw new TRPCError({ code: "NOT_FOUND", message: "Rota não encontrada." });
-      if (rota.status !== "EM_ROTA" || !rota.compartilhamentoAtivo) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "A rota não está compartilhando localização." });
-      }
-
-      const agora = new Date();
-      const localizacao = localizacaoParaBanco(input);
-      await ctx.prisma!.$transaction([
-        ctx.prisma!.rotaEntrega.update({
-          where: { id: input.rotaId },
-          data: {
-            ultimaLatitude: localizacao.latitude,
-            ultimaLongitude: localizacao.longitude,
-            ultimaPrecisaoMetros: localizacao.precisaoMetros,
-            ultimaLocalizacaoEm: agora,
-          },
-        }),
-        ctx.prisma!.historicoLocalizacaoEntrega.create({
-          data: {
-            rotaId: input.rotaId,
-            latitude: localizacao.latitude,
-            longitude: localizacao.longitude,
-            precisaoMetros: localizacao.precisaoMetros,
-          },
-        }),
-      ]);
-
-      return { success: true, atualizadaEm: agora };
+    .mutation(async () => {
+      // GPS ao vivo desativado: não grava histórico nem atualiza rota (economiza banco).
+      return { success: true, atualizadaEm: new Date(), ignorado: true as const };
     }),
 
   atualizarParada: comercialProcedure
@@ -906,32 +868,7 @@ export const entregasRouter = router({
       if (!parada) throw new TRPCError({ code: "NOT_FOUND", message: "Parada não encontrada." });
 
       const agora = new Date();
-      if (
-        input.localizacao &&
-        parada.rota.status === "EM_ROTA" &&
-        parada.rota.compartilhamentoAtivo
-      ) {
-        const localizacao = localizacaoParaBanco(input.localizacao);
-        await ctx.prisma!.$transaction([
-          ctx.prisma!.rotaEntrega.update({
-            where: { id: parada.rotaId },
-            data: {
-              ultimaLatitude: localizacao.latitude,
-              ultimaLongitude: localizacao.longitude,
-              ultimaPrecisaoMetros: localizacao.precisaoMetros,
-              ultimaLocalizacaoEm: agora,
-            },
-          }),
-          ctx.prisma!.historicoLocalizacaoEntrega.create({
-            data: {
-              rotaId: parada.rotaId,
-              latitude: localizacao.latitude,
-              longitude: localizacao.longitude,
-              precisaoMetros: localizacao.precisaoMetros,
-            },
-          }),
-        ]);
-      }
+      // Localização opcional ignorada de propósito (sem histórico GPS).
 
       await ctx.prisma!.paradaEntrega.update({
         where: { id: parada.id },
@@ -1012,27 +949,26 @@ export const entregasRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Rastreamento não encontrado." });
       }
 
-      const compartilhando =
-        parada.rota.compartilhamentoAtivo &&
+      const emTransito =
         parada.rota.status === "EM_ROTA" &&
         (parada.status === "EM_ROTA" || parada.status === "PENDENTE");
       const fila = parada.rota.paradas.filter((p) => p.status === "EM_ROTA" || p.status === "PENDENTE");
       const filaIndex = fila.findIndex((p) => p.id === parada.id);
-      const posicaoFila = compartilhando && filaIndex >= 0 ? filaIndex + 1 : null;
-      const totalFila = compartilhando ? fila.length : null;
-      const previsao = compartilhando ? previsaoEntregaPorFila(posicaoFila) : null;
+      const posicaoFila = emTransito && filaIndex >= 0 ? filaIndex + 1 : null;
+      const totalFila = emTransito ? fila.length : null;
+      const previsao = emTransito ? previsaoEntregaPorFila(posicaoFila) : null;
 
       return {
         clienteNome: parada.cliente?.nome ?? "Sua entrega",
         statusParada: parada.status,
         statusRota: parada.rota.status,
-        compartilhando,
+        compartilhando: false,
         fila: {
           posicao: posicaoFila,
           total: totalFila,
           previsaoMinutos: previsao,
         },
-        localizacao: compartilhando ? localizacaoRota(parada.rota) : null,
+        localizacao: null,
         entregueEm: parada.entregueEm,
         problemaEm: parada.problemaEm,
         observacoesProblema: parada.status === "PROBLEMA" ? parada.observacoesProblema : null,
