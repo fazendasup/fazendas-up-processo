@@ -245,7 +245,15 @@ export function Entregas() {
         }
       />
 
-      <MapaEnderecosDia pinos={pinosMapa} />
+      {roteiro.isError ? (
+        <Card>
+          <CardContent className="py-4 text-sm text-rose-700">
+            Não foi possível carregar o roteiro: {roteiro.error.message}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <MapaEnderecosDia pinos={pinosMapa} carregando={roteiro.isLoading || roteiro.isFetching} />
 
       {rotas.length > 0 ? (
         <Card>
@@ -577,12 +585,19 @@ type PinoEndereco = {
 };
 
 /** Mapa de planejamento: só pinos dos endereços do dia (sem GPS ao vivo / sem gravar no banco). */
-function MapaEnderecosDia({ pinos }: { pinos: PinoEndereco[] }) {
+function MapaEnderecosDia({
+  pinos,
+  carregando = false,
+}: {
+  pinos: PinoEndereco[];
+  carregando?: boolean;
+}) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const geocodeCacheRef = useRef(new Map<string, google.maps.LatLngLiteral>());
   const [resolvidos, setResolvidos] = useState(0);
   const [falhas, setFalhas] = useState(0);
+  const [geocodificando, setGeocodificando] = useState(false);
 
   useEffect(() => {
     if (!map || !window.google) return;
@@ -624,8 +639,12 @@ function MapaEnderecosDia({ pinos }: { pinos: PinoEndereco[] }) {
       clearMarkers();
       setResolvidos(0);
       setFalhas(0);
-      if (pinos.length === 0) return;
+      if (pinos.length === 0) {
+        setGeocodificando(false);
+        return;
+      }
 
+      setGeocodificando(true);
       const bounds = new window.google!.maps.LatLngBounds();
       let hasBounds = false;
       let ok = 0;
@@ -655,6 +674,7 @@ function MapaEnderecosDia({ pinos }: { pinos: PinoEndereco[] }) {
       if (!cancelled) {
         setResolvidos(ok);
         setFalhas(fail);
+        setGeocodificando(false);
         if (hasBounds) map.fitBounds(bounds, 64);
       }
     };
@@ -682,15 +702,21 @@ function MapaEnderecosDia({ pinos }: { pinos: PinoEndereco[] }) {
           initialZoom={12}
           onMapReady={setMap}
         />
-        {pinos.length === 0 ? (
+        {carregando ? (
+          <p className="text-sm text-muted-foreground">Carregando entregas do dia…</p>
+        ) : pinos.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Sem endereços para exibir. Gere a rota ou selecione o dia com entregas planejadas.
           </p>
+        ) : geocodificando && resolvidos === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Localizando {pinos.length} endereço(s) no mapa…
+          </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            {resolvidos} pino(s) no mapa
+            {resolvidos} pino{resolvidos === 1 ? "" : "s"} no mapa
             {falhas > 0 ? ` · ${falhas} endereço(s) sem geolocalização` : ""}.
-            Use para visualizar a distribuição ao montar a rota — sem acompanhamento GPS.
+            Use para visualizar a distribuição ao montar a rota.
           </p>
         )}
       </CardContent>

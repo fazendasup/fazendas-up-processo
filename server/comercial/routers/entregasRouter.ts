@@ -7,11 +7,6 @@ import {
   ordenarParadasOtimizadas,
   type ParadaParaOtimizar,
 } from "../lib/otimizar-rota-entrega";
-import { resolverItensOperacionaisExibicao } from "../lib/pedido-acumulo-operacional.js";
-import {
-  criarResolverChaveItemConciliacao,
-} from "../lib/produto-operacional.js";
-
 const podeGerenciarEntregas = comercialRequirePerfis("ADMIN", "GERENTE_COMERCIAL", "COMERCIAL", "OPERACOES", "LOGISTICA");
 const podeUsarModoEntregador = comercialRequirePerfis(
   "ADMIN",
@@ -128,42 +123,48 @@ async function resolverEntregador(
   return { entregadorId, entregadorNome: entregador.nome };
 }
 
+/**
+ * Lista clientes do dia para montar rota.
+ * Versão leve (sem resolução de acúmulo Conta Azul / N+1) — a página de entregas
+ * precisa responder dentro do timeout tRPC do browser (~25s).
+ */
 async function clientesPlanejados(prisma: ReturnType<typeof getComercialPrisma>, dia: Date) {
   const pedidos = await prisma.pedidoOperacional.findMany({
     where: {
       dataEntrega: { gte: inicioDia(dia), lte: fimDia(dia) },
       status: { not: "CANCELADO" },
     },
-    include: {
-      cliente: { include: { regraComercial: true } },
-      pedidoContaAzul: {
+    select: {
+      id: true,
+      contaAzulCustomerId: true,
+      status: true,
+      prioridadeEntrega: true,
+      cliente: {
         select: {
           id: true,
-          statusPedido: true,
-          itens: {
-            select: { produto: true, sku: true, quantidade: true },
+          nome: true,
+          endereco: true,
+          telefoneWhatsapp: true,
+          contatoPrincipal: true,
+          regraComercial: {
+            select: {
+              periodoEntrega: true,
+              horarioMaximoEntrega: true,
+            },
           },
         },
       },
-      itens: true,
-      avarias: true,
+      itens: {
+        select: {
+          produtoNome: true,
+          quantidade: true,
+          categoria: true,
+        },
+      },
+      _count: { select: { avarias: true } },
     },
     orderBy: [{ cliente: { nome: "asc" } }, { criadoEm: "asc" }],
   });
-
-  const produtosConciliacao = await prisma.produtoComercial.findMany({
-    where: { contaAzulProdutoId: { not: null } },
-    select: {
-      id: true,
-      nome: true,
-      sku: true,
-      contaAzulProdutoId: true,
-      ativo: true,
-      importadoOperacao: true,
-      categoria: true,
-    },
-  });
-  const resolverChave = criarResolverChaveItemConciliacao(produtosConciliacao);
 
   const grupos = new Map<
     string,
@@ -171,7 +172,7 @@ async function clientesPlanejados(prisma: ReturnType<typeof getComercialPrisma>,
       contaAzulCustomerId: string;
       cliente: (typeof pedidos)[number]["cliente"];
       prioridade: number;
-      pedidos: typeof pedidos;
+      pedidos: Array<(typeof pedidos)[number]>;
       itens: Array<{ produtoNome: string; quantidade: unknown; categoria: string | null }>;
       avariasCount: number;
     }
@@ -179,8 +180,8 @@ async function clientesPlanejados(prisma: ReturnType<typeof getComercialPrisma>,
 
   for (const pedido of pedidos) {
     const key = pedido.contaAzulCustomerId;
-    const prioridadeManual = pedido.prioridadeEntrega;
-    const prioridade = prioridadeManual ?? prioridadeEntregaAutomatica(pedido.cliente?.regraComercial);
+    const prioridade =
+      pedido.prioridadeEntrega ?? prioridadeEntregaAutomatica(pedido.cliente?.regraComercial);
     const atual = grupos.get(key) ?? {
       contaAzulCustomerId: key,
       cliente: pedido.cliente,
@@ -191,15 +192,8 @@ async function clientesPlanejados(prisma: ReturnType<typeof getComercialPrisma>,
     };
     atual.prioridade = Math.min(atual.prioridade, prioridade);
     atual.pedidos.push(pedido);
-    const itensResolvidos = await resolverItensOperacionaisExibicao(prisma, {
-      pedido,
-      regra: pedido.cliente?.regraComercial ?? null,
-      contaAzul: pedido.pedidoContaAzul,
-      resolverChave,
-      diaReferencia: dia,
-    });
-    atual.itens.push(...itensResolvidos.itens);
-    atual.avariasCount += pedido.avarias.length;
+    atual.itens.push(...pedido.itens);
+    atual.avariasCount += pedido._count.avarias;
     grupos.set(key, atual);
   }
 
