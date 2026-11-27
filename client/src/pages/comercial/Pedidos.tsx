@@ -487,19 +487,20 @@ export function Pedidos({
   const isPromoter = isPromoterPerfil(me.data?.perfil);
   const isLiderColheita = isLiderColheitaPerfil(me.data?.perfil);
   const perfilOperacionalRestrito = isPromoter || isLiderColheita;
+  /** Operação (Adria / LIDER_COLHEITA) pode ver e editar estoque da semana. */
+  const podeVerEstoqueSemana = !isPromoter;
+  const canEditarEstoqueSemana = canEditarComercial || isLiderColheita;
   const podeVerValores = !ocultarValoresComerciais(me.data?.perfil);
   useEffect(() => {
-    if (
-      perfilOperacionalRestrito &&
-      (aba === "estoqueSemana" ||
-        aba === "conciliacao" ||
-        aba === "regras" ||
-        aba === "produtos" ||
-        aba === "compras")
-    ) {
-      setAba("operacional");
-    }
-  }, [aba, perfilOperacionalRestrito]);
+    if (!perfilOperacionalRestrito) return;
+    const bloqueada =
+      aba === "conciliacao" ||
+      aba === "regras" ||
+      aba === "produtos" ||
+      aba === "compras" ||
+      (aba === "estoqueSemana" && !podeVerEstoqueSemana);
+    if (bloqueada) setAba("operacional");
+  }, [aba, perfilOperacionalRestrito, podeVerEstoqueSemana]);
   const clientes = trpc.comercial.pedidos.clientes.useQuery({
     busca: clienteBusca || undefined,
     limite: 80,
@@ -1771,7 +1772,7 @@ export function Pedidos({
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="operacional">Dashboard operacional</TabsTrigger>
           <TabsTrigger value="agenda">Emissão / Agenda</TabsTrigger>
-          {!perfilOperacionalRestrito && (
+          {podeVerEstoqueSemana && (
             <TabsTrigger value="estoqueSemana">Estoque semana</TabsTrigger>
           )}
           {!perfilOperacionalRestrito && (
@@ -2052,11 +2053,11 @@ export function Pedidos({
           </Card>
         </TabsContent>
 
-        {!perfilOperacionalRestrito && (
+        {podeVerEstoqueSemana && (
           <TabsContent value="estoqueSemana" className="space-y-3">
             <EstoqueSemanalPortalPanel
               dia={diaDate}
-              canEdit={canEditarComercial}
+              canEdit={canEditarEstoqueSemana}
             />
           </TabsContent>
         )}
