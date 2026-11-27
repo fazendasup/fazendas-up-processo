@@ -778,7 +778,17 @@ export const pedidosRouter = router({
         where: {
           importadoOperacao: true,
           ativo: true,
-          OR: [{ visivelPortal: true }, { estoqueLoja: { not: null } }],
+          OR: [
+            { visivelPortal: true },
+            { estoqueLoja: { not: null } },
+            // Broto de Microverdes entra no estoque da semana mesmo se ainda não estiver na vitrine.
+            {
+              AND: [
+                { categoria: "Microverdes" },
+                { nome: { contains: "Broto" } },
+              ],
+            },
+          ],
         },
         select: {
           id: true,
