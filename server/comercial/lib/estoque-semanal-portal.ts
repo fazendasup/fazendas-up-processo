@@ -135,7 +135,7 @@ export function colapsarItensEstoqueSemanalPotes(
     const disponivel =
       canon.quantidade == null
         ? null
-        : Math.max(0, Math.round((canon.quantidade - res) * 1000) / 1000);
+        : Math.round((canon.quantidade - res) * 1000) / 1000;
     unificados.push({
       ...canon,
       nome: base,

@@ -359,7 +359,13 @@ export function EstoqueSemanalPortalPanel({ dia, canEdit }: Props) {
                             <td className="px-3 py-2 tabular-nums text-amber-800 dark:text-amber-200">
                               {fmtQtd(item.reservado)}
                             </td>
-                            <td className="px-3 py-2 tabular-nums font-medium">
+                            <td
+                              className={`px-3 py-2 tabular-nums font-medium ${
+                                item.disponivel != null && item.disponivel < 0
+                                  ? "text-rose-700 dark:text-rose-300"
+                                  : ""
+                              }`}
+                            >
                               {fmtQtd(item.disponivel)}
                             </td>
                             <td className="px-3 py-2 tabular-nums text-muted-foreground">

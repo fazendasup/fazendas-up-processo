@@ -823,10 +823,11 @@ export const pedidosRouter = router({
         const plan = planejadoMap.get(p.id);
         const quantidade = plan ? Number(plan.quantidade) : null;
         const res = reservado.get(p.id) ?? 0;
+        // Pode ficar negativo quando a reserva passa do planejado (painel operacional).
         const disponivel =
           quantidade == null
             ? null
-            : Math.max(0, Math.round((quantidade - res) * 1000) / 1000);
+            : Math.round((quantidade - res) * 1000) / 1000;
         return {
           produtoId: p.id,
           nome: p.nome,
