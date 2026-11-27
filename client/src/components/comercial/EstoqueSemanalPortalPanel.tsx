@@ -37,29 +37,6 @@ function fmtQtd(v: number | null | undefined) {
     : v.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 }
 
-/** Em Microverdes: só linha Broto (esconde "X / Microverdes"). */
-function incluirProdutoEstoqueSemanal(
-  nome: string,
-  categoriaOperacao: CategoriaOperacaoOuOutros,
-): boolean {
-  if (categoriaOperacao !== "Microverdes") return true;
-  const n = nome
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase();
-  if (/\bbroto\b/.test(n)) return true;
-  if (/\bmicroverdes?\b/.test(n)) return false;
-  return false;
-}
-
-/** Exibe "Beterraba Broto 30g" em vez de "Beterraba / Broto 30g". */
-function rotuloEstoqueSemanal(nome: string): string {
-  return nome
-    .replace(/\s*\/\s*Broto\b/gi, " Broto")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
 const ESTILO_CATEGORIA: Record<
   CategoriaOperacaoOuOutros,
   { shell: string; head: string }
@@ -135,14 +112,11 @@ export function EstoqueSemanalPortalPanel({ dia, canEdit }: Props) {
 
   const itensComCategoria = useMemo(() => {
     const itens = (consulta.data?.itens ?? []) as ItemEstoque[];
-    return itens
-      .map(item => ({
-        ...item,
-        categoriaOperacao: categoriaOperacaoDoProduto(item.nome, item.categoria),
-      }))
-      .filter(item =>
-        incluirProdutoEstoqueSemanal(item.nome, item.categoriaOperacao),
-      );
+    return itens.map(item => ({
+      ...item,
+      // Nome já vem limpo do servidor (pote: "Beterraba"); categoria do cadastro guia o grupo.
+      categoriaOperacao: categoriaOperacaoDoProduto(item.nome, item.categoria),
+    }));
   }, [consulta.data?.itens]);
 
   const filtrados = useMemo(() => {
@@ -360,9 +334,7 @@ export function EstoqueSemanalPortalPanel({ dia, canEdit }: Props) {
                             className="border-t align-middle odd:bg-background even:bg-muted/10"
                           >
                             <td className="px-3 py-2">
-                              <p className="font-medium leading-tight">
-                                {rotuloEstoqueSemanal(item.nome)}
-                              </p>
+                              <p className="font-medium leading-tight">{item.nome}</p>
                               <p className="text-xs text-muted-foreground">
                                 {item.categoriaOperacao}
                                 {item.visivelPortal ? " · na loja" : ""}

@@ -83,7 +83,8 @@ import {
 } from "../../portal/portalAprovacao";
 import { LojaErro } from "../../portal/portalLoja";
 import {
-  reservadoPorProdutoNaSemana,
+  colapsarItensEstoqueSemanalPotes,
+  reservadoPorProdutoComPotesMicroverde,
   sincronizarEstoqueAposPedidos,
   sincronizarEstoqueLojaDaSemana,
 } from "../lib/estoque-semanal-portal.js";
@@ -781,11 +782,16 @@ export const pedidosRouter = router({
           OR: [
             { visivelPortal: true },
             { estoqueLoja: { not: null } },
-            // Broto de Microverdes entra no estoque da semana mesmo se ainda não estiver na vitrine.
+            // Potes Broto/Microverdes entram mesmo sem vitrine (reserva unificada).
             {
               AND: [
                 { categoria: "Microverdes" },
-                { nome: { contains: "Broto" } },
+                {
+                  OR: [
+                    { nome: { contains: "Broto" } },
+                    { nome: { contains: "Microverde" } },
+                  ],
+                },
               ],
             },
           ],
@@ -807,37 +813,38 @@ export const pedidosRouter = router({
       const planejadoMap = new Map(
         planejados.map(p => [p.produtoId, p] as const)
       );
-      const reservado = await reservadoPorProdutoNaSemana(
+      const reservado = await reservadoPorProdutoComPotesMicroverde(
         ctx.prisma!,
         inicio,
-        produtos.map(p => p.id)
+        produtos.map(p => ({ id: p.id, nome: p.nome })),
       );
       const rotulo = `${String(inicio.getDate()).padStart(2, "0")}/${String(inicio.getMonth() + 1).padStart(2, "0")}–${String(fim.getDate()).padStart(2, "0")}/${String(fim.getMonth() + 1).padStart(2, "0")}`;
+      const itensBrutos = produtos.map(p => {
+        const plan = planejadoMap.get(p.id);
+        const quantidade = plan ? Number(plan.quantidade) : null;
+        const res = reservado.get(p.id) ?? 0;
+        const disponivel =
+          quantidade == null
+            ? null
+            : Math.max(0, Math.round((quantidade - res) * 1000) / 1000);
+        return {
+          produtoId: p.id,
+          nome: p.nome,
+          categoria: p.categoria,
+          modoCompra: p.modoCompra,
+          visivelPortal: p.visivelPortal,
+          estoqueLoja: p.estoqueLoja == null ? null : Number(p.estoqueLoja),
+          quantidade,
+          reservado: res,
+          disponivel,
+          atualizadoEm: plan?.atualizadoEm ?? null,
+        };
+      });
       return {
         semanaInicio: inicio,
         semanaFim: fim,
         rotulo,
-        itens: produtos.map(p => {
-          const plan = planejadoMap.get(p.id);
-          const quantidade = plan ? Number(plan.quantidade) : null;
-          const res = reservado.get(p.id) ?? 0;
-          const disponivel =
-            quantidade == null
-              ? null
-              : Math.max(0, Math.round((quantidade - res) * 1000) / 1000);
-          return {
-            produtoId: p.id,
-            nome: p.nome,
-            categoria: p.categoria,
-            modoCompra: p.modoCompra,
-            visivelPortal: p.visivelPortal,
-            estoqueLoja: p.estoqueLoja == null ? null : Number(p.estoqueLoja),
-            quantidade,
-            reservado: res,
-            disponivel,
-            atualizadoEm: plan?.atualizadoEm ?? null,
-          };
-        }),
+        itens: colapsarItensEstoqueSemanalPotes(itensBrutos),
       };
     }),
 
